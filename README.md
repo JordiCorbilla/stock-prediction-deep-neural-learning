@@ -13,14 +13,14 @@ The initial data we will use for this model is taken directly from the [Yahoo Fi
 Below is a sample screenshot of the ticker symbol (GOOG) that we will use in this stock prediction article:
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/samplestock.png)
 
-### Market Data Download
+### Market Info Download
 
-To download the data, we will need the yFinance library installed and then we will only need to perform the following operation to download all the relevant information of a given Stock using its ticker symbol.
+To download the data info, we will need the yFinance library installed and then we will only need to perform the following operation to download all the relevant information of a given Stock using its ticker symbol.
 
-Below is the output from the [download_market_data.py] file that is able to download financial data from Yahoo Finance. 
+Below is the output from the [download_market_data_info.py] file that is able to download financial data from Yahoo Finance. 
 
 ```cmd
-C:\Users\thund\Source\Repos\stock-prediction-deep-neural-learning>python download_market_data.py
+C:\Users\thund\Source\Repos\stock-prediction-deep-neural-learning>python download_market_data_info.py
 Info
 {
     "52WeekChange": 0.26037383,
@@ -312,3 +312,92 @@ None
 Options
 ('2020-07-02', '2020-07-10', '2020-07-17', '2020-07-24', '2020-07-31', '2020-08-07', '2020-08-21', '2020-09-18', '2020-11-20', '2020-12-01', '2020-12-18', '2021-01-15', '2021-06-18', '2022-01-21', '2022-06-17')
 ```
+
+The data has a json document which we could use later on to create our Security Master if we ever wanted to store this data somewhere to keep track of the Securities we are going to trade with. As the data could come with different fields, my suggestion is to store them on a Data Lake so we can build it from multiple sources withouth having to worry to much on the way the data is structured.
+
+### Market Data Download
+
+The previous step helps us to identify several characteristiques of a given ticker symbol so we can use its properties to define some of the charts I'm showing below. Note that the yFinance library only requires the stock to download via ticker symbol, the start date and end date of the period we want to get. Additionally, we can also specify the granularity of the data using the interval parameter. By default the interval is 1 day and this is the one I will use for my training.
+
+To download the data we can use the following command:
+
+```python
+start = pd.to_datetime('2004-08-01')
+stock = ['GOOG']
+data = yf.download(stock, start=start, end=datetime.date.today())
+print(data)
+```
+
+And the sample output:
+
+```cmd
+C:\Users\thund\Source\Repos\stock-prediction-deep-neural-learning>python download_market_data.py
+[*********************100%***********************]  1 of 1 completed
+                   Open         High          Low        Close    Adj Close    Volume
+Date
+2004-08-19    49.813286    51.835709    47.800831    49.982655    49.982655  44871300
+2004-08-20    50.316402    54.336334    50.062355    53.952770    53.952770  22942800
+2004-08-23    55.168217    56.528118    54.321388    54.495735    54.495735  18342800
+2004-08-24    55.412300    55.591629    51.591621    52.239193    52.239193  15319700
+2004-08-25    52.284027    53.798351    51.746044    52.802086    52.802086   9232100
+2004-08-26    52.279045    53.773445    52.134586    53.753517    53.753517   7128600
+2004-08-27    53.848164    54.107193    52.647663    52.876804    52.876804   6241200
+2004-08-30    52.443428    52.548038    50.814533    50.814533    50.814533   5221400
+2004-08-31    50.958992    51.661362    50.889256    50.993862    50.993862   4941200
+2004-09-01    51.158245    51.292744    49.648903    49.937820    49.937820   9181600
+2004-09-02    49.409801    50.993862    49.285267    50.565468    50.565468  15190400
+2004-09-03    50.286514    50.680038    49.474556    49.818268    49.818268   5176800
+2004-09-07    50.316402    50.809555    49.619015    50.600338    50.600338   5875200
+2004-09-08    50.181908    51.322632    50.062355    50.958992    50.958992   5009200
+2004-09-09    51.073563    51.163227    50.311420    50.963974    50.963974   4080900
+2004-09-10    50.610302    53.081039    50.460861    52.468334    52.468334   8740200
+2004-09-13    53.115910    54.002586    53.031227    53.549286    53.549286   7881300
+2004-09-14    53.524376    55.790882    53.195610    55.536835    55.536835  10880300
+2004-09-15    55.073570    56.901718    54.894241    55.790882    55.790882  10763900
+2004-09-16    55.960247    57.683788    55.616535    56.772205    56.772205   9310200
+2004-09-17    56.996365    58.525631    56.562988    58.525631    58.525631   9517400
+2004-09-20    58.256641    60.572956    58.166977    59.457142    59.457142  10679200
+2004-09-21    59.681301    59.985161    58.535595    58.699978    58.699978   7263000
+2004-09-22    58.480801    59.611561    58.186901    58.968971    58.968971   7617100
+2004-09-23    59.198112    61.086033    58.291508    60.184414    60.184414   8576100
+2004-09-24    60.244190    61.818291    59.656395    59.691261    59.691261   9166700
+2004-09-27    59.556767    60.214302    58.680054    58.909195    58.909195   7099600
+2004-09-28    60.423519    63.462128    59.880554    63.193138    63.193138  17009400
+2004-09-29    63.113434    67.257904    62.879314    65.295258    65.295258  30661400
+2004-09-30    64.707458    65.902977    64.259140    64.558022    64.558022  13823300
+...                 ...          ...          ...          ...          ...       ...
+2020-05-19  1386.996948  1392.000000  1373.484985  1373.484985  1373.484985   1280600
+2020-05-20  1389.579956  1410.420044  1387.250000  1406.719971  1406.719971   1655400
+2020-05-21  1408.000000  1415.489990  1393.449951  1402.800049  1402.800049   1385000
+2020-05-22  1396.709961  1412.760010  1391.829956  1410.420044  1410.420044   1309400
+2020-05-26  1437.270020  1441.000000  1412.130005  1417.020020  1417.020020   2060600
+2020-05-27  1417.250000  1421.739990  1391.290039  1417.839966  1417.839966   1685800
+2020-05-28  1396.859985  1440.839966  1396.000000  1416.729980  1416.729980   1692200
+2020-05-29  1416.939941  1432.569946  1413.349976  1428.920044  1428.920044   1838100
+2020-06-01  1418.390015  1437.959961  1418.000000  1431.819946  1431.819946   1217100
+2020-06-02  1430.550049  1439.609985  1418.829956  1439.219971  1439.219971   1278100
+2020-06-03  1438.300049  1446.552002  1429.776978  1436.380005  1436.380005   1256200
+2020-06-04  1430.400024  1438.959961  1404.729980  1412.180054  1412.180054   1484300
+2020-06-05  1413.170044  1445.050049  1406.000000  1438.390015  1438.390015   1734900
+2020-06-08  1422.339966  1447.989990  1422.339966  1446.609985  1446.609985   1404200
+2020-06-09  1445.359985  1468.000000  1443.209961  1456.160034  1456.160034   1409200
+2020-06-10  1459.540039  1474.259033  1456.270020  1465.849976  1465.849976   1525200
+2020-06-11  1442.479980  1454.474976  1402.000000  1403.839966  1403.839966   1991300
+2020-06-12  1428.489990  1437.000000  1386.020020  1413.180054  1413.180054   1944200
+2020-06-15  1390.800049  1424.800049  1387.920044  1419.849976  1419.849976   1503900
+2020-06-16  1445.219971  1455.020020  1425.900024  1442.719971  1442.719971   1709200
+2020-06-17  1447.160034  1460.000000  1431.380005  1451.119995  1451.119995   1548300
+2020-06-18  1449.160034  1451.410034  1427.010010  1435.959961  1435.959961   1581900
+2020-06-19  1444.000000  1447.800049  1421.349976  1431.719971  1431.719971   3157900
+2020-06-22  1429.000000  1452.750000  1423.209961  1451.859985  1451.859985   1542400
+2020-06-23  1455.640015  1475.941040  1445.239990  1464.410034  1464.410034   1429800
+2020-06-24  1461.510010  1475.420044  1429.750000  1431.969971  1431.969971   1756000
+2020-06-25  1429.900024  1442.900024  1420.000000  1441.329956  1441.329956   1230500
+2020-06-26  1431.390015  1433.449951  1351.989990  1359.900024  1359.900024   4267700
+2020-06-29  1358.180054  1395.599976  1347.010010  1394.969971  1394.969971   1810200
+2020-06-30  1390.439941  1418.650024  1383.959961  1413.609985  1413.609985   2041600
+
+[3994 rows x 6 columns]
+```
+
+Note that is important to mention the start date correctly just to ensure we are collecting data. If we don't do that we might end up having some NaN variables that could affect the output of our training.
