@@ -2,18 +2,18 @@
 
 Predicting stock prices using a TensorFlow LSTM (long short-term memory) neural network for times series forecasting
 
-## Introduction
+## 1) Introduction
 
 Predicting stock prices is a cumbersome task as it does not follow any specific pattern. Changes in the stock prices are purely based on buy/sell actions during a period of time. In order to learn the specific characteristics of a stock price, we can use deep learning to identify these patterns through learning. One of the most well-known networks for series forecasting is [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) (long short-term memory) which is a recurrent neural network that is able to remember information over a long period of time, thus making them extremely useful for predicting stock prices.
 
-## Stock Market Data
+## 2) Stock Market Data
 
 The initial data we will use for this model is taken directly from the [Yahoo Finance](https://finance.yahoo.com/quote/GOOG?p=GOOG) page which contains the latest market data on a specific stock price. To perform this operation easily using Python, we will use the [yFinance](https://aroussi.com/post/python-yahoo-finance) library which has been built specifically for this and that it will allow us to download all the information we need on a given [ticker symbol](https://www.investopedia.com/terms/t/tickersymbol.asp).
 
 Below is a sample screenshot of the ticker symbol (GOOG) that we will use in this stock prediction article:
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/samplestock.png)
 
-### Market Info Download
+### 2.1) Market Info Download
 
 To download the data info, we will need the yFinance library installed and then we will only need to perform the following operation to download all the relevant information of a given Stock using its ticker symbol.
 
@@ -315,7 +315,7 @@ Options
 
 The data has a json document which we could use later on to create our Security Master if we ever wanted to store this data somewhere to keep track of the Securities we are going to trade with. As the data could come with different fields, my suggestion is to store them on a Data Lake so we can build it from multiple sources withouth having to worry to much on the way the data is structured.
 
-### Market Data Download
+### 2.2) Market Data Download
 
 The previous step helps us to identify several characteristiques of a given ticker symbol so we can use its properties to define some of the charts I'm showing below. Note that the yFinance library only requires the stock to download via ticker symbol, the start date and end date of the period we want to get. Additionally, we can also specify the granularity of the data using the interval parameter. By default the interval is 1 day and this is the one I will use for my training.
 
@@ -401,3 +401,15 @@ Date
 ```
 
 Note that is important to mention the start date correctly just to ensure we are collecting data. If we don't do that we might end up having some NaN variables that could affect the output of our training.
+
+## 3) Training and Validation Data
+
+Now that we have the data that we want to use, we need to define what defines our traning and validation data. As stocks could vary depending on the dates, the function I have created requires 3 basic arguments:
+- Ticker Symbol: GOOG
+- Start Date: Date as to when they started, in this case it was 2004-Aug-01.
+- Validation Date: Date as to when we want the validation to be considered. In this case we specify 2017-01-01 as our data point.
+
+Note that you will need to have configured [TensorFlow](https://www.tensorflow.org/), Keras and a GPU in order to run the samples below.
+
+In this exercise, I'm only interested in the [closing price](https://www.investopedia.com/terms/c/closingprice.asp) which is the standard benchmark regarding stocks or securities.
+
