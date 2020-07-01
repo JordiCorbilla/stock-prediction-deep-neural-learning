@@ -405,11 +405,17 @@ Note that is important to mention the start date correctly just to ensure we are
 ## 3) Training and Validation Data
 
 Now that we have the data that we want to use, we need to define what defines our traning and validation data. As stocks could vary depending on the dates, the function I have created requires 3 basic arguments:
-- Ticker Symbol: GOOG
-- Start Date: Date as to when they started, in this case it was 2004-Aug-01.
-- Validation Date: Date as to when we want the validation to be considered. In this case we specify 2017-01-01 as our data point.
+- Ticker Symbol: **GOOG**
+- Start Date: Date as to when they started, in this case it was **2004-Aug-01**.
+- Validation Date: Date as to when we want the validation to be considered. In this case we specify **2017-01-01** as our data point.
 
 Note that you will need to have configured [TensorFlow](https://www.tensorflow.org/), Keras and a GPU in order to run the samples below.
 
 In this exercise, I'm only interested in the [closing price](https://www.investopedia.com/terms/c/closingprice.asp) which is the standard benchmark regarding stocks or securities.
 
+Below you can find the chart with the division we will create between Training Data and Validation Data:
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/TrainingDataValidationData.png)
+
+Also the histogram of the Data:
+
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/DataHistogram.png)
