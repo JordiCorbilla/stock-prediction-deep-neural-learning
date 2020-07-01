@@ -413,3 +413,8 @@ Note that you will need to have configured [TensorFlow](https://www.tensorflow.o
 
 In this exercise, I'm only interested in the [closing price](https://www.investopedia.com/terms/c/closingprice.asp) which is the standard benchmark regarding stocks or securities.
 
+Below you can find the chart with the division we will create between Training Data and Validation Data:
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/TrainingDataValidationData.png)
+
+Also the histogram of the Data:
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/DataHistogram.png)
