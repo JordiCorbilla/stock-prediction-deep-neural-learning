@@ -402,7 +402,9 @@ Date
 
 Note that is important to mention the start date correctly just to ensure we are collecting data. If we don't do that we might end up having some NaN variables that could affect the output of our training.
 
-## 3) Training and Validation Data
+## 3) Deep Learning Model
+
+### 3.1) Training and Validation Data
 
 Now that we have the data that we want to use, we need to define what defines our traning and validation data. As stocks could vary depending on the dates, the function I have created requires 3 basic arguments:
 - Ticker Symbol: **GOOG**
@@ -419,3 +421,6 @@ Below you can find the chart with the division we will create between Training D
 Also the histogram of the Data:
 
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/DataHistogram.png)
+
+### 3.2) Data Normalization
+
