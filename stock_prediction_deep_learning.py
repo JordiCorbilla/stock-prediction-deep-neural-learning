@@ -25,8 +25,8 @@ import numpy as np
 import yfinance as yf
 
 def train_LSTM_network(start_date, ticker, validation_date):
-    sec = yf.Ticker("GOOG")
-    data = yf.download(ticker, start=start_date, end=datetime.date.today())[['Close']]
+    sec = yf.Ticker(ticker)
+    data = yf.download([ticker], start=start_date, end=datetime.date.today())[['Close']]
     data = data.reset_index()
     print(data)
 
@@ -45,7 +45,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     plt.show()
 
 if __name__ == '__main__':
-    start_date = pd.to_datetime('2004-08-01')
-    ticker = ['GOOG']
-    validation_date = pd.to_datetime('2017-01-01')
-    train_LSTM_network(start_date, ticker, validation_date)
+    stock_start_date = pd.to_datetime('2004-08-01')
+    stock_ticker = 'GOOG'
+    stock_validation_date = pd.to_datetime('2017-01-01')
+    train_LSTM_network(stock_start_date, stock_ticker, stock_validation_date)
