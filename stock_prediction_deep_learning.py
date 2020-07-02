@@ -24,6 +24,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yfinance as yf
 
+def plot_histogram_data_split(training, test, title, date):
+    plt.figure(figsize=(12, 5))
+    plt.plot(training.Close, color='green')
+    plt.plot(test.Close, color='red')
+    plt.ylabel("Price")
+    plt.xlabel("Date")
+    plt.legend(["Training Data", "Validation Data >= " + date.strftime("%Y-%m-%d")])
+    plt.title(title)
+    training.hist()
+    plt.show()
+
+def data_verification(train):
+    print('mean:', train.mean(axis=0))
+    print('max', train.max())
+    print('min', train.min())
+    print('Std dev:', train.std(axis=0))
+
 def train_LSTM_network(start_date, ticker, validation_date):
     sec = yf.Ticker(ticker)
     data = yf.download([ticker], start=start_date, end=datetime.date.today())[['Close']]
@@ -34,15 +51,11 @@ def train_LSTM_network(start_date, ticker, validation_date):
     test_data = data[data['Date'] >= validation_date].copy()
     training_data = training_data.set_index('Date')
     test_data = test_data.set_index('Date')
-    plt.figure(figsize=(12, 5))
-    plt.plot(training_data.Close, color='green')
-    plt.plot(test_data.Close, color='red')
-    plt.ylabel("Price")
-    plt.xlabel("Date")
-    plt.legend(["Training Data", "Validation Data >= " + validation_date.strftime("%Y-%m-%d")])
-    plt.title(sec.info['shortName'])
-    training_data.hist()
-    plt.show()
+    plot_histogram_data_split(training_data, test_data, sec.info['shortName'], validation_date)
+
+    min_max = MinMaxScaler(feature_range=(0, 1))
+    train_scaled = min_max.fit_transform(training_data)
+    data_verification(train_scaled)
 
 if __name__ == '__main__':
     stock_start_date = pd.to_datetime('2004-08-01')
