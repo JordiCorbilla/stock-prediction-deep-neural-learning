@@ -57,6 +57,17 @@ def train_LSTM_network(start_date, ticker, validation_date):
     train_scaled = min_max.fit_transform(training_data)
     data_verification(train_scaled)
 
+    time_steps = int(60)
+    x_train = []
+    y_train = []
+    for i in range(time_steps, train_scaled.shape[0]):
+        x_train.append(train_scaled[i - time_steps:i])
+        y_train.append(train_scaled[i, 0])
+
+    x_train, y_train = np.array(x_train), np.array(y_train)
+    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+    print(x_train)
+
 if __name__ == '__main__':
     stock_start_date = pd.to_datetime('2004-08-01')
     stock_ticker = 'GOOG'
