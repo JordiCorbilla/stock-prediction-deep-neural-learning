@@ -431,3 +431,21 @@ In order to normalise the data, we need to scale it between 0 and 1 so we talk i
     train_scaled = min_max.fit_transform(training_data)
 ```
 
+### 3.3) Adding Timesteps
+
+LSTM network needs the data imported as a 3D array. To translate this 2D array into a 3D one, we use a short timestep to loop through the data and create smaller partitions and feed them into the model. The final array is then reshaped into training samples, x number of timesteps and 1 feature per step. The code below represents this concept:
+
+```python
+    time_steps = int(60)
+    for i in range(time_steps, train_scaled.shape[0]):
+        x_train.append(train_scaled[i - time_steps:i])
+        y_train.append(train_scaled[i, 0])
+```
+
+### 3.4) Creation of the deep learning model LSTM
+
+To create this model, you will need to have TensorFlow, TensorFlow-Gpu and Keras install in order for this to run. The code for this model can be seen below and the explanation for each layer is also defined below:
+
+```python
+
+```
