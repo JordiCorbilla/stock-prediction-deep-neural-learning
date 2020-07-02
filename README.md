@@ -424,3 +424,10 @@ Also the histogram of the Data:
 
 ### 3.2) Data Normalization
 
+In order to normalise the data, we need to scale it between 0 and 1 so we talk in a common scale. To accomplish this, we can use the preprocessing tool MinMaxScaler as seen below:
+
+```python
+    min_max = MinMaxScaler(feature_range=(0, 1))
+    train_scaled = min_max.fit_transform(training_data)
+```
+
