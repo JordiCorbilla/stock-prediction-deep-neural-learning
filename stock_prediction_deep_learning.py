@@ -20,9 +20,11 @@ import tensorflow as tf
 from keras.losses import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 import datetime
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import yfinance as yf
+import secrets
 
 def plot_histogram_data_split(training, test, title, date):
     plt.figure(figsize=(12, 5))
@@ -40,6 +42,38 @@ def data_verification(train):
     print('max', train.max())
     print('min', train.min())
     print('Std dev:', train.std(axis=0))
+
+def create_long_short_term_memory_model(x_train):
+    model = Sequential()
+    # 1st layer with Dropout regularisation
+    # * units = add 100 neurons is the dimensionality of the output space
+    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
+    # * input_shape => Shape of the training dataset
+    model.add(LSTM(units=100, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+    # 20% of the layers will be dropped
+    model.add(Dropout(0.2))
+    # 2nd LSTM layer
+    # * units = add 50 neurons is the dimensionality of the output space
+    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
+    model.add(LSTM(units=50, return_sequences=True))
+    # 20% of the layers will be dropped
+    model.add(Dropout(0.2))
+    # 3rd LSTM layer
+    # * units = add 50 neurons is the dimensionality of the output space
+    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
+    model.add(LSTM(units=50, return_sequences=True))
+    # 50% of the layers will be dropped
+    model.add(Dropout(0.5))
+    # 4th LSTM layer
+    # * units = add 50 neurons is the dimensionality of the output space
+    model.add(LSTM(units=50))
+    # 50% of the layers will be dropped
+    model.add(Dropout(0.5))
+    # Dense layer that specifies an output of one unit
+    model.add(Dense(units=1))
+    model.summary()
+    tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True, show_layer_names=True)
+    return model
 
 def train_LSTM_network(start_date, ticker, validation_date):
     sec = yf.Ticker(ticker)
@@ -68,8 +102,12 @@ def train_LSTM_network(start_date, ticker, validation_date):
     x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
     print(x_train)
 
+    model = create_long_short_term_memory_model(x_train)
+
 if __name__ == '__main__':
     stock_start_date = pd.to_datetime('2004-08-01')
     stock_ticker = 'GOOG'
+    test_run = secrets.token_hex(16)
+    project_folder = os.path.join(os.getcwd(), token)
     stock_validation_date = pd.to_datetime('2017-01-01')
     train_LSTM_network(stock_start_date, stock_ticker, stock_validation_date)
