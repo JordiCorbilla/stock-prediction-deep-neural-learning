@@ -80,6 +80,7 @@ def load_data_transform(time_steps, training_data, test_data):
     train_scaled = min_max.fit_transform(training_data)
     data_verification(train_scaled)
 
+    # Training Data Transformation
     x_train = []
     y_train = []
     for i in range(time_steps, train_scaled.shape[0]):
@@ -91,7 +92,9 @@ def load_data_transform(time_steps, training_data, test_data):
 
     total_data = pd.concat((training_data, test_data), axis=0)
     inputs = total_data[len(total_data) - len(test_data) - time_steps:]
-    test_scaled = minmax.fit_transform(inputs)
+    test_scaled = min_max.fit_transform(inputs)
+
+    # Testing Data Transformation
     x_test = []
     y_test = []
     for i in range(time_steps, test_scaled.shape[0]):
