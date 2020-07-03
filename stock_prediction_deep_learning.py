@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import os
 import pandas as pd
 from keras import Sequential
 from keras.layers import LSTM, Dropout, Dense
@@ -20,7 +20,7 @@ import tensorflow as tf
 from keras.losses import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 import datetime
-import os
+os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 import matplotlib.pyplot as plt
 import numpy as np
 import yfinance as yf
@@ -109,5 +109,7 @@ if __name__ == '__main__':
     stock_ticker = 'GOOG'
     token = secrets.token_hex(16)
     project_folder = os.path.join(os.getcwd(), token)
+    if not os.path.exists(project_folder):
+        os.makedirs(project_folder)
     stock_validation_date = pd.to_datetime('2017-01-01')
     train_LSTM_network(stock_start_date, stock_ticker, stock_validation_date)
