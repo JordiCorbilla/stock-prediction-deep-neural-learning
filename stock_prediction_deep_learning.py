@@ -75,7 +75,11 @@ def create_long_short_term_memory_model(x_train):
     tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True, show_layer_names=True)
     return model
 
-def load_data(time_steps, train_scaled, training_data, test_data):
+def load_data_transform(time_steps, training_data, test_data):
+    min_max = MinMaxScaler(feature_range=(0, 1))
+    train_scaled = min_max.fit_transform(training_data)
+    data_verification(train_scaled)
+
     x_train = []
     y_train = []
     for i in range(time_steps, train_scaled.shape[0]):
@@ -110,11 +114,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     test_data = test_data.set_index('Date')
     plot_histogram_data_split(training_data, test_data, sec.info['shortName'], validation_date)
 
-    min_max = MinMaxScaler(feature_range=(0, 1))
-    train_scaled = min_max.fit_transform(training_data)
-    data_verification(train_scaled)
-
-    (x_train, y_train), (x_test, y_test) = load_data(60, train_scaled, training_data, test_data)
+    (x_train, y_train), (x_test, y_test) = load_data_transform(60, training_data, test_data)
 
     model = create_long_short_term_memory_model(x_train)
 
