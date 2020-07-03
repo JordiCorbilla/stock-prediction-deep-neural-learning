@@ -98,10 +98,10 @@ def load_data_transform(time_steps, training_data, test_data):
     x_test = []
     y_test = []
     for i in range(time_steps, test_scaled.shape[0]):
-        x_test.append(test_scaled[i - n_lags:i])
+        x_test.append(test_scaled[i - time_steps:i])
         y_test.append(test_scaled[i, 0])
 
-    x_test, y_test = np.array(X_test), np.array(y_test)
+    x_test, y_test = np.array(x_test), np.array(y_test)
     x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
     return (x_train, y_train), (x_test, y_test)
 
