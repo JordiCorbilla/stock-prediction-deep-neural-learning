@@ -35,8 +35,11 @@ def plot_histogram_data_split(training, test, title, date):
     plt.legend(["Training Data", "Validation Data >= " + date.strftime("%Y-%m-%d")])
     plt.title(title)
     plt.savefig(os.path.join(project_folder, title.strip()+'_price.png'))
-    training.hist()
-    training.savefig(os.path.join(project_folder, title.strip() + '_hist.png'))
+
+    fig, ax = plt.subplots()
+    training.hist('ColumnName', ax=ax)
+    fig.savefig(os.path.join(project_folder, title.strip() + '_hist.png'))
+
     plt.pause(0.001)
     plt.show() #block=False
 
