@@ -149,7 +149,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
 
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=defined_metrics)
-    history = model.fit(x_train, y_train, epochs=20, batch_size=32, validation_data=(x_test, y_test), callbacks=[callback])
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_test, y_test), callbacks=[callback])
     print("saving weights")
     model.save(os.path.join(project_folder, 'model_weights.h5'))
     plot_loss(history)
@@ -159,6 +159,8 @@ def train_LSTM_network(start_date, ticker, validation_date):
 if __name__ == '__main__':
     stock_start_date = pd.to_datetime('2004-08-01')
     stock_ticker = 'GOOG'
+    epochs = 50
+    batch_size = 32
     token = secrets.token_hex(16)
     project_folder = os.path.join(os.getcwd(), token)
     if not os.path.exists(project_folder):
