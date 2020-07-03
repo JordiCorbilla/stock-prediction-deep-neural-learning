@@ -75,6 +75,29 @@ def create_long_short_term_memory_model(x_train):
     tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True, show_layer_names=True)
     return model
 
+def load_data(time_steps, train_scaled, training_data, test_data):
+    x_train = []
+    y_train = []
+    for i in range(time_steps, train_scaled.shape[0]):
+        x_train.append(train_scaled[i - time_steps:i])
+        y_train.append(train_scaled[i, 0])
+
+    x_train, y_train = np.array(x_train), np.array(y_train)
+    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+
+    total_data = pd.concat((training_data, test_data), axis=0)
+    inputs = total_data[len(total_data) - len(test_data) - time_steps:]
+    test_scaled = minmax.fit_transform(inputs)
+    x_test = []
+    y_test = []
+    for i in range(time_steps, test_scaled.shape[0]):
+        x_test.append(test_scaled[i - n_lags:i])
+        y_test.append(test_scaled[i, 0])
+
+    x_test, y_test = np.array(X_test), np.array(y_test)
+    x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+    return (x_train, y_train), (x_test, y_test)
+
 def train_LSTM_network(start_date, ticker, validation_date):
     sec = yf.Ticker(ticker)
     data = yf.download([ticker], start=start_date, end=datetime.date.today())[['Close']]
@@ -91,18 +114,18 @@ def train_LSTM_network(start_date, ticker, validation_date):
     train_scaled = min_max.fit_transform(training_data)
     data_verification(train_scaled)
 
-    time_steps = int(60)
-    x_train = []
-    y_train = []
-    for i in range(time_steps, train_scaled.shape[0]):
-        x_train.append(train_scaled[i - time_steps:i])
-        y_train.append(train_scaled[i, 0])
-
-    x_train, y_train = np.array(x_train), np.array(y_train)
-    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
-    print(x_train)
+    (x_train, y_train), (x_test, y_test) = load_data(60, train_scaled, training_data, test_data)
 
     model = create_long_short_term_memory_model(x_train)
+
+    defined_metrics = [
+        tf.keras.metrics.MeanSquaredError(name='MSE')
+    ]
+
+    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
+
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=defined_metrics)
+    regressor.fit(x_train, y_train, epochs=20, batch_size=32, validation_data=(x_test, y_test), callbacks=[callback])
 
 if __name__ == '__main__':
     stock_start_date = pd.to_datetime('2004-08-01')
