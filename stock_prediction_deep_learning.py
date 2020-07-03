@@ -107,7 +107,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
 if __name__ == '__main__':
     stock_start_date = pd.to_datetime('2004-08-01')
     stock_ticker = 'GOOG'
-    test_run = secrets.token_hex(16)
+    token = secrets.token_hex(16)
     project_folder = os.path.join(os.getcwd(), token)
     stock_validation_date = pd.to_datetime('2017-01-01')
     train_LSTM_network(stock_start_date, stock_ticker, stock_validation_date)
