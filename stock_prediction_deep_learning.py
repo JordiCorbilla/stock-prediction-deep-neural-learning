@@ -35,7 +35,7 @@ def plot_histogram_data_split(training, test, title, date):
     plt.legend(["Training Data", "Validation Data >= " + date.strftime("%Y-%m-%d")])
     plt.title(title)
     training.hist()
-    plt.show()
+    plt.show(block=False)
 
 def data_verification(train):
     print('mean:', train.mean(axis=0))
@@ -128,7 +128,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
 
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=defined_metrics)
-    regressor.fit(x_train, y_train, epochs=20, batch_size=32, validation_data=(x_test, y_test), callbacks=[callback])
+    model.fit(x_train, y_train, epochs=20, batch_size=32, validation_data=(x_test, y_test), callbacks=[callback])
 
 if __name__ == '__main__':
     stock_start_date = pd.to_datetime('2004-08-01')
