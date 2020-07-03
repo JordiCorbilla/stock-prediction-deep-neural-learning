@@ -35,6 +35,7 @@ def plot_histogram_data_split(training, test, title, date):
     plt.legend(["Training Data", "Validation Data >= " + date.strftime("%Y-%m-%d")])
     plt.title(title)
     training.hist()
+    plt.pause(0.001)
     plt.show(block=False)
 
 def data_verification(train):
