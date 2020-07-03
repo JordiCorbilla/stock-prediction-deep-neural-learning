@@ -34,11 +34,11 @@ def plot_histogram_data_split(training, test, title, date):
     plt.xlabel("Date")
     plt.legend(["Training Data", "Validation Data >= " + date.strftime("%Y-%m-%d")])
     plt.title(title)
-    plt.savefig(os.path.join(new_folder, title.strip()+'_price.png'))
+    plt.savefig(os.path.join(project_folder, title.strip()+'_price.png'))
     training.hist()
-    training.savefig(os.path.join(new_folder, title.strip() + '_hist.png'))
+    training.savefig(os.path.join(project_folder, title.strip() + '_hist.png'))
     plt.pause(0.001)
-    plt.show(block=False)
+    plt.show() #block=False
 
 def data_verification(train):
     print('mean:', train.mean(axis=0))
@@ -114,7 +114,7 @@ def plot_loss(history):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend(loc='lower right')
-    plt.savefig(os.path.join(new_folder, 'loss.png'))
+    plt.savefig(os.path.join(project_folder, 'loss.png'))
     plt.show()
 
 def plot_mse(history):
@@ -123,7 +123,7 @@ def plot_mse(history):
     plt.xlabel('Epoch')
     plt.ylabel('MSE')
     plt.legend(loc='lower right')
-    plt.savefig(os.path.join(new_folder, 'MSE.png'))
+    plt.savefig(os.path.join(project_folder, 'MSE.png'))
     plt.show()
 
 def train_LSTM_network(start_date, ticker, validation_date):
@@ -154,6 +154,8 @@ def train_LSTM_network(start_date, ticker, validation_date):
     model.save(os.path.join(project_folder, 'model_weights.h5'))
     plot_loss(history)
     plot_mse(history)
+
+
 
 
 if __name__ == '__main__':
