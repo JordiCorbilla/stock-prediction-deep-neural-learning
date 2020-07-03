@@ -34,7 +34,9 @@ def plot_histogram_data_split(training, test, title, date):
     plt.xlabel("Date")
     plt.legend(["Training Data", "Validation Data >= " + date.strftime("%Y-%m-%d")])
     plt.title(title)
+    plt.savefig(os.path.join(new_folder, title.strip()+'_price.png'))
     training.hist()
+    training.savefig(os.path.join(new_folder, title.strip() + '_hist.png'))
     plt.pause(0.001)
     plt.show(block=False)
 
@@ -106,6 +108,24 @@ def load_data_transform(time_steps, training_data, test_data):
     x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
     return (x_train, y_train), (x_test, y_test)
 
+def plot_loss(history):
+    plt.plot(history.history['loss'], label='loss')
+    plt.plot(history.history['val_loss'], label='val_loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend(loc='lower right')
+    plt.savefig(os.path.join(new_folder, 'loss.png'))
+    plt.show()
+
+def plot_mse(history):
+    plt.plot(history.history['MSE'], label='MSE')
+    plt.plot(history.history['val_MSE'], label='val_MSE')
+    plt.xlabel('Epoch')
+    plt.ylabel('MSE')
+    plt.legend(loc='lower right')
+    plt.savefig(os.path.join(new_folder, 'MSE.png'))
+    plt.show()
+
 def train_LSTM_network(start_date, ticker, validation_date):
     sec = yf.Ticker(ticker)
     data = yf.download([ticker], start=start_date, end=datetime.date.today())[['Close']]
@@ -129,7 +149,12 @@ def train_LSTM_network(start_date, ticker, validation_date):
     callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
 
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=defined_metrics)
-    model.fit(x_train, y_train, epochs=20, batch_size=32, validation_data=(x_test, y_test), callbacks=[callback])
+    history = model.fit(x_train, y_train, epochs=20, batch_size=32, validation_data=(x_test, y_test), callbacks=[callback])
+    print("saving weights")
+    model.save(os.path.join(project_folder, 'model_weights.h5'))
+    plot_loss(history)
+    plot_mse(history)
+
 
 if __name__ == '__main__':
     stock_start_date = pd.to_datetime('2004-08-01')
