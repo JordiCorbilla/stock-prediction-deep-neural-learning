@@ -139,20 +139,12 @@ def train_LSTM_network(start_date, ticker, validation_date):
     test_predictions_baseline = model.predict(x_test)
     test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
     test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
+    test_predictions_baseline.to_csv(os.path.join(project_folder, 'predictions.csv'))
+
     test_predictions_baseline.rename(columns={0: stock_ticker + '_predicted'}, inplace=True)
     test_predictions_baseline = test_predictions_baseline.round(decimals=0)
     test_predictions_baseline.index = test_data.index
     plotter.project_plot_predictions(test_predictions_baseline, test_data)
-
-    with open(os.path.join(project_folder, 'close_price.csv'), 'w', newline='') as csv_file:
-        file_writer = csv.writer(csv_file, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        file_writer.writerow(['TimeSeries', 'ClosePrice'])
-        count = 0
-        for sub in test_predictions_baseline:
-            time_series = sub[0]
-            close_price = sub[1]
-            file_writer.writerow([time_series, close_price])
-            count = count + 1
 
 
 if __name__ == '__main__':
