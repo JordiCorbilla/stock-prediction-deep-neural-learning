@@ -128,7 +128,7 @@ def plot_mse(history):
     plt.savefig(os.path.join(project_folder, 'MSE.png'))
     plt.show()
 
-def project_plot_predictions(min_max, x_test, title, test_data, currency):
+def project_plot_predictions(model, min_max, x_test, title, test_data, currency):
     price_predicted = model.predict(x_test)
     price_predicted = min_max.inverse_transform(price_predicted)
     price_predicted = pd.DataFrame(price_predicted)
@@ -137,10 +137,10 @@ def project_plot_predictions(min_max, x_test, title, test_data, currency):
     price_predicted.index = test_data.index
 
     plt.figure(figsize=(14, 5))
-    plt.plot(price_predicted[stock_ticker+'_predicted'], color='red', label='Predicted '+title+' price')
-    plt.plot(test_data.Close, color='green', label='Actual '+title+' price')
+    plt.plot(price_predicted[stock_ticker+'_predicted'], color='red', label='Predicted ['+title+'] price')
+    plt.plot(test_data.Close, color='green', label='Actual ['+title+'] price')
     plt.xlabel('Time')
-    plt.ylabel('Price ('+currency+')')
+    plt.ylabel('Price ['+currency+']')
     plt.legend()
     plt.show()
 
@@ -175,7 +175,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     plot_mse(history)
 
     print("plotting prediction results")
-    project_plot_predictions(min_max, x_test, sec.info['shortName'], test_data, sec.info['currency'])
+    project_plot_predictions(model, min_max, x_test, sec.info['shortName'], test_data, sec.info['currency'])
 
 
 
