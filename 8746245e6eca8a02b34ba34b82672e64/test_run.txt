@@ -1,0 +1,191 @@
+C:\Users\thund\Source\Repos\stock-prediction-deep-neural-learning>python stock_prediction_deep_learning.py
+Using TensorFlow backend.
+2020-07-04 08:20:14.036618: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library cudart64_100.dll
+[*********************100%***********************]  1 of 1 completed
+           Date        Close
+0    2004-08-19    49.982655
+1    2004-08-20    53.952770
+2    2004-08-23    54.495735
+3    2004-08-24    52.239193
+4    2004-08-25    52.802086
+5    2004-08-26    53.753517
+6    2004-08-27    52.876804
+7    2004-08-30    50.814533
+8    2004-08-31    50.993862
+9    2004-09-01    49.937820
+10   2004-09-02    50.565468
+11   2004-09-03    49.818268
+12   2004-09-07    50.600338
+13   2004-09-08    50.958992
+14   2004-09-09    50.963974
+15   2004-09-10    52.468334
+16   2004-09-13    53.549286
+17   2004-09-14    55.536835
+18   2004-09-15    55.790882
+19   2004-09-16    56.772205
+20   2004-09-17    58.525631
+21   2004-09-20    59.457142
+22   2004-09-21    58.699978
+23   2004-09-22    58.968971
+24   2004-09-23    60.184414
+25   2004-09-24    59.691261
+26   2004-09-27    58.909195
+27   2004-09-28    63.193138
+28   2004-09-29    65.295258
+29   2004-09-30    64.558022
+...         ...          ...
+3966 2020-05-21  1402.800049
+3967 2020-05-22  1410.420044
+3968 2020-05-26  1417.020020
+3969 2020-05-27  1417.839966
+3970 2020-05-28  1416.729980
+3971 2020-05-29  1428.920044
+3972 2020-06-01  1431.819946
+3973 2020-06-02  1439.219971
+3974 2020-06-03  1436.380005
+3975 2020-06-04  1412.180054
+3976 2020-06-05  1438.390015
+3977 2020-06-08  1446.609985
+3978 2020-06-09  1456.160034
+3979 2020-06-10  1465.849976
+3980 2020-06-11  1403.839966
+3981 2020-06-12  1413.180054
+3982 2020-06-15  1419.849976
+3983 2020-06-16  1442.719971
+3984 2020-06-17  1451.119995
+3985 2020-06-18  1435.959961
+3986 2020-06-19  1431.719971
+3987 2020-06-22  1451.859985
+3988 2020-06-23  1464.410034
+3989 2020-06-24  1431.969971
+3990 2020-06-25  1441.329956
+3991 2020-06-26  1359.900024
+3992 2020-06-29  1394.969971
+3993 2020-06-30  1413.609985
+3994 2020-07-01  1438.040039
+3995 2020-07-02  1464.699951
+
+[3996 rows x 2 columns]
+mean: [0.39079931]
+max 0.9999999999999999
+min 0.0
+Std dev: [0.2458499]
+2020-07-04 08:20:54.824464: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library nvcuda.dll
+2020-07-04 08:20:55.840301: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1618] Found device 0 with properties:
+name: GeForce GTX 960M major: 5 minor: 0 memoryClockRate(GHz): 1.176
+pciBusID: 0000:01:00.0
+2020-07-04 08:20:55.854219: I tensorflow/stream_executor/platform/default/dlopen_checker_stub.cc:25] GPU libraries are statically linked, skip dlopen check.
+2020-07-04 08:20:55.869169: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1746] Adding visible gpu devices: 0
+2020-07-04 08:20:55.876722: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
+2020-07-04 08:20:55.914627: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1618] Found device 0 with properties:
+name: GeForce GTX 960M major: 5 minor: 0 memoryClockRate(GHz): 1.176
+pciBusID: 0000:01:00.0
+2020-07-04 08:20:55.930359: I tensorflow/stream_executor/platform/default/dlopen_checker_stub.cc:25] GPU libraries are statically linked, skip dlopen check.
+2020-07-04 08:20:55.945834: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1746] Adding visible gpu devices: 0
+2020-07-04 08:21:03.432145: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1159] Device interconnect StreamExecutor with strength 1 edge matrix:
+2020-07-04 08:21:03.491117: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1165]      0
+2020-07-04 08:21:03.637782: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1178] 0:   N
+2020-07-04 08:21:03.649202: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1304] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3040 MB memory) -> physical GPU (device: 0, name: GeForce GTX 960M, pci bus id: 0000:01:00.0, compute capability: 5.0)
+Model: "sequential_1"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #
+=================================================================
+lstm_1 (LSTM)                (None, 60, 100)           40800
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 60, 100)           0
+_________________________________________________________________
+lstm_2 (LSTM)                (None, 60, 50)            30200
+_________________________________________________________________
+dropout_2 (Dropout)          (None, 60, 50)            0
+_________________________________________________________________
+lstm_3 (LSTM)                (None, 60, 50)            20200
+_________________________________________________________________
+dropout_3 (Dropout)          (None, 60, 50)            0
+_________________________________________________________________
+lstm_4 (LSTM)                (None, 50)                20200
+_________________________________________________________________
+dropout_4 (Dropout)          (None, 50)                0
+_________________________________________________________________
+dense_1 (Dense)              (None, 1)                 51
+=================================================================
+Total params: 111,451
+Trainable params: 111,451
+Non-trainable params: 0
+_________________________________________________________________
+Train on 3055 samples, validate on 881 samples
+Epoch 1/50
+2020-07-04 08:21:14.976888: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library cublas64_100.dll
+3055/3055 [==============================] - 46s 15ms/step - loss: 0.0151 - MSE: 0.0340 - val_loss: 0.0069 - val_MSE: 0.0137
+Epoch 2/50
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0062 - MSE: 0.0115 - val_loss: 0.0064 - val_MSE: 0.0098
+Epoch 3/50
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0067 - MSE: 0.0094 - val_loss: 0.0088 - val_MSE: 0.0088
+Epoch 4/50
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0051 - MSE: 0.0085 - val_loss: 0.0069 - val_MSE: 0.0080
+Epoch 5/50
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0046 - MSE: 0.0078 - val_loss: 0.0054 - val_MSE: 0.0074
+Epoch 6/50
+3055/3055 [==============================] - 45s 15ms/step - loss: 0.0044 - MSE: 0.0072 - val_loss: 0.0053 - val_MSE: 0.0069
+Epoch 7/50
+3055/3055 [==============================] - 44s 14ms/step - loss: 0.0040 - MSE: 0.0068 - val_loss: 0.0045 - val_MSE: 0.0065
+Epoch 8/50
+3055/3055 [==============================] - 65s 21ms/step - loss: 0.0039 - MSE: 0.0064 - val_loss: 0.0044 - val_MSE: 0.0062
+Epoch 9/50
+3055/3055 [==============================] - 73s 24ms/step - loss: 0.0040 - MSE: 0.0061 - val_loss: 0.0044 - val_MSE: 0.0060
+Epoch 10/50
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0031 - MSE: 0.0059 - val_loss: 0.0047 - val_MSE: 0.0057
+Epoch 11/50
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0030 - MSE: 0.0056 - val_loss: 0.0048 - val_MSE: 0.0055
+Epoch 12/50
+3055/3055 [==============================] - 68s 22ms/step - loss: 0.0033 - MSE: 0.0054 - val_loss: 0.0040 - val_MSE: 0.0053
+Epoch 13/50
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0033 - MSE: 0.0053 - val_loss: 0.0038 - val_MSE: 0.0052
+Epoch 14/50
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0030 - MSE: 0.0051 - val_loss: 0.0037 - val_MSE: 0.0050
+Epoch 15/50
+3055/3055 [==============================] - 65s 21ms/step - loss: 0.0025 - MSE: 0.0050 - val_loss: 0.0036 - val_MSE: 0.0049
+Epoch 16/50
+3055/3055 [==============================] - 75s 25ms/step - loss: 0.0027 - MSE: 0.0048 - val_loss: 0.0035 - val_MSE: 0.0048
+Epoch 17/50
+3055/3055 [==============================] - 68s 22ms/step - loss: 0.0025 - MSE: 0.0047 - val_loss: 0.0033 - val_MSE: 0.0046
+Epoch 18/50
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0023 - MSE: 0.0046 - val_loss: 0.0035 - val_MSE: 0.0045
+Epoch 19/50
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0024 - MSE: 0.0045 - val_loss: 0.0036 - val_MSE: 0.0044
+Epoch 20/50
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0022 - MSE: 0.0044 - val_loss: 0.0031 - val_MSE: 0.0043
+Epoch 21/50
+3055/3055 [==============================] - 66s 21ms/step - loss: 0.0023 - MSE: 0.0043 - val_loss: 0.0030 - val_MSE: 0.0042
+Epoch 22/50
+3055/3055 [==============================] - 71s 23ms/step - loss: 0.0024 - MSE: 0.0042 - val_loss: 0.0030 - val_MSE: 0.0042
+Epoch 23/50
+3055/3055 [==============================] - 71s 23ms/step - loss: 0.0020 - MSE: 0.0041 - val_loss: 0.0030 - val_MSE: 0.0041
+Epoch 24/50
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0024 - MSE: 0.0041 - val_loss: 0.0029 - val_MSE: 0.0040
+Epoch 25/50
+3055/3055 [==============================] - 68s 22ms/step - loss: 0.0021 - MSE: 0.0040 - val_loss: 0.0028 - val_MSE: 0.0039
+Epoch 26/50
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0019 - MSE: 0.0039 - val_loss: 0.0029 - val_MSE: 0.0039
+Epoch 27/50
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0021 - MSE: 0.0038 - val_loss: 0.0026 - val_MSE: 0.0038
+Epoch 28/50
+3055/3055 [==============================] - 68s 22ms/step - loss: 0.0020 - MSE: 0.0038 - val_loss: 0.0027 - val_MSE: 0.0038
+Epoch 29/50
+3055/3055 [==============================] - 70s 23ms/step - loss: 0.0021 - MSE: 0.0037 - val_loss: 0.0026 - val_MSE: 0.0037
+Epoch 30/50
+3055/3055 [==============================] - 65s 21ms/step - loss: 0.0019 - MSE: 0.0037 - val_loss: 0.0026 - val_MSE: 0.0036
+Epoch 31/50
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0022 - MSE: 0.0036 - val_loss: 0.0025 - val_MSE: 0.0036
+Epoch 32/50
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0019 - MSE: 0.0036 - val_loss: 0.0024 - val_MSE: 0.0036
+Epoch 33/50
+3055/3055 [==============================] - 68s 22ms/step - loss: 0.0019 - MSE: 0.0035 - val_loss: 0.0024 - val_MSE: 0.0035
+Epoch 34/50
+3055/3055 [==============================] - 66s 22ms/step - loss: 0.0020 - MSE: 0.0035 - val_loss: 0.0027 - val_MSE: 0.0035
+Epoch 35/50
+3055/3055 [==============================] - 69s 22ms/step - loss: 0.0021 - MSE: 0.0034 - val_loss: 0.0024 - val_MSE: 0.0034
+Epoch 36/50
+3055/3055 [==============================] - 85s 28ms/step - loss: 0.0021 - MSE: 0.0034 - val_loss: 0.0024 - val_MSE: 0.0034
+Epoch 00036: early stopping
+saving weights
+plotting prediction results
