@@ -81,8 +81,7 @@ def create_long_short_term_memory_model(x_train):
     tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True, show_layer_names=True)
     return model
 
-def load_data_transform(time_steps, training_data, test_data):
-    min_max = MinMaxScaler(feature_range=(0, 1))
+def load_data_transform(time_steps, min_max, training_data, test_data):
     train_scaled = min_max.fit_transform(training_data)
     data_verification(train_scaled)
 
@@ -129,7 +128,24 @@ def plot_mse(history):
     plt.savefig(os.path.join(project_folder, 'MSE.png'))
     plt.show()
 
+def project_plot_predictions(min_max, x_test, title, test_data, currency):
+    price_predicted = model.predict(x_test)
+    price_predicted = min_max.inverse_transform(price_predicted)
+    price_predicted = pd.DataFrame(price_predicted)
+    price_predicted.rename(columns={0: stock_ticker + '_predicted'}, inplace=True)
+    price_predicted = price_predicted.round(decimals=0)
+    price_predicted.index = test_data.index
+
+    plt.figure(figsize=(14, 5))
+    plt.plot(price_predicted[stock_ticker+'_predicted'], color='red', label='Predicted '+title+' price')
+    plt.plot(test_data.Close, color='green', label='Actual '+title+' price')
+    plt.xlabel('Time')
+    plt.ylabel('Price ('+currency+')')
+    plt.legend()
+    plt.show()
+
 def train_LSTM_network(start_date, ticker, validation_date):
+    min_max = MinMaxScaler(feature_range=(0, 1))
     sec = yf.Ticker(ticker)
     data = yf.download([ticker], start=start_date, end=datetime.date.today())[['Close']]
     data = data.reset_index()
@@ -141,7 +157,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     test_data = test_data.set_index('Date')
     plot_histogram_data_split(training_data, test_data, sec.info['shortName'], validation_date)
 
-    (x_train, y_train), (x_test, y_test) = load_data_transform(60, training_data, test_data)
+    (x_train, y_train), (x_test, y_test) = load_data_transform(60, min_max, training_data, test_data)
 
     model = create_long_short_term_memory_model(x_train)
 
@@ -158,6 +174,8 @@ def train_LSTM_network(start_date, ticker, validation_date):
     plot_loss(history)
     plot_mse(history)
 
+    print("plotting prediction results")
+    project_plot_predictions(min_max, x_test, sec.info['shortName'], test_data, sec.info['currency'])
 
 
 
