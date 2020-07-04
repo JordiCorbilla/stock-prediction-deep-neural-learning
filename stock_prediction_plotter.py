@@ -13,30 +13,31 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import datetime
 import matplotlib.pyplot as plt
 
+
 class Plotter:
-    def __init__(self, blocking, project_folder, short_name, currency):
+    def __init__(self, blocking, project_folder, short_name, currency, stock_ticker):
         self.blocking = blocking
         self.project_folder = project_folder
         self.short_name = short_name
         self.currency = currency
+        self.stock_ticker = stock_ticker
 
     def plot_histogram_data_split(self, training_data, test_data, validation_date):
         print("plotting Data and Histogram")
         plt.figure(figsize=(12, 5))
         plt.plot(training_data.Close, color='green')
         plt.plot(test_data.Close, color='red')
-        plt.ylabel('Price ['+self.currency+']')
+        plt.ylabel('Price [' + self.currency + ']')
         plt.xlabel("Date")
         plt.legend(["Training Data", "Validation Data >= " + validation_date.strftime("%Y-%m-%d")])
         plt.title(self.short_name)
-        plt.savefig(os.path.join(project_folder, self.short_name.strip().replace('.','')+'_price.png'))
+        plt.savefig(os.path.join(self.project_folder, self.short_name.strip().replace('.', '') + '_price.png'))
 
         fig, ax = plt.subplots()
-        training.hist(ax=ax)
-        fig.savefig(os.path.join(self.project_folder, self.short_name.strip().replace('.','') + '_hist.png'))
+        training_data.hist(ax=ax)
+        fig.savefig(os.path.join(self.project_folder, self.short_name.strip().replace('.', '') + '_hist.png'))
 
         plt.pause(0.001)
         plt.show(block=self.blocking)
@@ -59,20 +60,18 @@ class Plotter:
         plt.xlabel('Epoch')
         plt.ylabel('MSE')
         plt.legend(loc='upper right')
-        plt.savefig(os.path.join(project_folder, 'MSE.png'))
+        plt.savefig(os.path.join(self.project_folder, 'MSE.png'))
         plt.pause(0.001)
         plt.show(block=self.blocking)
 
     def project_plot_predictions(self, price_predicted, test_data):
         print("plotting predictions")
         plt.figure(figsize=(14, 5))
-        plt.plot(price_predicted[stock_ticker+'_predicted'], color='red', label='Predicted ['+self.short_name+'] price')
-        plt.plot(test_data.Close, color='green', label='Actual ['+self.short_name+'] price')
+        plt.plot(price_predicted[self.stock_ticker + '_predicted'], color='red', label='Predicted [' + self.short_name + '] price')
+        plt.plot(test_data.Close, color='green', label='Actual [' + self.short_name + '] price')
         plt.xlabel('Time')
-        plt.ylabel('Price ['+self.currency+']')
+        plt.ylabel('Price [' + self.currency + ']')
         plt.legend()
-        plt.savefig(os.path.join(self.project_folder, self.title.strip().replace('.', '') + '_prediction.png'))
+        plt.savefig(os.path.join(self.project_folder, self.short_name.strip().replace('.', '') + '_prediction.png'))
         plt.pause(0.001)
         plt.show(block=self.blocking)
-
-

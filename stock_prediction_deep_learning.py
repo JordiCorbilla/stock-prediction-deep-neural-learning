@@ -15,22 +15,24 @@
 import os
 import pandas as pd
 from keras import Sequential
+import csv
 from keras.layers import LSTM, Dropout, Dense
 import tensorflow as tf
-from keras.losses import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 import datetime
+from stock_prediction_plotter import Plotter
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
-import matplotlib.pyplot as plt
 import numpy as np
 import yfinance as yf
 import secrets
+
 
 def data_verification(train):
     print('mean:', train.mean(axis=0))
     print('max', train.max())
     print('min', train.min())
     print('Std dev:', train.std(axis=0))
+
 
 def create_long_short_term_memory_model(x_train):
     model = Sequential()
@@ -64,6 +66,7 @@ def create_long_short_term_memory_model(x_train):
     tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True, show_layer_names=True)
     return model
 
+
 def load_data_transform(time_steps, min_max, training_data, test_data):
     train_scaled = min_max.fit_transform(training_data)
     data_verification(train_scaled)
@@ -93,6 +96,7 @@ def load_data_transform(time_steps, min_max, training_data, test_data):
     x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
     return (x_train, y_train), (x_test, y_test)
 
+
 def train_LSTM_network(start_date, ticker, validation_date):
     min_max = MinMaxScaler(feature_range=(0, 1))
     sec = yf.Ticker(ticker)
@@ -100,13 +104,13 @@ def train_LSTM_network(start_date, ticker, validation_date):
     data = data.reset_index()
     print(data)
 
-    plotter = Plotter(True, project_folder, sec.info['shortName'], sec.info['currency'])
+    plotter = Plotter(True, project_folder, sec.info['shortName'], sec.info['currency'], stock_ticker)
 
     training_data = data[data['Date'] < validation_date].copy()
     test_data = data[data['Date'] >= validation_date].copy()
     training_data = training_data.set_index('Date')
     test_data = test_data.set_index('Date')
-    plotter.plot_histogram_data_split(training_data, test_data, sec.info['shortName'], validation_date)
+    plotter.plot_histogram_data_split(training_data, test_data, validation_date)
 
     (x_train, y_train), (x_test, y_test) = load_data_transform(60, min_max, training_data, test_data)
 
@@ -132,13 +136,13 @@ def train_LSTM_network(start_date, ticker, validation_date):
     print()
 
     print("plotting prediction results")
-    test_predictions_baseline  = model.predict(x_test)
-    test_predictions_baseline  = min_max.inverse_transform(test_predictions_baseline )
-    test_predictions_baseline  = pd.DataFrame(test_predictions_baseline )
-    test_predictions_baseline .rename(columns={0: stock_ticker + '_predicted'}, inplace=True)
-    test_predictions_baseline  = test_predictions_baseline .round(decimals=0)
-    test_predictions_baseline .index = test_data.index
-    plotter.project_plot_predictions(test_predictions_baseline , test_data)
+    test_predictions_baseline = model.predict(x_test)
+    test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
+    test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
+    test_predictions_baseline.rename(columns={0: stock_ticker + '_predicted'}, inplace=True)
+    test_predictions_baseline = test_predictions_baseline.round(decimals=0)
+    test_predictions_baseline.index = test_data.index
+    plotter.project_plot_predictions(test_predictions_baseline, test_data)
 
     with open(os.path.join(project_folder, 'close_price.csv'), 'w', newline='') as csv_file:
         file_writer = csv.writer(csv_file, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
