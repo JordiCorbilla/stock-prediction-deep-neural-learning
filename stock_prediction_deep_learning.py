@@ -17,7 +17,7 @@ import secrets
 import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
-import datetime
+from datetime import datetime, timedelta
 import yfinance as yf
 from stock_prediction_lstm import LongShortTermMemory
 from stock_prediction_numpy import StockData
@@ -29,7 +29,9 @@ os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 def train_LSTM_network(start_date, ticker, validation_date):
     min_max = MinMaxScaler(feature_range=(0, 1))
     sec = yf.Ticker(ticker)
-    data = yf.download([ticker], start=start_date, end=datetime.date.today())[['Close']]
+    end_date = datetime.date.today() + timedelta(100)
+    print('End Date: ' + end_date)
+    data = yf.download([ticker], start=start_date, end=end_date)[['Close']]
     data = data.reset_index()
     print(data)
 
@@ -38,6 +40,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     training_data = data[data['Date'] < validation_date].copy()
     test_data = data[data['Date'] >= validation_date].copy()
     training_data = training_data.set_index('Date')
+    # Set the data frame index using column Date
     test_data = test_data.set_index('Date')
     plotter.plot_histogram_data_split(training_data, test_data, validation_date)
 
@@ -86,7 +89,6 @@ def train_LSTM_network(start_date, ticker, validation_date):
 # Start date => Date when we want to start using the data for training, usually the first data point of the stock
 # Validation date => Date when we want to start partitioning our data from training to validation
 if __name__ == '__main__':
-
     STOCK_TICKER = 'GOOG'
     STOCK_START_DATE = pd.to_datetime('2004-08-01')
     STOCK_VALIDATION_DATE = pd.to_datetime('2017-01-01')
@@ -95,7 +97,10 @@ if __name__ == '__main__':
     TIME_STEPS = 60
     TODAY_RUN = datetime.date.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
-    print('Generating folder ' + TOKEN)
+    print('Ticker: ' + STOCK_TICKER)
+    print('Start Date: ' + STOCK_START_DATE)
+    print('Validation Date: ' + STOCK_START_DATE)
+    print('Generating folder: ' + TOKEN)
     # create project run folder
     project_folder = os.path.join(os.getcwd(), TOKEN)
     if not os.path.exists(project_folder):
