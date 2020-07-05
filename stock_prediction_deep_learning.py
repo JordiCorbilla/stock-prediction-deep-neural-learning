@@ -13,18 +13,17 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import secrets
 import pandas as pd
 from keras import Sequential
-import csv
 from keras.layers import LSTM, Dropout, Dense
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 import datetime
-from stock_prediction_plotter import Plotter
-os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 import numpy as np
 import yfinance as yf
-import secrets
+from stock_prediction_plotter import Plotter
+os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 
 def data_verification(train):
@@ -63,7 +62,8 @@ def create_long_short_term_memory_model(x_train):
     # Dense layer that specifies an output of one unit
     model.add(Dense(units=1))
     model.summary()
-    tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True, show_layer_names=True)
+    tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True,
+                              show_layer_names=True)
     return model
 
 
@@ -123,7 +123,8 @@ def train_LSTM_network(start_date, ticker, validation_date):
     callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
 
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=defined_metrics)
-    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_test, y_test), callbacks=[callback])
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_test, y_test),
+                        callbacks=[callback])
     print("saving weights")
     model.save(os.path.join(project_folder, 'model_weights.h5'))
     plotter.plot_loss(history)
@@ -145,6 +146,8 @@ def train_LSTM_network(start_date, ticker, validation_date):
     test_predictions_baseline = test_predictions_baseline.round(decimals=0)
     test_predictions_baseline.index = test_data.index
     plotter.project_plot_predictions(test_predictions_baseline, test_data)
+
+    print("prediction is finished")
 
 
 if __name__ == '__main__':
