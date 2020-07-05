@@ -13,19 +13,50 @@
 # limitations under the License.
 # ==============================================================================
 import numpy as np
-import pandas as pd
 from datetime import timedelta
 import random
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from datetime import datetime
+import yfinance as yf
+from stock_prediction_plotter import Plotter
 
 
 class StockData:
+    def __init__(self, stock):
+        self._stock = stock
+        self._sec = yf.Ticker(self._stock.get_ticker())
+
     def __data_verification(self, train):
         print('mean:', train.mean(axis=0))
         print('max', train.max())
         print('min', train.min())
         print('Std dev:', train.std(axis=0))
 
-    def to_numpy(self, time_steps, min_max, training_data, test_data):
+    def get_stock_short_name(self):
+        return self._sec.info['shortName']
+
+    def get_stock_currency(self):
+        return self._sec.info['currency']
+
+    def download_transform_to_numpy(self, time_steps):
+        min_max = MinMaxScaler(feature_range=(0, 1))
+        end_date = datetime.today()
+        print('End Date: ' + end_date.strftime("%Y-%m-%d"))
+        data = yf.download([self._stock.get_ticker()], start=self._stock.get_start_date(), end=end_date)[['Close']]
+        data = data.reset_index()
+        print(data)
+
+        plotter = Plotter(True, self._stock.get_project_folder(), self._sec.info['shortName'], self._sec.info['currency'], self._stock.get_ticker())
+
+        training_data = data[data['Date'] < self._stock.get_validation_date()].copy()
+        test_data = data[data['Date'] >= self._stock.get_validation_date()].copy()
+        training_data = training_data.set_index('Date')
+        # Set the data frame index using column Date
+        test_data = test_data.set_index('Date')
+        print(test_data)
+        plotter.plot_histogram_data_split(training_data, test_data, self._stock.get_validation_date())
+
         train_scaled = min_max.fit_transform(training_data)
         self.__data_verification(train_scaled)
 
@@ -52,7 +83,7 @@ class StockData:
 
         x_test, y_test = np.array(x_test), np.array(y_test)
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
-        return (x_train, y_train), (x_test, y_test)
+        return (x_train, y_train), (x_test, y_test), (min_max, test_data)
 
     def __daterange(self, start_date, end_date):
         for n in range(int((end_date - start_date).days)):

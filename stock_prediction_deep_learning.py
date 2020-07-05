@@ -16,9 +16,9 @@ import os
 import secrets
 import pandas as pd
 import tensorflow as tf
-from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
-import yfinance as yf
+
+from stock_prediction_class import StockPrediction
 from stock_prediction_lstm import LongShortTermMemory
 from stock_prediction_numpy import StockData
 from stock_prediction_plotter import Plotter
@@ -26,31 +26,16 @@ from stock_prediction_plotter import Plotter
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 
-def train_LSTM_network(start_date, ticker, validation_date):
-    min_max = MinMaxScaler(feature_range=(0, 1))
-    sec = yf.Ticker(ticker)
-    end_date = datetime.today()
-    print('End Date: ' + end_date.strftime("%Y-%m-%d"))
-    data = yf.download([ticker], start=start_date, end=end_date)[['Close']]
-    data = data.reset_index()
-    print(data)
+def train_LSTM_network(stock):
+    data = StockData(stock)
 
-    plotter = Plotter(True, project_folder, sec.info['shortName'], sec.info['currency'], STOCK_TICKER)
+    plotter = Plotter(True, stock.get_project_folder(), data.get_stock_short_name(), data.get_stock_currency(), stock.get_ticker())
 
-    training_data = data[data['Date'] < validation_date].copy()
-    test_data = data[data['Date'] >= validation_date].copy()
-    training_data = training_data.set_index('Date')
-    # Set the data frame index using column Date
-    test_data = test_data.set_index('Date')
-    print(test_data)
-    plotter.plot_histogram_data_split(training_data, test_data, validation_date)
-
-    data = StockData()
-    (x_train, y_train), (x_test, y_test) = data.to_numpy(TIME_STEPS, min_max, training_data, test_data)
+    (x_train, y_train), (x_test, y_test), (min_max, test_data) = data.download_transform_to_numpy(TIME_STEPS)
 
     print(x_test)
 
-    lstm = LongShortTermMemory(project_folder)
+    lstm = LongShortTermMemory(stock.get_project_folder())
     model = lstm.create_model(x_train)
 
     defined_metrics = [
@@ -63,7 +48,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     history = model.fit(x_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(x_test, y_test),
                         callbacks=[callback])
     print("saving weights")
-    model.save(os.path.join(project_folder, 'model_weights.h5'))
+    model.save(os.path.join(stock.get_project_folder(), 'model_weights.h5'))
     plotter.plot_loss(history)
     plotter.plot_mse(history)
 
@@ -77,7 +62,7 @@ def train_LSTM_network(start_date, ticker, validation_date):
     test_predictions_baseline = model.predict(x_test)
     test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
     test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
-    test_predictions_baseline.to_csv(os.path.join(project_folder, 'predictions.csv'))
+    test_predictions_baseline.to_csv(os.path.join(stock.get_project_folder(), 'predictions.csv'))
 
     test_predictions_baseline.rename(columns={0: STOCK_TICKER + '_predicted'}, inplace=True)
     test_predictions_baseline = test_predictions_baseline.round(decimals=0)
@@ -105,9 +90,10 @@ if __name__ == '__main__':
     print('Validation Date: ' + STOCK_START_DATE.strftime("%Y-%m-%d"))
     print('Generating folder: ' + TOKEN)
     # create project run folder
-    project_folder = os.path.join(os.getcwd(), TOKEN)
-    if not os.path.exists(project_folder):
-        os.makedirs(project_folder)
+    PROJECT_FOLDER = os.path.join(os.getcwd(), TOKEN)
+    if not os.path.exists(PROJECT_FOLDER):
+        os.makedirs(PROJECT_FOLDER)
 
+    stock_prediction = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, PROJECT_FOLDER)
     # Execute Deep Learning model
-    train_LSTM_network(STOCK_START_DATE, STOCK_TICKER, STOCK_VALIDATION_DATE)
+    train_LSTM_network(stock_prediction)
