@@ -15,13 +15,13 @@
 import os
 import secrets
 import pandas as pd
-from keras import Sequential
-from keras.layers import LSTM, Dropout, Dense
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 import datetime
 import numpy as np
 import yfinance as yf
+
+from stock_prediction_lstm import LongShortTermMemory
 from stock_prediction_plotter import Plotter
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
@@ -31,41 +31,6 @@ def data_verification(train):
     print('max', train.max())
     print('min', train.min())
     print('Std dev:', train.std(axis=0))
-
-
-def create_long_short_term_memory_model(x_train):
-    model = Sequential()
-    # 1st layer with Dropout regularisation
-    # * units = add 100 neurons is the dimensionality of the output space
-    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
-    # * input_shape => Shape of the training dataset
-    model.add(LSTM(units=100, return_sequences=True, input_shape=(x_train.shape[1], 1)))
-    # 20% of the layers will be dropped
-    model.add(Dropout(0.2))
-    # 2nd LSTM layer
-    # * units = add 50 neurons is the dimensionality of the output space
-    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
-    model.add(LSTM(units=50, return_sequences=True))
-    # 20% of the layers will be dropped
-    model.add(Dropout(0.2))
-    # 3rd LSTM layer
-    # * units = add 50 neurons is the dimensionality of the output space
-    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
-    model.add(LSTM(units=50, return_sequences=True))
-    # 50% of the layers will be dropped
-    model.add(Dropout(0.5))
-    # 4th LSTM layer
-    # * units = add 50 neurons is the dimensionality of the output space
-    model.add(LSTM(units=50))
-    # 50% of the layers will be dropped
-    model.add(Dropout(0.5))
-    # Dense layer that specifies an output of one unit
-    model.add(Dense(units=1))
-    model.summary()
-    tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True,
-                              show_layer_names=True)
-    return model
-
 
 def load_data_transform(time_steps, min_max, training_data, test_data):
     train_scaled = min_max.fit_transform(training_data)
@@ -114,7 +79,8 @@ def train_LSTM_network(start_date, ticker, validation_date):
 
     (x_train, y_train), (x_test, y_test) = load_data_transform(60, min_max, training_data, test_data)
 
-    model = create_long_short_term_memory_model(x_train)
+    lstm = LongShortTermMemory(project_folder)
+    model = lstm.create_model(x_train)
 
     defined_metrics = [
         tf.keras.metrics.MeanSquaredError(name='MSE')
