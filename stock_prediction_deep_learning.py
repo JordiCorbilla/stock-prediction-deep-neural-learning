@@ -81,15 +81,23 @@ def train_LSTM_network(start_date, ticker, validation_date):
     print("prediction is finished")
 
 
+# The Main function requires 3 major variables
+# Ticker => defines the short code of a stock
+# Start date => Date when we want to start using the data for training, usually the first data point of the stock
+# Validation date => Date when we want to start partitioning our data from training to validation
 if __name__ == '__main__':
-    STOCK_START_DATE = pd.to_datetime('2004-08-01')
+
     STOCK_TICKER = 'GOOG'
+    STOCK_START_DATE = pd.to_datetime('2004-08-01')
+    STOCK_VALIDATION_DATE = pd.to_datetime('2017-01-01')
     EPOCHS = 100
     BATCH_SIZE = 32
     TIME_STEPS = 60
-    token = secrets.token_hex(16)
-    project_folder = os.path.join(os.getcwd(), token)
+    TOKEN = secrets.token_hex(16)
+    # create project run folder
+    project_folder = os.path.join(os.getcwd(), TOKEN)
     if not os.path.exists(project_folder):
         os.makedirs(project_folder)
-    stock_validation_date = pd.to_datetime('2017-01-01')
-    train_LSTM_network(STOCK_START_DATE, STOCK_TICKER, stock_validation_date)
+
+    # Execute Deep Learning model
+    train_LSTM_network(STOCK_START_DATE, STOCK_TICKER, STOCK_VALIDATION_DATE)
