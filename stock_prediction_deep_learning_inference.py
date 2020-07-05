@@ -16,8 +16,7 @@ import os
 from absl import app
 import tensorflow as tf
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
-
+from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
 from datetime import date
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
@@ -26,10 +25,13 @@ os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 def main(argv):
     print(tf.version.VERSION)
     inference_folder = os.path.join(os.getcwd(), 'GOOG_20200704_b5f47746c83698528343678663ac3c96')
+    stock = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, inference_folder)
+
+    data = StockData(stock)
+
+    (x_train, y_train), (x_test, y_test), (min_max, test_data) = data.download_transform_to_numpy(TIME_STEPS)
 
     # load future data
-    data = StockData()
-    min_max = MinMaxScaler(feature_range=(0, 1))
     x_test, y_test = data.generate_future_data(TIME_STEPS, min_max, date(2020, 7, 5), date(2021, 7, 5))
 
     # load the weights from our best model
@@ -52,4 +54,7 @@ def main(argv):
 
 if __name__ == '__main__':
     TIME_STEPS = 60
+    STOCK_TICKER = 'GOOG'
+    STOCK_START_DATE = pd.to_datetime('2004-08-01')
+    STOCK_VALIDATION_DATE = pd.to_datetime('2017-01-01')
     app.run(main)
