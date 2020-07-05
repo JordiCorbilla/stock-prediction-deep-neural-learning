@@ -22,6 +22,16 @@ class LongShortTermMemory:
     def __init__(self, project_folder):
         self.project_folder = project_folder
 
+    def get_defined_metrics(self):
+        defined_metrics = [
+            tf.keras.metrics.MeanSquaredError(name='MSE')
+        ]
+        return defined_metrics
+
+    def get_callback(self):
+        callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
+        return callback
+
     def create_model(self, x_train):
         model = Sequential()
         # 1st layer with Dropout regularisation

@@ -15,7 +15,6 @@
 import os
 import secrets
 import pandas as pd
-import tensorflow as tf
 from datetime import datetime
 
 from stock_prediction_class import StockPrediction
@@ -28,27 +27,18 @@ os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 def train_LSTM_network(stock):
     data = StockData(stock)
-
     plotter = Plotter(True, stock.get_project_folder(), data.get_stock_short_name(), data.get_stock_currency(), stock.get_ticker())
-
-    (x_train, y_train), (x_test, y_test), (min_max, test_data) = data.download_transform_to_numpy(TIME_STEPS)
-
-    print(x_test)
+    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(TIME_STEPS)
+    plotter.plot_histogram_data_split(training_data, test_data, stock.get_validation_date())
 
     lstm = LongShortTermMemory(stock.get_project_folder())
     model = lstm.create_model(x_train)
-
-    defined_metrics = [
-        tf.keras.metrics.MeanSquaredError(name='MSE')
-    ]
-
-    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
-
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=defined_metrics)
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=lstm.get_defined_metrics())
     history = model.fit(x_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(x_test, y_test),
-                        callbacks=[callback])
+                        callbacks=[lstm.get_callback()])
     print("saving weights")
     model.save(os.path.join(stock.get_project_folder(), 'model_weights.h5'))
+
     plotter.plot_loss(history)
     plotter.plot_mse(history)
 
@@ -60,7 +50,7 @@ def train_LSTM_network(stock):
 
     print("plotting prediction results")
     test_predictions_baseline = model.predict(x_test)
-    test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
+    test_predictions_baseline = data.get_min_max().inverse_transform(test_predictions_baseline)
     test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
     test_predictions_baseline.to_csv(os.path.join(stock.get_project_folder(), 'predictions.csv'))
 
