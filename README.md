@@ -674,7 +674,7 @@ First we need to import the test data using the same approach we used for the tr
 
 Now we can call the predict method which will allow us to generate the stock prediction based on the training done over the training data. As a result, we will generate a csv file that contains the result of the prediction and also a chart that shows what's the real vs the estimation. 
 
-![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/Alphabet Inc_prediction.png)
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/Alphabet%20Inc_prediction.png)
 
 With the validation loss and validation MSE metrics:
 
