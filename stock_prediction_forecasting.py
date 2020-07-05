@@ -14,29 +14,32 @@
 # ==============================================================================
 import os
 from absl import app
-import pandas as pd
-from keras import Sequential
-from keras.layers import LSTM, Dropout, Dense
 import tensorflow as tf
-from keras.losses import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
-import datetime
+
+from stock_prediction_numpy import StockData
+from datetime import date
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
-import matplotlib.pyplot as plt
-import numpy as np
-import yfinance as yf
-import secrets
+
 
 def main(argv):
     print(tf.version.VERSION)
     inference_folder = os.path.join(os.getcwd(), 'GOOG_20200704_b5f47746c83698528343678663ac3c96')
 
     # load future data
-    
+    data = StockData()
+    min_max = MinMaxScaler(feature_range=(0, 1))
+    x_test, y_test = data.generate_future_data(TIME_STEPS, min_max, date(2020, 7, 5), date(2021, 7, 5))
 
+    # load the weights from our best model
+    model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
+    model.summary()
 
-
+    # perform a prediction
+    test_predictions_baseline = model.predict(x_test)
+    print(test_predictions_baseline)
 
 
 if __name__ == '__main__':
+    TIME_STEPS = 60
     app.run(main)

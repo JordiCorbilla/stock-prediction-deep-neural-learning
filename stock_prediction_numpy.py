@@ -57,8 +57,27 @@ class StockData:
         for n in range(int((end_date - start_date).days)):
             yield start_date + timedelta(n)
 
-    def generate_future_data(self, start_date, end_date):
+    def generate_future_data(self, time_steps, min_max, start_date, end_date):
         x_future = []
+        y_future = []
         for single_date in self.__daterange(start_date, end_date):
             x_future.append(single_date)
+            y_future.append(0.0)
+
+        test_data = pd.DataFrame({'Date': x_future, 'Close': y_future})
+        test_data = test_data.set_index('Date')
+        print(test_data)
+
+        test_scaled = min_max.fit_transform(test_data)
+        x_test = []
+        y_test = []
+        for i in range(time_steps, test_scaled.shape[0]):
+            x_test.append(test_scaled[i - time_steps:i])
+            y_test.append(test_scaled[i, 0])
+
+        x_test, y_test = np.array(x_test), np.array(y_test)
+        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+        return x_test, y_test
+
+
 
