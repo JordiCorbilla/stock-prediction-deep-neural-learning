@@ -524,9 +524,159 @@ Once we have defined the model, we need to specify the metrics we want to use to
                         callbacks=[callback])
 ```
 
+This model is slightly fined tuned to reach the lowest validation loss. In this example, we reach a validation loss of 0.20% with an MSE (Mean Square Error) of  0.29% which is relatively good, providing us with a very accurate result.
+
+The training result can be seen below:
+
+```cmd
+Train on 3055 samples, validate on 881 samples
+Epoch 1/100
+2020-07-04 11:48:37.847380: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library cublas64_100.dll
+3055/3055 [==============================] - 47s 15ms/step - loss: 0.0222 - MSE: 0.0533 - val_loss: 0.0054 - val_MSE: 0.0198
+Epoch 2/100
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0072 - MSE: 0.0156 - val_loss: 0.0050 - val_MSE: 0.0129
+Epoch 3/100
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0060 - MSE: 0.0116 - val_loss: 0.0054 - val_MSE: 0.0104
+Epoch 4/100
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0053 - MSE: 0.0098 - val_loss: 0.0051 - val_MSE: 0.0091
+Epoch 5/100
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0050 - MSE: 0.0087 - val_loss: 0.0048 - val_MSE: 0.0083
+Epoch 6/100
+3055/3055 [==============================] - 44s 14ms/step - loss: 0.0045 - MSE: 0.0080 - val_loss: 0.0047 - val_MSE: 0.0076
+Epoch 7/100
+3055/3055 [==============================] - 44s 14ms/step - loss: 0.0045 - MSE: 0.0074 - val_loss: 0.0045 - val_MSE: 0.0072
+Epoch 8/100
+3055/3055 [==============================] - 44s 14ms/step - loss: 0.0041 - MSE: 0.0070 - val_loss: 0.0045 - val_MSE: 0.0068
+Epoch 9/100
+3055/3055 [==============================] - 43s 14ms/step - loss: 0.0038 - MSE: 0.0067 - val_loss: 0.0044 - val_MSE: 0.0065
+Epoch 10/100
+3055/3055 [==============================] - 53s 17ms/step - loss: 0.0038 - MSE: 0.0064 - val_loss: 0.0049 - val_MSE: 0.0062
+Epoch 11/100
+3055/3055 [==============================] - 67s 22ms/step - loss: 0.0034 - MSE: 0.0061 - val_loss: 0.0041 - val_MSE: 0.0060
+Epoch 12/100
+3055/3055 [==============================] - 71s 23ms/step - loss: 0.0035 - MSE: 0.0059 - val_loss: 0.0048 - val_MSE: 0.0058
+Epoch 13/100
+3055/3055 [==============================] - 68s 22ms/step - loss: 0.0031 - MSE: 0.0057 - val_loss: 0.0047 - val_MSE: 0.0056
+Epoch 14/100
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0029 - MSE: 0.0055 - val_loss: 0.0038 - val_MSE: 0.0054
+Epoch 15/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0031 - MSE: 0.0054 - val_loss: 0.0036 - val_MSE: 0.0053
+Epoch 16/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0027 - MSE: 0.0052 - val_loss: 0.0047 - val_MSE: 0.0051
+Epoch 17/100
+3055/3055 [==============================] - 63s 20ms/step - loss: 0.0028 - MSE: 0.0051 - val_loss: 0.0035 - val_MSE: 0.0050
+Epoch 18/100
+3055/3055 [==============================] - 65s 21ms/step - loss: 0.0024 - MSE: 0.0050 - val_loss: 0.0032 - val_MSE: 0.0049
+Epoch 19/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0026 - MSE: 0.0048 - val_loss: 0.0039 - val_MSE: 0.0048
+Epoch 20/100
+3055/3055 [==============================] - 63s 20ms/step - loss: 0.0024 - MSE: 0.0047 - val_loss: 0.0048 - val_MSE: 0.0047
+Epoch 21/100
+3055/3055 [==============================] - 62s 20ms/step - loss: 0.0022 - MSE: 0.0046 - val_loss: 0.0031 - val_MSE: 0.0046
+Epoch 22/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0022 - MSE: 0.0045 - val_loss: 0.0030 - val_MSE: 0.0045
+Epoch 23/100
+3055/3055 [==============================] - 62s 20ms/step - loss: 0.0023 - MSE: 0.0044 - val_loss: 0.0032 - val_MSE: 0.0044
+Epoch 24/100
+3055/3055 [==============================] - 72s 24ms/step - loss: 0.0021 - MSE: 0.0044 - val_loss: 0.0029 - val_MSE: 0.0043
+Epoch 25/100
+3055/3055 [==============================] - 76s 25ms/step - loss: 0.0021 - MSE: 0.0043 - val_loss: 0.0028 - val_MSE: 0.0042
+Epoch 26/100
+3055/3055 [==============================] - 86s 28ms/step - loss: 0.0022 - MSE: 0.0042 - val_loss: 0.0042 - val_MSE: 0.0042
+Epoch 27/100
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0021 - MSE: 0.0041 - val_loss: 0.0028 - val_MSE: 0.0041
+Epoch 28/100
+3055/3055 [==============================] - 65s 21ms/step - loss: 0.0021 - MSE: 0.0041 - val_loss: 0.0027 - val_MSE: 0.0040
+Epoch 29/100
+3055/3055 [==============================] - 67s 22ms/step - loss: 0.0022 - MSE: 0.0040 - val_loss: 0.0026 - val_MSE: 0.0040
+Epoch 30/100
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0020 - MSE: 0.0039 - val_loss: 0.0031 - val_MSE: 0.0039
+Epoch 31/100
+3055/3055 [==============================] - 65s 21ms/step - loss: 0.0019 - MSE: 0.0039 - val_loss: 0.0026 - val_MSE: 0.0039
+Epoch 32/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0019 - MSE: 0.0038 - val_loss: 0.0026 - val_MSE: 0.0038
+Epoch 33/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0023 - MSE: 0.0038 - val_loss: 0.0032 - val_MSE: 0.0038
+Epoch 34/100
+3055/3055 [==============================] - 67s 22ms/step - loss: 0.0022 - MSE: 0.0037 - val_loss: 0.0026 - val_MSE: 0.0037
+Epoch 35/100
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0021 - MSE: 0.0037 - val_loss: 0.0027 - val_MSE: 0.0037
+Epoch 36/100
+3055/3055 [==============================] - 64s 21ms/step - loss: 0.0021 - MSE: 0.0037 - val_loss: 0.0023 - val_MSE: 0.0036
+Epoch 37/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0019 - MSE: 0.0036 - val_loss: 0.0025 - val_MSE: 0.0036
+Epoch 38/100
+3055/3055 [==============================] - 65s 21ms/step - loss: 0.0019 - MSE: 0.0036 - val_loss: 0.0022 - val_MSE: 0.0035
+Epoch 39/100
+3055/3055 [==============================] - 68s 22ms/step - loss: 0.0022 - MSE: 0.0035 - val_loss: 0.0022 - val_MSE: 0.0035
+Epoch 40/100
+3055/3055 [==============================] - 70s 23ms/step - loss: 0.0020 - MSE: 0.0035 - val_loss: 0.0023 - val_MSE: 0.0035
+Epoch 41/100
+3055/3055 [==============================] - 62s 20ms/step - loss: 0.0019 - MSE: 0.0035 - val_loss: 0.0022 - val_MSE: 0.0034
+Epoch 42/100
+3055/3055 [==============================] - 62s 20ms/step - loss: 0.0019 - MSE: 0.0034 - val_loss: 0.0024 - val_MSE: 0.0034
+Epoch 43/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0019 - MSE: 0.0034 - val_loss: 0.0023 - val_MSE: 0.0034
+Epoch 44/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0020 - MSE: 0.0034 - val_loss: 0.0021 - val_MSE: 0.0033
+Epoch 45/100
+3055/3055 [==============================] - 66s 22ms/step - loss: 0.0019 - MSE: 0.0033 - val_loss: 0.0020 - val_MSE: 0.0033
+Epoch 46/100
+3055/3055 [==============================] - 62s 20ms/step - loss: 0.0019 - MSE: 0.0033 - val_loss: 0.0022 - val_MSE: 0.0033
+Epoch 47/100
+3055/3055 [==============================] - 63s 20ms/step - loss: 0.0020 - MSE: 0.0033 - val_loss: 0.0019 - val_MSE: 0.0033
+Epoch 48/100
+3055/3055 [==============================] - 62s 20ms/step - loss: 0.0018 - MSE: 0.0032 - val_loss: 0.0019 - val_MSE: 0.0032
+Epoch 49/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0019 - MSE: 0.0032 - val_loss: 0.0024 - val_MSE: 0.0032
+Epoch 50/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0019 - MSE: 0.0032 - val_loss: 0.0019 - val_MSE: 0.0032
+Epoch 51/100
+3055/3055 [==============================] - 65s 21ms/step - loss: 0.0021 - MSE: 0.0032 - val_loss: 0.0018 - val_MSE: 0.0031
+Epoch 52/100
+3055/3055 [==============================] - 67s 22ms/step - loss: 0.0018 - MSE: 0.0031 - val_loss: 0.0018 - val_MSE: 0.0031
+Epoch 53/100
+3055/3055 [==============================] - 71s 23ms/step - loss: 0.0021 - MSE: 0.0031 - val_loss: 0.0017 - val_MSE: 0.0031
+Epoch 54/100
+3055/3055 [==============================] - 66s 22ms/step - loss: 0.0017 - MSE: 0.0031 - val_loss: 0.0018 - val_MSE: 0.0031
+Epoch 55/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0020 - MSE: 0.0031 - val_loss: 0.0017 - val_MSE: 0.0031
+Epoch 56/100
+3055/3055 [==============================] - 66s 22ms/step - loss: 0.0018 - MSE: 0.0030 - val_loss: 0.0018 - val_MSE: 0.0030
+Epoch 57/100
+3055/3055 [==============================] - 63s 21ms/step - loss: 0.0018 - MSE: 0.0030 - val_loss: 0.0018 - val_MSE: 0.0030
+Epoch 58/100
+3055/3055 [==============================] - 62s 20ms/step - loss: 0.0017 - MSE: 0.0030 - val_loss: 0.0020 - val_MSE: 0.0030
+Epoch 00058: early stopping
+
+display the content of the model
+loss :  0.002031383795714456
+MSE :  0.0029848262201994658
+```
 
 ### 3.5) Making predictions happen
 
 Now it is time to prepare our testing data and send it through our deep-learning model to obtain the predictions we are trying to get.
 
-First we need to import the test data:
+First we need to import the test data using the same approach we used for the training data using the time steps:
+
+```python
+    # Testing Data Transformation
+    x_test = []
+    y_test = []
+    for i in range(time_steps, test_scaled.shape[0]):
+        x_test.append(test_scaled[i - time_steps:i])
+        y_test.append(test_scaled[i, 0])
+
+    x_test, y_test = np.array(x_test), np.array(y_test)
+    x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+```
+
+Now we can call the predict method which will allow us to generate the stock prediction based on the training done over the training data. As a result, we will generate a csv file that contains the result of the prediction and also a chart that shows what's the real vs the estimation. 
+
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/Alphabet Inc_prediction.png)
+
+With the validation loss and validation MSE metrics:
+
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/loss.png)
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/MSE.png)
