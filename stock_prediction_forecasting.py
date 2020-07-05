@@ -15,6 +15,7 @@
 import os
 from absl import app
 import tensorflow as tf
+import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 from stock_prediction_numpy import StockData
@@ -35,8 +36,17 @@ def main(argv):
     model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
     model.summary()
 
+    # display the content of the model
+    baseline_results = model.evaluate(x_test, y_test, verbose=2)
+    for name, value in zip(model.metrics_names, baseline_results):
+        print(name, ': ', value)
+    print()
+
     # perform a prediction
     test_predictions_baseline = model.predict(x_test)
+    test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
+    test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
+    test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
     print(test_predictions_baseline)
 
 
