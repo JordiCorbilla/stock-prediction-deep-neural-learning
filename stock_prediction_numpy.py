@@ -14,6 +14,7 @@
 # ==============================================================================
 import numpy as np
 import pandas as pd
+from datetime import timedelta
 
 
 class StockData:
@@ -52,5 +53,12 @@ class StockData:
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
         return (x_train, y_train), (x_test, y_test)
 
-    def generate_future_data(self):
+    def __daterange(self, start_date, end_date):
+        for n in range(int((end_date - start_date).days)):
+            yield start_date + timedelta(n)
+
+    def generate_future_data(self, start_date, end_date):
+        x_future = []
+        for single_date in self.__daterange(start_date, end_date):
+            x_future.append(single_date)
 

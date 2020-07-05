@@ -17,7 +17,7 @@ import secrets
 import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
-from datetime import datetime, timedelta
+from datetime import datetime
 import yfinance as yf
 from stock_prediction_lstm import LongShortTermMemory
 from stock_prediction_numpy import StockData
@@ -29,8 +29,8 @@ os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 def train_LSTM_network(start_date, ticker, validation_date):
     min_max = MinMaxScaler(feature_range=(0, 1))
     sec = yf.Ticker(ticker)
-    end_date = datetime.date.today() + timedelta(100)
-    print('End Date: ' + end_date)
+    end_date = datetime.today()
+    print('End Date: ' + end_date.strftime("%Y-%m-%d"))
     data = yf.download([ticker], start=start_date, end=end_date)[['Close']]
     data = data.reset_index()
     print(data)
@@ -42,10 +42,13 @@ def train_LSTM_network(start_date, ticker, validation_date):
     training_data = training_data.set_index('Date')
     # Set the data frame index using column Date
     test_data = test_data.set_index('Date')
+    print(test_data)
     plotter.plot_histogram_data_split(training_data, test_data, validation_date)
 
     data = StockData()
     (x_train, y_train), (x_test, y_test) = data.to_numpy(TIME_STEPS, min_max, training_data, test_data)
+
+    print(x_test)
 
     lstm = LongShortTermMemory(project_folder)
     model = lstm.create_model(x_train)
@@ -95,11 +98,11 @@ if __name__ == '__main__':
     EPOCHS = 100
     BATCH_SIZE = 32
     TIME_STEPS = 60
-    TODAY_RUN = datetime.date.today().strftime("%Y%m%d")
+    TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
     print('Ticker: ' + STOCK_TICKER)
-    print('Start Date: ' + STOCK_START_DATE)
-    print('Validation Date: ' + STOCK_START_DATE)
+    print('Start Date: ' + STOCK_START_DATE.strftime("%Y-%m-%d"))
+    print('Validation Date: ' + STOCK_START_DATE.strftime("%Y-%m-%d"))
     print('Generating folder: ' + TOKEN)
     # create project run folder
     project_folder = os.path.join(os.getcwd(), TOKEN)
