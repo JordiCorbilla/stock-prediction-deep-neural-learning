@@ -447,5 +447,66 @@ LSTM network needs the data imported as a 3D array. To translate this 2D array i
 To create this model, you will need to have TensorFlow, TensorFlow-Gpu and Keras install in order for this to run. The code for this model can be seen below and the explanation for each layer is also defined below:
 
 ```python
-
+def create_long_short_term_memory_model(x_train):
+    model = Sequential()
+    # 1st layer with Dropout regularisation
+    # * units = add 100 neurons is the dimensionality of the output space
+    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
+    # * input_shape => Shape of the training dataset
+    model.add(LSTM(units=100, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+    # 20% of the layers will be dropped
+    model.add(Dropout(0.2))
+    # 2nd LSTM layer
+    # * units = add 50 neurons is the dimensionality of the output space
+    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
+    model.add(LSTM(units=50, return_sequences=True))
+    # 20% of the layers will be dropped
+    model.add(Dropout(0.2))
+    # 3rd LSTM layer
+    # * units = add 50 neurons is the dimensionality of the output space
+    # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
+    model.add(LSTM(units=50, return_sequences=True))
+    # 50% of the layers will be dropped
+    model.add(Dropout(0.5))
+    # 4th LSTM layer
+    # * units = add 50 neurons is the dimensionality of the output space
+    model.add(LSTM(units=50))
+    # 50% of the layers will be dropped
+    model.add(Dropout(0.5))
+    # Dense layer that specifies an output of one unit
+    model.add(Dense(units=1))
+    model.summary()
+    tf.keras.utils.plot_model(model, to_file=os.path.join(project_folder, 'model_lstm.png'), show_shapes=True,
+                              show_layer_names=True)
+    return model
 ```
+
+The rendered model can be seen in the image below, producing a model with more than 100k trainable parameters.
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/model_lstm.png)
+
+```cmd
+Layer (type)                 Output Shape              Param #
+=================================================================
+lstm_1 (LSTM)                (None, 60, 100)           40800
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 60, 100)           0
+_________________________________________________________________
+lstm_2 (LSTM)                (None, 60, 50)            30200
+_________________________________________________________________
+dropout_2 (Dropout)          (None, 60, 50)            0
+_________________________________________________________________
+lstm_3 (LSTM)                (None, 60, 50)            20200
+_________________________________________________________________
+dropout_3 (Dropout)          (None, 60, 50)            0
+_________________________________________________________________
+lstm_4 (LSTM)                (None, 50)                20200
+_________________________________________________________________
+dropout_4 (Dropout)          (None, 50)                0
+_________________________________________________________________
+dense_1 (Dense)              (None, 1)                 51
+=================================================================
+Total params: 111,451
+Trainable params: 111,451
+Non-trainable params: 0
+```
+
