@@ -510,3 +510,23 @@ Trainable params: 111,451
 Non-trainable params: 0
 ```
 
+Once we have defined the model, we need to specify the metrics we want to use to track how well our model is behaving and also the kind of optimizer we want to use for our training. I have also defined the patience I want my model to have and what is the rule defined for it.
+
+```python
+    defined_metrics = [
+        tf.keras.metrics.MeanSquaredError(name='MSE')
+    ]
+
+    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
+
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=defined_metrics)
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_test, y_test),
+                        callbacks=[callback])
+```
+
+
+### 3.5) Making predictions happen
+
+Now it is time to prepare our testing data and send it through our deep-learning model to obtain the predictions we are trying to get.
+
+First we need to import the test data:
