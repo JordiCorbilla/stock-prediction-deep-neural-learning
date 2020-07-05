@@ -93,7 +93,9 @@ if __name__ == '__main__':
     EPOCHS = 100
     BATCH_SIZE = 32
     TIME_STEPS = 60
-    TOKEN = secrets.token_hex(16)
+    TODAY_RUN = datetime.date.today().strftime("%Y%m%d")
+    TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
+    print('Generating folder ' + TOKEN)
     # create project run folder
     project_folder = os.path.join(os.getcwd(), TOKEN)
     if not os.path.exists(project_folder):
