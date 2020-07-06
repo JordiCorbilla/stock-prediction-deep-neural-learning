@@ -94,7 +94,8 @@ class StockData:
         y_future = []
         for single_date in self.__date_range(start_date, end_date):
             x_future.append(single_date)
-            y_future.append(random.uniform(10, 100))
+            y_future.append(0)
+            #y_future.append(random.uniform(10, 100))
 
         test_data = pd.DataFrame({'Date': x_future, 'Close': y_future})
         test_data = test_data.set_index('Date')

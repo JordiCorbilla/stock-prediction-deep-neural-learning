@@ -29,7 +29,8 @@ def main(argv):
 
     data = StockData(stock)
 
-    (x_train, y_train), (x_test, y_test), (min_max, test_data) = data.download_transform_to_numpy(TIME_STEPS)
+    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(TIME_STEPS)
+    min_max = data.get_min_max()
 
     # load future data
     x_test, y_test = data.generate_future_data(TIME_STEPS, min_max, date(2020, 7, 5), date(2021, 7, 5))
