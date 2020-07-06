@@ -682,3 +682,99 @@ With the validation loss and validation MSE metrics:
 
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/loss.png)
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/MSE.png)
+
+# 4) Usage
+
+This has been built using python 3.6.8 version.
+
+Download the source code and install the following packages:
+
+```cmd
+C:\Users\thund\Source\Repos\stock-prediction-deep-neural-learning>pip list
+Package              Version
+-------------------- ---------
+absl-py              0.8.0
+astor                0.8.0
+astroid              2.3.3
+backcall             0.1.0
+certifi              2020.6.20
+chardet              3.0.4
+colorama             0.4.1
+cycler               0.10.0
+decorator            4.4.0
+Django               2.2.6
+gast                 0.2.2
+google-pasta         0.1.7
+graphviz             0.13.2
+grpcio               1.23.0
+h5py                 2.10.0
+idna                 2.10
+image                1.5.27
+imageio              2.6.1
+imbalanced-learn     0.5.0
+imblearn             0.0
+ipython              7.8.0
+ipython-genutils     0.2.0
+isort                4.3.21
+jedi                 0.15.1
+joblib               0.14.0
+Keras                2.3.1
+Keras-Applications   1.0.8
+Keras-Preprocessing  1.1.0
+kiwisolver           1.1.0
+lazy-object-proxy    1.4.3
+lxml                 4.5.1
+Markdown             3.1.1
+matplotlib           3.1.1
+mccabe               0.6.1
+multitasking         0.0.9
+networkx             2.4
+numpy                1.17.2
+opencv-python        4.1.1.26
+opt-einsum           3.1.0
+pandas               0.24.0
+pandas-datareader    0.5.0
+parso                0.5.1
+pickleshare          0.7.5
+Pillow               6.2.0
+pip                  20.1.1
+prompt-toolkit       2.0.10
+protobuf             3.9.2
+pydot                1.4.1
+Pygments             2.4.2
+pylint               2.4.4
+pyparsing            2.4.2
+python-dateutil      2.8.0
+pytz                 2019.2
+PyWavelets           1.1.1
+PyYAML               5.1.2
+requests             2.24.0
+requests-file        1.5.1
+requests-ftp         0.3.1
+scikit-image         0.16.2
+scikit-learn         0.21.3
+scipy                1.3.1
+seaborn              0.9.0
+setuptools           41.2.0
+six                  1.12.0
+sqlparse             0.3.0
+tensorboard          2.0.0
+tensorflow           2.0.0
+tensorflow-estimator 2.0.1
+tensorflow-gpu       2.0.0
+termcolor            1.1.0
+traitlets            4.3.3
+typed-ast            1.4.0
+urllib3              1.25.9
+wcwidth              0.1.7
+Werkzeug             0.16.0
+wheel                0.33.6
+wrapt                1.11.2
+xlrd                 1.2.0
+yfinance             0.1.54
+```
+The edit the file "stock_prediction_deep_learning.py" to include the Stock you want to use and the relevant dates and call:
+
+```cmd
+python stock_prediction_deep_learning.py
+```
