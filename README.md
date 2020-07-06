@@ -418,13 +418,13 @@ In this exercise, I'm only interested in the [closing price](https://www.investo
 Below you can find the chart with the division we will create between Training Data and Validation Data:
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/TrainingDataValidationData.png)
 
-Also the histogram of the Data:
+Also the histogram showing the distribution of the prices:
 
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/DataHistogram.png)
 
 ### 3.2) Data Normalization
 
-In order to normalise the data, we need to scale it between 0 and 1 so we talk in a common scale. To accomplish this, we can use the preprocessing tool MinMaxScaler as seen below:
+In order to normalise the data, we need to scale it between 0 and 1 so we talk in a common scale. To accomplish this, we can use the preprocessing tool [MinMaxScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html) as seen below:
 
 ```python
     min_max = MinMaxScaler(feature_range=(0, 1))
