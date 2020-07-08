@@ -16,6 +16,8 @@ import os
 from absl import app
 import tensorflow as tf
 import pandas as pd
+from networkx.drawing.tests.test_pylab import plt
+
 from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
 from datetime import date
@@ -51,6 +53,19 @@ def main(argv):
     test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
     test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
     print(test_predictions_baseline)
+
+    print("plotting predictions")
+    plt.figure(figsize=(14, 5))
+    plt.plot(test_predictions_baseline['GOOG' + '_predicted'], color='red',
+             label='Predicted [' + 'GOOG' + '] price')
+    #plt.plot(test_data.Close, color='green', label='Actual [' + 'GOOG' + '] price')
+    plt.xlabel('Time')
+    plt.ylabel('Price [' + 'USD' + ']')
+    plt.legend()
+    plt.title('Prediction')
+    #plt.savefig(os.path.join(self.project_folder, self.short_name.strip().replace('.', '') + '_prediction.png'))
+    plt.pause(0.001)
+    plt.show()
 
 
 if __name__ == '__main__':
