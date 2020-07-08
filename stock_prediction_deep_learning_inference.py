@@ -56,7 +56,7 @@ def main(argv):
 
     print("plotting predictions")
     plt.figure(figsize=(14, 5))
-    plt.plot(test_predictions_baseline['GOOG' + '_predicted'], color='red',
+    plt.plot(test_predictions_baseline, color='red',
              label='Predicted [' + 'GOOG' + '] price')
     #plt.plot(test_data.Close, color='green', label='Actual [' + 'GOOG' + '] price')
     plt.xlabel('Time')
