@@ -1,10 +1,10 @@
 # Stock prediction using deep neural learning
 
-Predicting stock prices using a TensorFlow LSTM (long short-term memory) neural network for times series forecasting
+Predicting stock prices using a TensorFlow LSTM (long short-term memory) neural network for times series forecasting.
 
 ## 1) Introduction
 
-Predicting stock prices is a cumbersome task as it does not follow any specific pattern. Changes in the stock prices are purely based on the supply and demand during a period of time. In order to learn the specific characteristics of a stock price, we can use deep learning to identify these patterns through learning. One of the most well-known networks for series forecasting is [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) (long short-term memory) which is a recurrent neural network that is able to remember information over a long period of time, thus making them extremely useful for predicting stock prices.
+Predicting stock prices is a cumbersome task as it does not follow any specific pattern. Changes in the stock prices are purely based on the supply and demand during a period of time. In order to learn the specific characteristics of a stock price, we can use deep learning to identify these patterns through machine learning. One of the most well-known networks for series forecasting is [LSTM](https://www.researchgate.net/publication/13853244_Long_Short-term_Memory) (long short-term memory) which is a Recurrent Neural Network (RNN) that is able to remember information over a long period of time, thus making them extremely useful for predicting stock prices. RNNs are well-suited to time series data and they are able to process the data step-by-step, maintaining an internal state where they cache the information they have seen so far in a summarised version. The successful prediction of a stock's future price could yield significant profit.
 
 ## 2) Stock Market Data
 
