@@ -16,7 +16,7 @@ import os
 from absl import app
 import tensorflow as tf
 import pandas as pd
-from networkx.drawing.tests.test_pylab import plt
+import matplotlib.pyplot as plt
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
