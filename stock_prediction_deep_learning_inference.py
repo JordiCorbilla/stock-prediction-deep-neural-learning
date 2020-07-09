@@ -35,8 +35,9 @@ def main(argv):
     min_max = data.get_min_max()
 
     # load future data
-    print(test_data['Date'].iloc[-1])
-    print(test_data['Close'].iloc[-1])
+    #print(test_data.Date)
+    print(test_data.Close.iloc[-1])
+    print(test_data[-1:]['Close'].Date)
     return
     x_test, y_test = data.generate_future_data(TIME_STEPS, min_max, date(2020, 7, 5), date(2021, 7, 5))
 

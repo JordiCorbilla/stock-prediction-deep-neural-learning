@@ -19,7 +19,6 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
 import yfinance as yf
-from stock_prediction_plotter import Plotter
 
 
 class StockData:
