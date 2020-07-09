@@ -44,7 +44,7 @@ def main(argv):
     print(latest_date)
 
     tomorrow_date = latest_date + timedelta(1)
-    next_year = latest_date + timedelta(365)
+    next_year = latest_date + timedelta(100)
 
     print('Future Date')
     print(tomorrow_date)
@@ -68,17 +68,21 @@ def main(argv):
     test_predictions_baseline = model.predict(x_test)
     test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
     test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
-    test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
-    #print(test_predictions_baseline)
 
     test_predictions_baseline.rename(columns={0: STOCK_TICKER + '_predicted'}, inplace=True)
     test_predictions_baseline = test_predictions_baseline.round(decimals=0)
+
+    print(test_data)
+    print(test_predictions_baseline)
+
     test_predictions_baseline.index = test_data.index
+    test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
+
 
     print("plotting predictions")
     plt.figure(figsize=(14, 5))
-    plt.plot(test_predictions_baseline, color='red', label='Predicted [' + 'GOOG' + '] price')
-    #plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
+    plt.plot(test_predictions_baseline[STOCK_TICKER + '_predicted'], color='red', label='Predicted [' + 'GOOG' + '] price')
+    plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
     plt.xlabel('Time')
     plt.ylabel('Price [' + 'USD' + ']')
     plt.legend()
