@@ -73,14 +73,13 @@ def main(argv):
 
     print("plotting predictions")
     plt.figure(figsize=(14, 5))
-    plt.plot(test_predictions_baseline, color='red',
-             label='Predicted [' + 'GOOG' + '] price')
-    #plt.plot(test_data.Close, color='green', label='Actual [' + 'GOOG' + '] price')
+    plt.plot(test_predictions_baseline, color='red', label='Predicted [' + 'GOOG' + '] price')
+    plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
     plt.xlabel('Time')
     plt.ylabel('Price [' + 'USD' + ']')
     plt.legend()
     plt.title('Prediction')
-    #plt.savefig(os.path.join(self.project_folder, self.short_name.strip().replace('.', '') + '_prediction.png'))
+    plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_prediction.png'))
     plt.pause(0.001)
     plt.show()
 

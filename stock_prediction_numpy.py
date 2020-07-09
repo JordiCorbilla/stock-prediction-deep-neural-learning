@@ -97,7 +97,7 @@ class StockData:
 
         # We need to provide a randomisation algorithm for the close price
         # This is my own implementation and it will provide a variation of the
-        # close price for a +-0.2% of the original value, when the value wants to go below
+        # close price for a +-2% of the original value, when the value wants to go below
         # zero, it will be forced to go up.
 
         original_price = latest_close_price
@@ -105,7 +105,7 @@ class StockData:
         for single_date in self.__date_range(start_date, end_date):
             x_future.append(single_date)
             direction = self.negative_positive_random()
-            original_price = original_price + (direction * 0.002)
+            original_price = original_price + (direction * 0.02)
             if original_price < 0:
                 original_price = 0
 
