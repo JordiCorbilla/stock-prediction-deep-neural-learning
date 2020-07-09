@@ -52,7 +52,7 @@ def main(argv):
     print('Future Timespan Date')
     print(next_year)
 
-    x_test, y_test = data.generate_future_data(TIME_STEPS, min_max, tomorrow_date, next_year, latest_close_price)
+    x_test, y_test, test_data = data.generate_future_data(TIME_STEPS, min_max, tomorrow_date, next_year, latest_close_price)
 
     # load the weights from our best model
     model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
@@ -69,12 +69,16 @@ def main(argv):
     test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
     test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
     test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
-    print(test_predictions_baseline)
+    #print(test_predictions_baseline)
+
+    test_predictions_baseline.rename(columns={0: STOCK_TICKER + '_predicted'}, inplace=True)
+    test_predictions_baseline = test_predictions_baseline.round(decimals=0)
+    test_predictions_baseline.index = test_data.index
 
     print("plotting predictions")
     plt.figure(figsize=(14, 5))
     plt.plot(test_predictions_baseline, color='red', label='Predicted [' + 'GOOG' + '] price')
-    plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
+    #plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
     plt.xlabel('Time')
     plt.ylabel('Price [' + 'USD' + ']')
     plt.legend()

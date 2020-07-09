@@ -111,7 +111,6 @@ class StockData:
 
             y_future.append(original_price)
 
-
         test_data = pd.DataFrame({'Date': x_future, 'Close': y_future})
         test_data = test_data.set_index('Date')
         print(test_data)
@@ -125,7 +124,7 @@ class StockData:
 
         x_test, y_test = np.array(x_test), np.array(y_test)
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
-        return x_test, y_test
+        return x_test, y_test, test_data
 
 
 
