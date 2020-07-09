@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
-from datetime import date
+from datetime import date, timedelta
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 
@@ -35,11 +35,24 @@ def main(argv):
     min_max = data.get_min_max()
 
     # load future data
-    #print(test_data.Date)
-    print(test_data.Close.iloc[-1])
-    print(test_data[-1:]['Close'].Date)
-    return
-    x_test, y_test = data.generate_future_data(TIME_STEPS, min_max, date(2020, 7, 5), date(2021, 7, 5))
+
+    print('Latest Stock Price')
+    latest_close_price = test_data.Close.iloc[-1]
+    latest_date = test_data[-1:]['Close'].idxmin()
+    print(latest_close_price)
+    print('Latest Date')
+    print(latest_date)
+
+    tomorrow_date = latest_date + timedelta(1)
+    next_year = latest_date + timedelta(365)
+
+    print('Future Date')
+    print(tomorrow_date)
+
+    print('Future Timespan Date')
+    print(next_year)
+
+    x_test, y_test = data.generate_future_data(TIME_STEPS, min_max, tomorrow_date, next_year, latest_close_price)
 
     # load the weights from our best model
     model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
