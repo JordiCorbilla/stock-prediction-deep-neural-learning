@@ -77,14 +77,14 @@ def main(argv):
     #print(test_data)
     #print(test_predictions_baseline)
 
-    #test_predictions_baseline.index = test_data.index
+    test_predictions_baseline.index = test_data.index
     test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
 
 
     print("plotting predictions")
     plt.figure(figsize=(14, 5))
     plt.plot(test_predictions_baseline[STOCK_TICKER + '_predicted'], color='red', label='Predicted [' + 'GOOG' + '] price')
-    #plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
+    plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
     plt.xlabel('Time')
     plt.ylabel('Price [' + 'USD' + ']')
     plt.legend()
