@@ -44,7 +44,7 @@ def main(argv):
     print(latest_date)
 
     tomorrow_date = latest_date + timedelta(1)
-    next_year = latest_date + timedelta(360)
+    next_year = latest_date + timedelta(361)
 
     print('Future Date')
     print(tomorrow_date)
@@ -78,6 +78,7 @@ def main(argv):
     #print(test_predictions_baseline)
 
     #test_predictions_baseline.index = test_data.index
+    test_data.to_csv(os.path.join(inference_folder, 'generated.csv'))
     test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
 
 
