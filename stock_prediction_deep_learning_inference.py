@@ -44,7 +44,7 @@ def main(argv):
     print(latest_date)
 
     tomorrow_date = latest_date + timedelta(1)
-    next_year = latest_date + timedelta(365)
+    next_year = latest_date + timedelta(360)
 
     print('Future Date')
     print(tomorrow_date)
@@ -58,6 +58,8 @@ def main(argv):
     model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
     model.summary()
 
+    print(x_test)
+    print(test_data)
     # display the content of the model
     baseline_results = model.evaluate(x_test, y_test, verbose=2)
     for name, value in zip(model.metrics_names, baseline_results):

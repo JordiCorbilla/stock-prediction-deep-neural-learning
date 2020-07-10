@@ -92,7 +92,7 @@ class StockData:
         return 1 if random.random() < 0.5 else -1
 
     def pseudo_random(self):
-        return random.uniform(2.0, 10.0)
+        return random.uniform(5.0, 20.0)
 
     def generate_future_data(self, time_steps, min_max, start_date, end_date, latest_close_price):
         x_future = []
@@ -111,7 +111,6 @@ class StockData:
             original_price = original_price + (direction * (self.pseudo_random()/100))
             if original_price < 0:
                 original_price = 0
-
             y_future.append(original_price)
 
         test_data = pd.DataFrame({'Date': x_future, 'Close': y_future})
