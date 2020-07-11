@@ -100,7 +100,7 @@ def main(argv):
 
 if __name__ == '__main__':
     TIME_STEPS = 3
-    RUN_FOLDER = 'GOOG_20200711_23787967bfadc708e9b507740b30b411'
+    RUN_FOLDER = 'GOOG_20200711_76c9683d2457682b0e2e918d8ef6670e'
     STOCK_TICKER = 'GOOG'
     STOCK_START_DATE = pd.to_datetime('2004-08-01')
     STOCK_VALIDATION_DATE = pd.to_datetime('2017-01-01')
