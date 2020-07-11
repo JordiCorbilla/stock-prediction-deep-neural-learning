@@ -44,7 +44,7 @@ def main(argv):
     print(latest_date)
 
     tomorrow_date = latest_date + timedelta(1)
-    next_year = latest_date + timedelta(TIME_STEPS*10)
+    next_year = latest_date + timedelta(TIME_STEPS*30)
 
     print('Future Date')
     print(tomorrow_date)
@@ -85,12 +85,20 @@ def main(argv):
     print("plotting predictions")
     plt.figure(figsize=(14, 5))
     plt.plot(test_predictions_baseline[STOCK_TICKER + '_predicted'], color='red', label='Predicted [' + 'GOOG' + '] price')
-    #plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
     plt.xlabel('Time')
     plt.ylabel('Price [' + 'USD' + ']')
     plt.legend()
     plt.title('Prediction')
     plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_prediction.png'))
+    plt.pause(0.001)
+
+    plt.figure(figsize=(14, 5))
+    plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
+    plt.xlabel('Time')
+    plt.ylabel('Price [' + 'USD' + ']')
+    plt.legend()
+    plt.title('Random')
+    plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_random.png'))
     plt.pause(0.001)
     plt.show()
 
