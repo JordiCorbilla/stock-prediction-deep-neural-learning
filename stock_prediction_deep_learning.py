@@ -78,7 +78,7 @@ if __name__ == '__main__':
     print('Ticker: ' + STOCK_TICKER)
     print('Start Date: ' + STOCK_START_DATE.strftime("%Y-%m-%d"))
     print('Validation Date: ' + STOCK_START_DATE.strftime("%Y-%m-%d"))
-    print('Generating folder: ' + TOKEN)
+    print('Test Run Folder: ' + TOKEN)
     # create project run folder
     PROJECT_FOLDER = os.path.join(os.getcwd(), TOKEN)
     if not os.path.exists(PROJECT_FOLDER):

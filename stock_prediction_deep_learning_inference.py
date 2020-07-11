@@ -26,7 +26,7 @@ os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 def main(argv):
     print(tf.version.VERSION)
-    inference_folder = os.path.join(os.getcwd(), 'GOOG_20200704_b5f47746c83698528343678663ac3c96')
+    inference_folder = os.path.join(os.getcwd(), RUN_FOLDER)
     stock = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, inference_folder)
 
     data = StockData(stock)
@@ -44,7 +44,7 @@ def main(argv):
     print(latest_date)
 
     tomorrow_date = latest_date + timedelta(1)
-    next_year = latest_date + timedelta(121)
+    next_year = latest_date + timedelta(TIME_STEPS*10)
 
     print('Future Date')
     print(tomorrow_date)
@@ -96,7 +96,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    TIME_STEPS = 60
+    TIME_STEPS = 10
+    RUN_FOLDER = 'GOOG_20200711_23787967bfadc708e9b507740b30b411'
     STOCK_TICKER = 'GOOG'
     STOCK_START_DATE = pd.to_datetime('2004-08-01')
     STOCK_VALIDATION_DATE = pd.to_datetime('2017-01-01')
