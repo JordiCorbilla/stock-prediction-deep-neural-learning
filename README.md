@@ -773,7 +773,7 @@ wrapt                1.11.2
 xlrd                 1.2.0
 yfinance             0.1.54
 ```
-The edit the file "stock_prediction_deep_learning.py" to include the Stock you want to use and the relevant dates and call:
+Then edit the file "stock_prediction_deep_learning.py" to include the Stock you want to use and the relevant dates and execute:
 
 ```cmd
 python stock_prediction_deep_learning.py
