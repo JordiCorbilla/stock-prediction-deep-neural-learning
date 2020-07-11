@@ -44,7 +44,7 @@ def main(argv):
     print(latest_date)
 
     tomorrow_date = latest_date + timedelta(1)
-    next_year = latest_date + timedelta(420)
+    next_year = latest_date + timedelta(121)
 
     print('Future Date')
     print(tomorrow_date)

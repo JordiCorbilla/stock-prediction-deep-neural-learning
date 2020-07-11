@@ -106,7 +106,7 @@ class StockData:
         # close price for a +-1-3% of the original value, when the value wants to go below
         # zero, it will be forced to go up.
 
-        original_price = int(latest_close_price)
+        original_price = latest_close_price
 
         for single_date in self.__date_range(start_date, end_date):
             x_future.append(single_date)
