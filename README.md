@@ -444,6 +444,10 @@ LSTM network needs the data imported as a 3D array. To translate this 2D array i
 
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/blob/master/3dmatrix.png)
 
+We have implemented a time step of 3 days. Using this technique, we allow our network to look back 3 days on our data to predict the subsequent day). The figure below represents how our implementation uses this concept and how the first 3 samples for Close price would generate the 4th sample and so on.This will generate a matrix of shape (3,1), 3 being the time steps and 1 the number of features (Close price).
+
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/blob/master/timesteps.png)
+
 ### 3.4) Creation of the deep learning model LSTM
 
 To create this model, you will need to have **TensorFlow**, **TensorFlow-Gpu** and **Keras** installed in order for this to run. The code for this model can be seen below and the explanation for each layer is also defined below:
