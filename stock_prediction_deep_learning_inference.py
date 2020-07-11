@@ -31,7 +31,7 @@ def main(argv):
 
     data = StockData(stock)
 
-    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(TIME_STEPS)
+    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(TIME_STEPS, inference_folder)
     min_max = data.get_min_max()
 
     # load future data
@@ -44,7 +44,7 @@ def main(argv):
     print(latest_date)
 
     tomorrow_date = latest_date + timedelta(1)
-    next_year = latest_date + timedelta(361)
+    next_year = latest_date + timedelta(365)
 
     print('Future Date')
     print(tomorrow_date)

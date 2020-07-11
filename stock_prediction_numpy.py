@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
+
 import numpy as np
 from datetime import timedelta
 import random
@@ -42,11 +44,12 @@ class StockData:
     def get_stock_currency(self):
         return self._sec.info['currency']
 
-    def download_transform_to_numpy(self, time_steps):
+    def download_transform_to_numpy(self, time_steps, project_folder):
         end_date = datetime.today()
         print('End Date: ' + end_date.strftime("%Y-%m-%d"))
         data = yf.download([self._stock.get_ticker()], start=self._stock.get_start_date(), end=end_date)[['Close']]
         data = data.reset_index()
+        data.to_csv(os.path.join(project_folder, 'downloaded_data_'+self._stock.get_ticker()+'.csv'))
         #print(data)
 
         training_data = data[data['Date'] < self._stock.get_validation_date()].copy()
