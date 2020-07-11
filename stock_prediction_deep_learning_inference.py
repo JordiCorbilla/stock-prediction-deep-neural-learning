@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
-from datetime import date, timedelta
+from datetime import timedelta
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 
@@ -44,7 +44,8 @@ def main(argv):
     print(latest_date)
 
     tomorrow_date = latest_date + timedelta(1)
-    next_year = latest_date + timedelta(TIME_STEPS*30)
+    # Specify the next 300 days
+    next_year = latest_date + timedelta(TIME_STEPS*100)
 
     print('Future Date')
     print(tomorrow_date)
@@ -61,10 +62,10 @@ def main(argv):
     #print(x_test)
     #print(test_data)
     # display the content of the model
-    #baseline_results = model.evaluate(x_test, y_test, verbose=2)
-    #for name, value in zip(model.metrics_names, baseline_results):
-    #    print(name, ': ', value)
-    #print()
+    baseline_results = model.evaluate(x_test, y_test, verbose=2)
+    for name, value in zip(model.metrics_names, baseline_results):
+        print(name, ': ', value)
+    print()
 
     # perform a prediction
     test_predictions_baseline = model.predict(x_test)
@@ -73,14 +74,8 @@ def main(argv):
 
     test_predictions_baseline.rename(columns={0: STOCK_TICKER + '_predicted'}, inplace=True)
     test_predictions_baseline = test_predictions_baseline.round(decimals=0)
-
-    #print(test_data)
-    #print(test_predictions_baseline)
-
-    #test_predictions_baseline.index = test_data.index
     test_data.to_csv(os.path.join(inference_folder, 'generated.csv'))
     test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
-
 
     print("plotting predictions")
     plt.figure(figsize=(14, 5))
@@ -104,7 +99,7 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    TIME_STEPS = 10
+    TIME_STEPS = 3
     RUN_FOLDER = 'GOOG_20200711_23787967bfadc708e9b507740b30b411'
     STOCK_TICKER = 'GOOG'
     STOCK_START_DATE = pd.to_datetime('2004-08-01')
