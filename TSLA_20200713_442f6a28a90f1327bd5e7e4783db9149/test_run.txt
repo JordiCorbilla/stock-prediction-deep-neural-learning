@@ -1,0 +1,99 @@
+C:\Users\thund\Source\Repos\stock-prediction-deep-neural-learning>python stock_prediction_deep_learning.py
+2020-07-13 19:00:04.691959: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library cudart64_100.dll
+Ticker: TSLA
+Start Date: 2010-06-01
+Validation Date: 2010-06-01
+Test Run Folder: TSLA_20200713_442f6a28a90f1327bd5e7e4783db9149
+End Date: 2020-07-13
+[*********************100%***********************]  1 of 1 completed
+mean: [0.41762693]
+max 1.0
+min 0.0
+Std dev: [0.34520093]
+plotting Data and Histogram
+2020-07-13 19:00:57.084336: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library nvcuda.dll
+2020-07-13 19:00:58.239629: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1618] Found device 0 with properties:
+name: GeForce GTX 960M major: 5 minor: 0 memoryClockRate(GHz): 1.176
+pciBusID: 0000:01:00.0
+2020-07-13 19:00:58.253767: I tensorflow/stream_executor/platform/default/dlopen_checker_stub.cc:25] GPU libraries are statically linked, skip dlopen check.
+2020-07-13 19:00:58.264579: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1746] Adding visible gpu devices: 0
+2020-07-13 19:00:58.278301: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
+2020-07-13 19:00:58.311271: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1618] Found device 0 with properties:
+name: GeForce GTX 960M major: 5 minor: 0 memoryClockRate(GHz): 1.176
+pciBusID: 0000:01:00.0
+2020-07-13 19:00:58.324393: I tensorflow/stream_executor/platform/default/dlopen_checker_stub.cc:25] GPU libraries are statically linked, skip dlopen check.
+2020-07-13 19:00:58.334536: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1746] Adding visible gpu devices: 0
+2020-07-13 19:01:03.640757: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1159] Device interconnect StreamExecutor with strength 1 edge matrix:
+2020-07-13 19:01:03.649074: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1165]      0
+2020-07-13 19:01:03.655705: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1178] 0:   N
+2020-07-13 19:01:03.670892: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1304] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3040 MB memory) -> physical GPU (device: 0, name: GeForce GTX 960M, pci bus id: 0000:01:00.0, compute capability: 5.0)
+Model: "sequential"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #
+=================================================================
+lstm (LSTM)                  (None, 3, 100)            40800
+_________________________________________________________________
+dropout (Dropout)            (None, 3, 100)            0
+_________________________________________________________________
+lstm_1 (LSTM)                (None, 3, 50)             30200
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 3, 50)             0
+_________________________________________________________________
+lstm_2 (LSTM)                (None, 3, 50)             20200
+_________________________________________________________________
+dropout_2 (Dropout)          (None, 3, 50)             0
+_________________________________________________________________
+lstm_3 (LSTM)                (None, 50)                20200
+_________________________________________________________________
+dropout_3 (Dropout)          (None, 50)                0
+_________________________________________________________________
+dense (Dense)                (None, 1)                 51
+=================================================================
+Total params: 111,451
+Trainable params: 111,451
+Non-trainable params: 0
+_________________________________________________________________
+Train on 1637 samples, validate on 887 samples
+Epoch 1/100
+2020-07-13 19:01:23.118158: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library cublas64_100.dll
+1637/1637 [==============================] - 19s 12ms/sample - loss: 0.1175 - MSE: 0.1175 - val_loss: 0.0146 - val_MSE: 0.0146
+Epoch 2/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0151 - MSE: 0.0151 - val_loss: 9.6087e-04 - val_MSE: 9.6087e-04
+Epoch 3/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0139 - MSE: 0.0139 - val_loss: 0.0011 - val_MSE: 0.0011
+Epoch 4/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0107 - MSE: 0.0107 - val_loss: 5.7244e-04 - val_MSE: 5.7244e-04
+Epoch 5/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0091 - MSE: 0.0091 - val_loss: 6.9075e-04 - val_MSE: 6.9075e-04
+Epoch 6/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0086 - MSE: 0.0086 - val_loss: 5.2775e-04 - val_MSE: 5.2775e-04
+Epoch 7/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0080 - MSE: 0.0080 - val_loss: 6.1406e-04 - val_MSE: 6.1406e-04
+Epoch 8/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0079 - MSE: 0.0079 - val_loss: 6.8704e-04 - val_MSE: 6.8704e-04
+Epoch 9/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0078 - MSE: 0.0078 - val_loss: 5.1845e-04 - val_MSE: 5.1845e-04
+Epoch 10/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0079 - MSE: 0.0079 - val_loss: 6.9056e-04 - val_MSE: 6.9056e-04
+Epoch 11/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0072 - MSE: 0.0072 - val_loss: 6.1126e-04 - val_MSE: 6.1126e-04
+Epoch 12/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0069 - MSE: 0.0069 - val_loss: 5.1828e-04 - val_MSE: 5.1828e-04
+Epoch 13/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0073 - MSE: 0.0073 - val_loss: 9.8233e-04 - val_MSE: 9.8233e-04
+Epoch 14/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0080 - MSE: 0.0080 - val_loss: 5.8174e-04 - val_MSE: 5.8174e-04
+Epoch 15/100
+1637/1637 [==============================] - 3s 2ms/sample - loss: 0.0071 - MSE: 0.0071 - val_loss: 5.3599e-04 - val_MSE: 5.3599e-04
+Epoch 00015: early stopping
+saving weights
+plotting loss
+plotting MSE
+display the content of the model
+887/1 - 0s - loss: 0.0037 - MSE: 5.3599e-04
+loss :  0.0005359921430887522
+MSE :  0.00053599215
+
+plotting prediction results
+plotting predictions
+prediction is finished

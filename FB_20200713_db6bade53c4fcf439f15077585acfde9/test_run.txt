@@ -1,0 +1,95 @@
+C:\Users\thund\Source\Repos\stock-prediction-deep-neural-learning>python stock_prediction_deep_learning.py
+2020-07-13 19:09:59.890167: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library cudart64_100.dll
+Ticker: FB
+Start Date: 2012-05-14
+Validation Date: 2012-05-14
+Test Run Folder: FB_20200713_db6bade53c4fcf439f15077585acfde9
+End Date: 2020-07-13
+[*********************100%***********************]  1 of 1 completed
+mean: [0.45643234]
+max 1.0
+min 0.0
+Std dev: [0.29561276]
+plotting Data and Histogram
+2020-07-13 19:10:46.072215: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library nvcuda.dll
+2020-07-13 19:10:47.088143: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1618] Found device 0 with properties:
+name: GeForce GTX 960M major: 5 minor: 0 memoryClockRate(GHz): 1.176
+pciBusID: 0000:01:00.0
+2020-07-13 19:10:47.102742: I tensorflow/stream_executor/platform/default/dlopen_checker_stub.cc:25] GPU libraries are statically linked, skip dlopen check.
+2020-07-13 19:10:47.118125: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1746] Adding visible gpu devices: 0
+2020-07-13 19:10:47.126131: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
+2020-07-13 19:10:47.158778: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1618] Found device 0 with properties:
+name: GeForce GTX 960M major: 5 minor: 0 memoryClockRate(GHz): 1.176
+pciBusID: 0000:01:00.0
+2020-07-13 19:10:47.176905: I tensorflow/stream_executor/platform/default/dlopen_checker_stub.cc:25] GPU libraries are statically linked, skip dlopen check.
+2020-07-13 19:10:47.188796: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1746] Adding visible gpu devices: 0
+2020-07-13 19:10:51.702535: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1159] Device interconnect StreamExecutor with strength 1 edge matrix:
+2020-07-13 19:10:51.711004: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1165]      0
+2020-07-13 19:10:51.717505: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1178] 0:   N
+2020-07-13 19:10:51.731492: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1304] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3040 MB memory) -> physical GPU (device: 0, name: GeForce GTX 960M, pci bus id: 0000:01:00.0, compute capability: 5.0)
+Model: "sequential"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #
+=================================================================
+lstm (LSTM)                  (None, 3, 100)            40800
+_________________________________________________________________
+dropout (Dropout)            (None, 3, 100)            0
+_________________________________________________________________
+lstm_1 (LSTM)                (None, 3, 50)             30200
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 3, 50)             0
+_________________________________________________________________
+lstm_2 (LSTM)                (None, 3, 50)             20200
+_________________________________________________________________
+dropout_2 (Dropout)          (None, 3, 50)             0
+_________________________________________________________________
+lstm_3 (LSTM)                (None, 50)                20200
+_________________________________________________________________
+dropout_3 (Dropout)          (None, 50)                0
+_________________________________________________________________
+dense (Dense)                (None, 1)                 51
+=================================================================
+Total params: 111,451
+Trainable params: 111,451
+Non-trainable params: 0
+_________________________________________________________________
+Train on 1160 samples, validate on 887 samples
+Epoch 1/100
+2020-07-13 19:11:11.170534: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library cublas64_100.dll
+1160/1160 [==============================] - 18s 15ms/sample - loss: 0.1406 - MSE: 0.1406 - val_loss: 0.0220 - val_MSE: 0.0220
+Epoch 2/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0276 - MSE: 0.0276 - val_loss: 0.0029 - val_MSE: 0.0029
+Epoch 3/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0142 - MSE: 0.0142 - val_loss: 0.0023 - val_MSE: 0.0023
+Epoch 4/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0119 - MSE: 0.0119 - val_loss: 0.0020 - val_MSE: 0.0020
+Epoch 5/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0113 - MSE: 0.0113 - val_loss: 0.0032 - val_MSE: 0.0032
+Epoch 6/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0088 - MSE: 0.0088 - val_loss: 0.0019 - val_MSE: 0.0019
+Epoch 7/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0076 - MSE: 0.0076 - val_loss: 0.0027 - val_MSE: 0.0027
+Epoch 8/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0083 - MSE: 0.0083 - val_loss: 0.0020 - val_MSE: 0.0020
+Epoch 9/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0082 - MSE: 0.0082 - val_loss: 0.0019 - val_MSE: 0.0019
+Epoch 10/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0079 - MSE: 0.0079 - val_loss: 0.0018 - val_MSE: 0.0018
+Epoch 11/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0070 - MSE: 0.0070 - val_loss: 0.0019 - val_MSE: 0.0019
+Epoch 12/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0066 - MSE: 0.0066 - val_loss: 0.0021 - val_MSE: 0.0021
+Epoch 13/100
+1160/1160 [==============================] - 2s 2ms/sample - loss: 0.0066 - MSE: 0.0066 - val_loss: 0.0019 - val_MSE: 0.0019
+Epoch 00013: early stopping
+saving weights
+plotting loss
+plotting MSE
+display the content of the model
+887/1 - 1s - loss: 0.0032 - MSE: 0.0019
+loss :  0.0019253667694933319
+MSE :  0.0019253669
+
+plotting prediction results
+plotting predictions
+prediction is finished
