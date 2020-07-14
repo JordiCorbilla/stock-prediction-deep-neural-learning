@@ -23,8 +23,8 @@ class ReadmeGenerator:
 
     def write(self):
         my_file = open(os.path.join(self.project_folder, 'README.md'), "w+")
-        my_file.write(self.baseUrl + self.project_folder + '/' + self.short_name + '_price.png')
-        my_file.write(self.baseUrl + self.project_folder + '/' + self.short_name + '_hist.png')
-        my_file.write(self.baseUrl + self.project_folder + '/' + self.short_name + '_prediction.png')
-        my_file.write(self.baseUrl + self.project_folder + '/' + 'MSE.png')
-        my_file.write(self.baseUrl + self.project_folder + '/' + 'loss.png')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_price.png)')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_hist.png)')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_prediction.png)')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + 'MSE.png)')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + 'loss.png)')
