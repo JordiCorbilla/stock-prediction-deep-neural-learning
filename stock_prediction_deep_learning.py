@@ -60,7 +60,7 @@ def train_LSTM_network(stock):
     test_predictions_baseline.index = test_data.index
     plotter.project_plot_predictions(test_predictions_baseline, test_data)
 
-    generator = ReadmeGenerator(stock.get_project_folder(), data.get_stock_short_name())
+    generator = ReadmeGenerator(TOKEN, data.get_stock_short_name())
     generator.write()
 
     print("prediction is finished")

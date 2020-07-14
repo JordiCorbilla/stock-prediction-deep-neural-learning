@@ -19,12 +19,12 @@ class ReadmeGenerator:
     def __init__(self, project_folder, short_name):
         self.baseUrl = "https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/"
         self.project_folder = project_folder
-        self.short_name = short_name
+        self.short_name = short_name.strip().replace('.', '').replace(' ', '%20')
 
     def write(self):
         my_file = open(os.path.join(self.project_folder, 'README.md'), "w+")
-        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_price.png)')
-        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_hist.png)')
-        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_prediction.png)')
-        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + 'MSE.png)')
-        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + 'loss.png)')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_price.png)\n')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_hist.png)\n')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + self.short_name + '_prediction.png)\n')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + 'MSE.png)\n')
+        my_file.write('![](' + self.baseUrl + self.project_folder + '/' + 'loss.png)\n')
