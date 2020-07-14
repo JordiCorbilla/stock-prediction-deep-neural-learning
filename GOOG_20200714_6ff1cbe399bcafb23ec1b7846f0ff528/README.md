@@ -1,5 +1,0 @@
-![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/GOOG_20200714_6ff1cbe399bcafb23ec1b7846f0ff528/Alphabet%20Inc_price.png)
-![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/GOOG_20200714_6ff1cbe399bcafb23ec1b7846f0ff528/Alphabet%20Inc_hist.png)
-![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/GOOG_20200714_6ff1cbe399bcafb23ec1b7846f0ff528/Alphabet%20Inc_prediction.png)
-![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/GOOG_20200714_6ff1cbe399bcafb23ec1b7846f0ff528/MSE.png)
-![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/GOOG_20200714_6ff1cbe399bcafb23ec1b7846f0ff528/loss.png)
