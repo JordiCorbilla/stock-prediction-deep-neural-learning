@@ -606,6 +606,7 @@ absl-py              0.8.0
 astor                0.8.0
 astroid              2.3.3
 backcall             0.1.0
+beautifulsoup4       4.9.3
 certifi              2020.6.20
 chardet              3.0.4
 colorama             0.4.1
@@ -617,6 +618,7 @@ google-pasta         0.1.7
 graphviz             0.13.2
 grpcio               1.23.0
 h5py                 2.10.0
+html5lib             1.1
 idna                 2.10
 image                1.5.27
 imageio              2.6.1
@@ -646,7 +648,7 @@ pandas-datareader    0.5.0
 parso                0.5.1
 pickleshare          0.7.5
 Pillow               6.2.0
-pip                  20.1.1
+pip                  21.2.4
 prompt-toolkit       2.0.10
 protobuf             3.9.2
 pydot                1.4.1
@@ -666,6 +668,7 @@ scipy                1.3.1
 seaborn              0.9.0
 setuptools           41.2.0
 six                  1.12.0
+soupsieve            2.2
 sqlparse             0.3.0
 tensorboard          2.0.0
 tensorflow           2.0.0
@@ -676,11 +679,12 @@ traitlets            4.3.3
 typed-ast            1.4.0
 urllib3              1.25.9
 wcwidth              0.1.7
+webencodings         0.5.1
 Werkzeug             0.16.0
 wheel                0.33.6
 wrapt                1.11.2
 xlrd                 1.2.0
-yfinance             0.1.54
+yfinance             0.1.63
 ```
 Then edit the file "stock_prediction_deep_learning.py" to include the Stock you want to use and the relevant dates and execute:
 
