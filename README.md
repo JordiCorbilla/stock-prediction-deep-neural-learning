@@ -905,3 +905,7 @@ Then edit the file "stock_prediction_deep_learning.py" to include the Stock you 
 ```cmd
 python stock_prediction_deep_learning.py
 ```
+
+# 5) CUDA installation
+
+![image](https://user-images.githubusercontent.com/7347994/136704184-da189b61-a3b0-4ac8-bd96-3cf669e25823.png)
