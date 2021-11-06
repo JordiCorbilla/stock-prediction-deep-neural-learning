@@ -909,3 +909,6 @@ python stock_prediction_deep_learning.py
 # 5) CUDA installation
 
 ![image](https://user-images.githubusercontent.com/7347994/136704184-da189b61-a3b0-4ac8-bd96-3cf669e25823.png)
+
+As I mentioned before, I'm using a GPU to ramp up my testing. As my laptop has a nvidia geforce card, I installed CUDA to make use of its GPU capabilities. Depending on your tensorflow version you'll need a version or another.
+Here is the link: https://developer.nvidia.com/cuda-11.0-download-archive?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exelocal
