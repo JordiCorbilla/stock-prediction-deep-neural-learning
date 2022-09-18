@@ -1,4 +1,4 @@
-# Copyright 2020 Jordi Corbilla. All Rights Reserved.
+# Copyright 2020-2022 Jordi Corbilla. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -61,6 +61,6 @@ class LongShortTermMemory:
         # Dense layer that specifies an output of one unit
         model.add(Dense(units=1))
         model.summary()
-        tf.keras.utils.plot_model(model, to_file=os.path.join(self.project_folder, 'model_lstm.png'), show_shapes=True,
-                                  show_layer_names=True)
+        #tf.keras.utils.plot_model(model, to_file=os.path.join(self.project_folder, 'model_lstm.png'), show_shapes=True,
+        #                          show_layer_names=True)
         return model
