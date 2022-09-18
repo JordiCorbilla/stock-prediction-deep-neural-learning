@@ -985,3 +985,13 @@ If you run the project after this, the GPU should be correctly picked up:
 
 ![image](https://user-images.githubusercontent.com/7347994/190925144-a1b5d934-683f-4d43-a083-fd7c927ed6c5.png)
 
+# 6) Graphviz installation
+
+if you see this message, then you need to install GraphViz library:
+
+```bash
+You must install pydot (`pip install pydot`) and install graphviz (see instructions at https://graphviz.gitlab.io/download/) for plot_model/model_to_dot to work.
+```
+
+- https://graphviz.gitlab.io/download/
+
