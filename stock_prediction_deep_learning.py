@@ -75,7 +75,7 @@ if __name__ == '__main__':
     STOCK_START_DATE = pd.to_datetime('2015-08-07')
     STOCK_VALIDATION_DATE = pd.to_datetime('2021-09-01')
     EPOCHS = 100
-    BATCH_SIZE = 32
+    BATCH_SIZE = 10
     TIME_STEPS = 3
     TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
