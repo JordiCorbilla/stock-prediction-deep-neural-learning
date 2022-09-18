@@ -912,3 +912,76 @@ python stock_prediction_deep_learning.py
 
 As I mentioned before, I'm using a GPU to ramp up my testing. As my laptop has a nvidia geforce card, I installed CUDA to make use of its GPU capabilities. Depending on your tensorflow version you'll need a version or another.
 Here is the link: https://developer.nvidia.com/cuda-11.0-download-archive?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exelocal
+
+You can do from your conda prompt:
+
+```bash
+(base) >conda install -c conda-forge cudatoolkit=11.2 cudnn=8.1.0
+Collecting package metadata (current_repodata.json): done
+Solving environment: failed with initial frozen solve. Retrying with flexible solve.
+Collecting package metadata (repodata.json): done
+Solving environment: done
+
+
+==> WARNING: A newer version of conda exists. <==
+  current version: 4.10.3
+  latest version: 4.14.0
+
+Please update conda by running
+
+    $ conda update -n base -c defaults conda
+
+
+
+## Package Plan ##
+
+  environment location: C:\Users\jordi\anaconda3
+
+  added / updated specs:
+    - cudatoolkit=11.2
+    - cudnn=8.1.0
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    conda-4.12.0               |   py39hcbf5309_0         1.0 MB  conda-forge
+    cudatoolkit-11.2.2         |      h933977f_10       879.9 MB  conda-forge
+    cudnn-8.1.0.77             |       h3e0f4f4_0       610.8 MB  conda-forge
+    python_abi-3.9             |           2_cp39           4 KB  conda-forge
+    ------------------------------------------------------------
+                                           Total:        1.46 GB
+
+The following NEW packages will be INSTALLED:
+
+  cudatoolkit        conda-forge/win-64::cudatoolkit-11.2.2-h933977f_10
+  cudnn              conda-forge/win-64::cudnn-8.1.0.77-h3e0f4f4_0
+  python_abi         conda-forge/win-64::python_abi-3.9-2_cp39
+
+The following packages will be UPDATED:
+
+  conda              pkgs/main::conda-4.10.3-py39haa95532_0 --> conda-forge::conda-4.12.0-py39hcbf5309_0
+
+
+Proceed ([y]/n)? y
+
+
+Downloading and Extracting Packages
+conda-4.12.0         | 1.0 MB    | ############################################################################ | 100%
+python_abi-3.9       | 4 KB      | ############################################################################ | 100%
+cudnn-8.1.0.77       | 610.8 MB  | ############################################################################ | 100%
+cudatoolkit-11.2.2   | 879.9 MB  | ############################################################################ | 100%
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: / "By downloading and using the CUDA Toolkit conda packages, you accept the terms and conditions of the CUDA End User License Agreement (EULA): https://docs.nvidia.com/cuda/eula/index.html"
+
+| "By downloading and using the cuDNN conda packages, you accept the terms and conditions of the NVIDIA cuDNN EULA - https://docs.nvidia.com/deeplearning/cudnn/sla/index.html"
+
+done
+```
+
+If you run the project after this, the GPU should be correctly picked up:
+
+![image](https://user-images.githubusercontent.com/7347994/190925144-a1b5d934-683f-4d43-a083-fd7c927ed6c5.png)
+
