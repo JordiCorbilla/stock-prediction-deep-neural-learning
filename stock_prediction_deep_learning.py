@@ -71,11 +71,11 @@ def train_LSTM_network(stock):
 # 2) Start date => Date when we want to start using the data for training, usually the first data point of the stock
 # 3) Validation date => Date when we want to start partitioning our data from training to validation
 if __name__ == '__main__':
-    STOCK_TICKER = 'ETH-USD'
-    STOCK_START_DATE = pd.to_datetime('2015-08-07')
+    STOCK_TICKER = '^FTSE'
+    STOCK_START_DATE = pd.to_datetime('2017-11-01')
     STOCK_VALIDATION_DATE = pd.to_datetime('2021-09-01')
     EPOCHS = 100
-    BATCH_SIZE = 10
+    BATCH_SIZE = 32
     TIME_STEPS = 3
     TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)

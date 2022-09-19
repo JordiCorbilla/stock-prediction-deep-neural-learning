@@ -16,7 +16,7 @@
 import json
 import yfinance as yf
 
-sec = yf.Ticker("GOOG")
+sec = yf.Ticker("^FTSE")
 
 print('Info')
 print(json.dumps(sec.info, indent=4, sort_keys=True))
