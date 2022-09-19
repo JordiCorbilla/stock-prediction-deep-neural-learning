@@ -995,3 +995,7 @@ You must install pydot (`pip install pydot`) and install graphviz (see instructi
 
 - https://graphviz.gitlab.io/download/
 
+## Sponsors
+No sponsors yet! Will you be the first?
+
+[![PayPayl donate button](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/paypalme/jordicorbilla)
