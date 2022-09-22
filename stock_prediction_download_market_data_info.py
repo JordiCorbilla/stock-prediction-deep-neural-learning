@@ -18,6 +18,12 @@ import yfinance as yf
 
 sec = yf.Ticker("^FTSE")
 
+data = sec.history()
+#data.head()
+
+my_max = data['Close'].idxmax()
+my_min = data['Close'].idxmin()
+
 print('Info')
 print(json.dumps(sec.info, indent=4, sort_keys=True))
 print()

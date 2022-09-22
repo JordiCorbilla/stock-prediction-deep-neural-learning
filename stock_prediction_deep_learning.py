@@ -15,6 +15,7 @@
 import os
 import secrets
 import pandas as pd
+import argparse
 from datetime import datetime
 
 from stock_prediction_class import StockPrediction
@@ -71,12 +72,22 @@ def train_LSTM_network(stock):
 # 2) Start date => Date when we want to start using the data for training, usually the first data point of the stock
 # 3) Validation date => Date when we want to start partitioning our data from training to validation
 if __name__ == '__main__':
-    STOCK_TICKER = '^FTSE'
-    STOCK_START_DATE = pd.to_datetime('2017-11-01')
-    STOCK_VALIDATION_DATE = pd.to_datetime('2021-09-01')
-    EPOCHS = 100
-    BATCH_SIZE = 32
-    TIME_STEPS = 3
+    parser = argparse.ArgumentParser(description=("parsing arguments"))
+    parser.add_argument("-ticker", default="^FTSE")
+    parser.add_argument("-start_date", default="2017-11-01")
+    parser.add_argument("-validation_date", default="2021-09-01")
+    parser.add_argument("-epochs", default="100")
+    parser.add_argument("-batch_size", default="32")
+    parser.add_argument("-time_steps", default="3")
+    
+    args = parser.parse_args()
+    
+    STOCK_TICKER = args.ticker
+    STOCK_START_DATE = pd.to_datetime(args.start_date)
+    STOCK_VALIDATION_DATE = pd.to_datetime(args.validation_date)
+    EPOCHS = int(args.epochs)
+    BATCH_SIZE = int(args.batch_size)
+    TIME_STEPS = int(args.time_steps)
     TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
     print('Ticker: ' + STOCK_TICKER)
