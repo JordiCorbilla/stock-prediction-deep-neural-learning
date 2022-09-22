@@ -903,7 +903,8 @@ zope.interface                     5.3.0
 Then edit the file "stock_prediction_deep_learning.py" to include the Stock you want to use and the relevant dates and execute:
 
 ```cmd
-python stock_prediction_deep_learning.py
+# all arguments are optional
+python stock_prediction_deep_learning.py -ticker=GOOG -start_date=2017-11-01 -validation_date=2022-09-01 -epochs=100 -batch_size=32 -time_steps=3
 ```
 
 # 5) CUDA installation
