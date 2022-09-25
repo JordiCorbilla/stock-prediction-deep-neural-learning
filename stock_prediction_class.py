@@ -15,11 +15,12 @@
 
 
 class StockPrediction:
-    def __init__(self, ticker, start_date, validation_date, project_folder):
+    def __init__(self, ticker, start_date, validation_date, project_folder, github_url):
         self._ticker = ticker
         self._start_date = start_date
         self._validation_date = validation_date
         self._project_folder = project_folder
+        self._github_url = github_url
 
     def get_ticker(self):
         return self._ticker
@@ -44,3 +45,9 @@ class StockPrediction:
 
     def set_project_folder(self, value):
         self._project_folder = value
+        
+    def set_github_url(self, value):
+        self._github_url = value
+        
+    def get_github_url(self):
+        return self._github_url

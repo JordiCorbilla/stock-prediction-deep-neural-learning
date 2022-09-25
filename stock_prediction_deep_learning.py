@@ -61,7 +61,7 @@ def train_LSTM_network(stock):
     test_predictions_baseline.index = test_data.index
     plotter.project_plot_predictions(test_predictions_baseline, test_data)
 
-    generator = ReadmeGenerator(TOKEN, data.get_stock_short_name())
+    generator = ReadmeGenerator(stock.get_github_url(), TOKEN, data.get_stock_short_name())
     generator.write()
 
     print("prediction is finished")
@@ -79,6 +79,7 @@ if __name__ == '__main__':
     parser.add_argument("-epochs", default="100")
     parser.add_argument("-batch_size", default="32")
     parser.add_argument("-time_steps", default="3")
+    parser.add_argument("-github_url", default="https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/")
     
     args = parser.parse_args()
     
@@ -90,6 +91,7 @@ if __name__ == '__main__':
     TIME_STEPS = int(args.time_steps)
     TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
+    GITHUB_URL = args.github_url
     print('Ticker: ' + STOCK_TICKER)
     print('Start Date: ' + STOCK_START_DATE.strftime("%Y-%m-%d"))
     print('Validation Date: ' + STOCK_START_DATE.strftime("%Y-%m-%d"))
@@ -99,6 +101,6 @@ if __name__ == '__main__':
     if not os.path.exists(PROJECT_FOLDER):
         os.makedirs(PROJECT_FOLDER)
 
-    stock_prediction = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, PROJECT_FOLDER)
+    stock_prediction = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, PROJECT_FOLDER, GITHUB_URL)
     # Execute Deep Learning model
     train_LSTM_network(stock_prediction)
