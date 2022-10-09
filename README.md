@@ -594,7 +594,7 @@ With the validation loss and validation MSE metrics:
 
 # 4) Usage
 
-This has been built using Python 3.8 version.
+This has been built using Python 3.10 version.
 
 Download the source code and install the following packages:
 
@@ -906,6 +906,10 @@ Then edit the file "stock_prediction_deep_learning.py" to include the Stock you 
 # all arguments are optional
 python stock_prediction_deep_learning.py -ticker=GOOG -start_date=2017-11-01 -validation_date=2022-09-01 -epochs=100 -batch_size=32 -time_steps=3
 ```
+
+Also you can use the `Jupyter notebook` available here:
+
+https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/blob/master/stock_prediction_lstm.ipynb
 
 # 5) CUDA installation
 
