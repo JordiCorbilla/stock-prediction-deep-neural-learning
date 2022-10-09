@@ -30,7 +30,7 @@ os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 def train_LSTM_network(stock):
     data = StockData(stock)
     plotter = Plotter(True, stock.get_project_folder(), data.get_stock_short_name(), data.get_stock_currency(), stock.get_ticker())
-    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(TIME_STEPS, stock.get_project_folder())
+    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(stock.get_time_steps(), stock.get_project_folder())
     plotter.plot_histogram_data_split(training_data, test_data, stock.get_validation_date())
 
     lstm = LongShortTermMemory(stock.get_project_folder())
