@@ -36,7 +36,7 @@ def train_LSTM_network(stock):
     lstm = LongShortTermMemory(stock.get_project_folder())
     model = lstm.create_model(x_train)
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=lstm.get_defined_metrics())
-    history = model.fit(x_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(x_test, y_test),
+    history = model.fit(x_train, y_train, epochs=stock.get_epochs(), batch_size=stock.get_batch_size(), validation_data=(x_test, y_test),
                         callbacks=[lstm.get_callback()])
     print("saving weights")
     model.save(os.path.join(stock.get_project_folder(), 'model_weights.h5'))
@@ -56,12 +56,12 @@ def train_LSTM_network(stock):
     test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
     test_predictions_baseline.to_csv(os.path.join(stock.get_project_folder(), 'predictions.csv'))
 
-    test_predictions_baseline.rename(columns={0: STOCK_TICKER + '_predicted'}, inplace=True)
+    test_predictions_baseline.rename(columns={0: stock.get_ticker() + '_predicted'}, inplace=True)
     test_predictions_baseline = test_predictions_baseline.round(decimals=0)
     test_predictions_baseline.index = test_data.index
     plotter.project_plot_predictions(test_predictions_baseline, test_data)
 
-    generator = ReadmeGenerator(stock.get_github_url(), TOKEN, data.get_stock_short_name())
+    generator = ReadmeGenerator(stock.get_github_url(), stock.get_token(), data.get_stock_short_name())
     generator.write()
 
     print("prediction is finished")
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument("-start_date", default="2017-11-01")
     parser.add_argument("-validation_date", default="2021-09-01")
     parser.add_argument("-epochs", default="100")
-    parser.add_argument("-batch_size", default="32")
+    parser.add_argument("-batch_size", default="10")
     parser.add_argument("-time_steps", default="3")
     parser.add_argument("-github_url", default="https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/")
     
@@ -101,6 +101,14 @@ if __name__ == '__main__':
     if not os.path.exists(PROJECT_FOLDER):
         os.makedirs(PROJECT_FOLDER)
 
-    stock_prediction = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, PROJECT_FOLDER, GITHUB_URL)
+    stock_prediction = StockPrediction(STOCK_TICKER, 
+                                       STOCK_START_DATE, 
+                                       STOCK_VALIDATION_DATE, 
+                                       PROJECT_FOLDER, 
+                                       GITHUB_URL,
+                                       EPOCHS,
+                                       TIME_STEPS,
+                                       TOKEN,
+                                       BATCH_SIZE)
     # Execute Deep Learning model
     train_LSTM_network(stock_prediction)

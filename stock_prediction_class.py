@@ -15,12 +15,16 @@
 
 
 class StockPrediction:
-    def __init__(self, ticker, start_date, validation_date, project_folder, github_url):
+    def __init__(self, ticker, start_date, validation_date, project_folder, github_url, epochs, time_steps, token, batch_size):
         self._ticker = ticker
         self._start_date = start_date
         self._validation_date = validation_date
         self._project_folder = project_folder
         self._github_url = github_url
+        self._epochs = epochs
+        self._time_steps = time_steps
+        self._token = token
+        self._batch_size = batch_size
 
     def get_ticker(self):
         return self._ticker
@@ -51,3 +55,15 @@ class StockPrediction:
         
     def get_github_url(self):
         return self._github_url
+    
+    def get_epochs(self):
+        return self._epochs
+
+    def get_time_steps(self):
+        return self._time_steps
+        
+    def get_token(self):
+        return self._token     
+    
+    def get_batch_size(self):
+        return self._batch_size     
