@@ -1,6 +1,8 @@
 # Stock prediction using deep neural learning
 
-Predicting stock prices using a TensorFlow LSTM (long short-term memory) neural network for times series forecasting.
+Predicting stock prices can be a challenging task as it often does not follow any specific pattern. However, deep neural learning can be used to identify patterns through machine learning. One of the most effective techniques for series forecasting is using LSTM (long short-term memory) networks, which are a type of recurrent neural network (RNN) capable of remembering information over a long period of time. This makes them extremely useful for predicting stock prices.
+
+This TensorFlow implementation of an LSTM neural network can be used for time series forecasting. **Successful prediction of a stock's future price can yield significant profits for investors**.
 
 ## 1) Introduction
 
@@ -8,9 +10,9 @@ Predicting stock prices is a complex task, as it is influenced by various factor
 
 ## 2) Stock Market Data
 
-The initial data we will use for this model is taken directly from the [Yahoo Finance](https://finance.yahoo.com/quote/GOOG?p=GOOG) page which contains the latest market data on a specific stock price. To perform this operation easily using Python, we will use the [yFinance](https://aroussi.com/post/python-yahoo-finance) library which has been built specifically for this and that it will allow us to download all the information we need on a given [ticker symbol](https://www.investopedia.com/terms/t/tickersymbol.asp).
+To gather the necessary market data for our stock prediction model, we will utilize the [yFinance](https://aroussi.com/post/python-yahoo-finance) library in Python. This library is designed specifically for downloading relevant information on a given [ticker symbol](https://www.investopedia.com/terms/t/tickersymbol.asp) from the [Yahoo Finance](https://finance.yahoo.com/quote/GOOG?p=GOOG) Finance webpage. By using yFinance, we can easily access the latest market data and incorporate it into our model.
 
-Below is a sample screenshot of the ticker symbol (GOOG) that we will use in this stock prediction article:
+For our purposes, we will be using the ticker symbol "GOOG", which is a well-known technology company. Here's an example screenshot of the ticker symbol on the Yahoo Finance page:
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/samplestock.png)
 
 ### 2.1) Market Info Download
