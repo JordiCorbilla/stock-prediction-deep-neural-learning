@@ -435,20 +435,26 @@ In order to normalise the data, we need to scale it between 0 and 1 so we talk o
 
 ### 3.3) Adding Timesteps
 
-LSTM network needs the data imported as a 3D array. To translate this 2D array into a 3D one, we use a short [timestep](http://colah.github.io/posts/2015-08-Understanding-LSTMs/) to loop through the data and create smaller partitions and feed them into the model. The final array is then reshaped into training samples, x number of timesteps, and 1 feature per step. The code below represents this concept:
+To implement the LSTM network for time series forecasting, we have used a [time step](http://colah.github.io/posts/2015-08-Understanding-LSTMs/) of 3 days. This technique allows the network to look back at the previous 3 days of data to predict the subsequent day. The figure below illustrates how this concept is used in our implementation, where the first 3 samples for Close price generate the 4th sample and so on. This generates a matrix of shape (3,1), with 3 representing the time steps and 1 representing the number of features (Close price).
 
-```python
-    time_steps = 3
-    for i in range(time_steps, train_scaled.shape[0]):
-        x_train.append(train_scaled[i - time_steps:i])
-        y_train.append(train_scaled[i, 0])
-```
+![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/blob/master/timesteps.png)
 
 ![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/blob/master/3dmatrix.png)
 
-We have implemented a time step of 3 days. Using this technique, we allow our network to look back 3 days on our data to predict the subsequent day). The figure below represents how our implementation uses this concept and how the first 3 samples for Close price would generate the 4th sample and so on.This will generate a matrix of shape (3,1), 3 being the time steps and 1 the number of features (Close price).
+```python
+# Define the number of time steps
+time_steps = 3
 
-![](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/blob/master/timesteps.png)
+# Loop through the data to create partitions
+for i in range(time_steps, train_scaled.shape[0]):
+    # Create a partition of the previous 3 days' data
+    x_train.append(train_scaled[i - time_steps:i])
+
+    # Append the next day's Close price to the label array
+    y_train.append(train_scaled[i, 0])
+```
+
+Using a time step of 3 days allows the LSTM network to identify patterns in the data and make predictions based on those patterns. By using a sliding window approach, we can train the network to predict future stock prices based on historical data.
 
 ### 3.4) Creation of the deep learning model LSTM
 
