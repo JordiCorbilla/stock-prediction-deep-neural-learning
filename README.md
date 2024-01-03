@@ -17,7 +17,7 @@ For our purposes, we will be using the ticker symbol "GOOG", which is a well-kno
 
 ### 2.1) Market Info Download
 
-To download the data info, we will need the yFinance library installed and then we will only need to perform the following operation to download all the relevant information of a given Stock using its ticker symbol.
+To download the data info, we will need the `yFinance` library installed and then we will only need to perform the following operation to download all the relevant information of a given Stock using its ticker symbol. Please make sure you use the latest version of the library (`pip install yfinance==0.2.33`) as I have seen errors with previous versions.
 
 Below is the output from the [download_market_data_info.py] file that is able to download financial data from Yahoo Finance. 
 
