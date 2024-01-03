@@ -20,14 +20,14 @@ import matplotlib.pyplot as plt
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
-from datetime import timedelta
-os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+from datetime import timedelta, datetime
 
+os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 def main(argv):
     print(tf.version.VERSION)
     inference_folder = os.path.join(os.getcwd(), RUN_FOLDER)
-    stock = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, inference_folder)
+    stock = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, inference_folder, GITHUB_URL, EPOCHS, TIME_STEPS, TOKEN, BATCH_SIZE)
 
     data = StockData(stock)
 
@@ -35,7 +35,6 @@ def main(argv):
     min_max = data.get_min_max()
 
     # load future data
-
     print('Latest Stock Price')
     latest_close_price = test_data.Close.iloc[-1]
     latest_date = test_data[-1:]['Close'].idxmin()
@@ -45,7 +44,7 @@ def main(argv):
 
     tomorrow_date = latest_date + timedelta(1)
     # Specify the next 300 days
-    next_year = latest_date + timedelta(TIME_STEPS*100)
+    next_year = latest_date + timedelta(TIME_STEPS * 100)
 
     print('Future Date')
     print(tomorrow_date)
@@ -55,53 +54,52 @@ def main(argv):
 
     x_test, y_test, test_data = data.generate_future_data(TIME_STEPS, min_max, tomorrow_date, next_year, latest_close_price)
 
-    # load the weights from our best model
-    model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
-    model.summary()
+    # Check if the future data is not empty
+    if x_test.shape[0] > 0:
+        # load the weights from our best model
+        model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
+        model.summary()
 
-    #print(x_test)
-    #print(test_data)
-    # display the content of the model
-    baseline_results = model.evaluate(x_test, y_test, verbose=2)
-    for name, value in zip(model.metrics_names, baseline_results):
-        print(name, ': ', value)
-    print()
+        # display the content of the model
+        baseline_results = model.evaluate(x_test, y_test, verbose=2)
+        for name, value in zip(model.metrics_names, baseline_results):
+            print(name, ': ', value)
+        print()
 
-    # perform a prediction
-    test_predictions_baseline = model.predict(x_test)
-    test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
-    test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
+        # perform a prediction
+        test_predictions_baseline = model.predict(x_test)
+        test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
+        test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
 
-    test_predictions_baseline.rename(columns={0: STOCK_TICKER + '_predicted'}, inplace=True)
-    test_predictions_baseline = test_predictions_baseline.round(decimals=0)
-    test_data.to_csv(os.path.join(inference_folder, 'generated.csv'))
-    test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
+        test_predictions_baseline.rename(columns={0: STOCK_TICKER + '_predicted'}, inplace=True)
+        test_predictions_baseline = test_predictions_baseline.round(decimals=0)
+        test_data.to_csv(os.path.join(inference_folder, 'generated.csv'))
+        test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
 
-    print("plotting predictions")
-    plt.figure(figsize=(14, 5))
-    plt.plot(test_predictions_baseline[STOCK_TICKER + '_predicted'], color='red', label='Predicted [' + 'GOOG' + '] price')
-    plt.xlabel('Time')
-    plt.ylabel('Price [' + 'USD' + ']')
-    plt.legend()
-    plt.title('Prediction')
-    plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_prediction.png'))
-    plt.pause(0.001)
-
-    plt.figure(figsize=(14, 5))
-    plt.plot(test_data.Close, color='green', label='Simulated [' + 'GOOG' + '] price')
-    plt.xlabel('Time')
-    plt.ylabel('Price [' + 'USD' + ']')
-    plt.legend()
-    plt.title('Random')
-    plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_random.png'))
-    plt.pause(0.001)
-    plt.show()
-
+        # Plotting predictions
+        plt.figure(figsize=(14, 5))
+        plt.plot(test_data.Close, color='green', label='Simulated [' + STOCK_TICKER + '] price')
+        plt.plot(test_predictions_baseline[STOCK_TICKER + '_predicted'], color='red', label='Predicted [' + STOCK_TICKER + '] price')
+        plt.xlabel('Time')
+        plt.ylabel('Price [USD]')
+        plt.legend()
+        plt.title('Simulated vs Predicted Prices')
+        plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_comparison.png'))
+        plt.show()
+    else:
+        print("Error: Future data is empty.")
 
 if __name__ == '__main__':
     TIME_STEPS = 3
-    RUN_FOLDER = 'GOOG_20200711_76c9683d2457682b0e2e918d8ef6670e'
-    STOCK_TICKER = 'GOOG'
-    STOCK_START_DATE = pd.to_datetime('2004-08-01')
-    STOCK_VALIDATION_DATE = pd.to_datetime('2017-01-01')
+    RUN_FOLDER = '^FTSE_20240103_edae6b8f5fc742031805151aeba98571'
+    TOKEN = 'edae6b8f5fc742031805151aeba98571'
+    STOCK_TICKER = '^FTSE'
+    BATCH_SIZE = 10
+    STOCK_START_DATE = pd.to_datetime('2017-11-01')
+    start_date = pd.to_datetime('2017-01-01')
+    end_date = datetime.today()
+    duration = end_date - start_date
+    STOCK_VALIDATION_DATE = start_date + 0.8 * duration
+    GITHUB_URL = "https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/"
+    EPOCHS = 100
     app.run(main)
