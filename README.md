@@ -901,7 +901,7 @@ xlwings                            0.23.0
 xlwt                               1.3.0
 xmltodict                          0.12.0
 yapf                               0.31.0
-yfinance                           0.1.63
+yfinance                           0.2.33
 zict                               2.0.0
 zipp                               3.4.1
 zope.event                         4.5.0
