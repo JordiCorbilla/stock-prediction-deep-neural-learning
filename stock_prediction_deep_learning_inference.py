@@ -60,26 +60,25 @@ def main(argv):
         model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
         model.summary()
 
-        # display the content of the model
-        baseline_results = model.evaluate(x_test, y_test, verbose=2)
-        for name, value in zip(model.metrics_names, baseline_results):
-            print(name, ': ', value)
-        print()
-
         # perform a prediction
         test_predictions_baseline = model.predict(x_test)
         test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
-        test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
+        test_predictions_baseline = pd.DataFrame(test_predictions_baseline, columns=['Predicted_Price'])
 
-        test_predictions_baseline.rename(columns={0: STOCK_TICKER + '_predicted'}, inplace=True)
-        test_predictions_baseline = test_predictions_baseline.round(decimals=0)
-        test_data.to_csv(os.path.join(inference_folder, 'generated.csv'))
-        test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
-
+        # Combine the predicted values with dates from the test data
+        predicted_dates = pd.date_range(start=test_data.index[0], periods=len(test_predictions_baseline))
+        test_predictions_baseline['Date'] = predicted_dates
+        
+        # Reset the index for proper concatenation
+        test_data.reset_index(inplace=True)
+        
+        # Concatenate the test_data and predicted data
+        combined_data = pd.concat([test_data, test_predictions_baseline], ignore_index=True)
+        
         # Plotting predictions
         plt.figure(figsize=(14, 5))
-        plt.plot(test_data.Close, color='green', label='Simulated [' + STOCK_TICKER + '] price')
-        plt.plot(test_predictions_baseline[STOCK_TICKER + '_predicted'], color='red', label='Predicted [' + STOCK_TICKER + '] price')
+        plt.plot(combined_data['Date'], combined_data.Close, color='green', label='Simulated [' + STOCK_TICKER + '] price')
+        plt.plot(combined_data['Date'], combined_data['Predicted_Price'], color='red', label='Predicted [' + STOCK_TICKER + '] price')
         plt.xlabel('Time')
         plt.ylabel('Price [USD]')
         plt.legend()
