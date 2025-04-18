@@ -85,7 +85,6 @@ Info
     "lastSplitDate": 1430092800,
     "lastSplitFactor": "10000000:10000000",
     "legalType": null,
-    "logo_url": "https://logo.clearbit.com/abc.xyz",
     "longBusinessSummary": "Alphabet Inc. provides online advertising services in the United States, Europe, the Middle East, Africa, the Asia-Pacific, Canada, and Latin America. It offers performance and brand advertising services. The company operates through Google and Other Bets segments. The Google segment offers products, such as Ads, Android, Chrome, Google Cloud, Google Maps, Google Play, Hardware, Search, and YouTube, as well as technical infrastructure. It also offers digital content, cloud services, hardware devices, and other miscellaneous products and services. The Other Bets segment includes businesses, including Access, Calico, CapitalG, GV, Verily, Waymo, and X, as well as Internet and television services. Alphabet Inc. was founded in 1998 and is headquartered in Mountain View, California.",
     "longName": "Alphabet Inc.",
     "market": "us_market",
