@@ -1,4 +1,4 @@
-# Copyright 2020-2024 Jordi Corbilla. All Rights Reserved.
+# Copyright 2020-2026 Jordi Corbilla. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
