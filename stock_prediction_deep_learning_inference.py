@@ -17,12 +17,45 @@ from absl import app
 import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+import pickle
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
 from datetime import timedelta, datetime
+from pandas.tseries.offsets import BDay
 
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+
+
+def _load_scaler(inference_folder):
+    scaler_path = os.path.join(inference_folder, 'min_max_scaler.pkl')
+    if not os.path.exists(scaler_path):
+        return None
+    with open(scaler_path, 'rb') as scaler_file:
+        return pickle.load(scaler_file)
+
+
+def _future_dates(last_date, forecast_days, use_business_days):
+    if use_business_days:
+        return pd.bdate_range(last_date + BDay(1), periods=forecast_days)
+    return pd.date_range(last_date + timedelta(1), periods=forecast_days)
+
+
+def _returns_to_prices(returns, start_price):
+    prices = []
+    current_price = start_price
+    for value in returns:
+        current_price = current_price * np.exp(value)
+        prices.append(current_price)
+    return prices
+
+
+def _ensure_frame(series_or_frame):
+    if isinstance(series_or_frame, pd.Series):
+        return series_or_frame.to_frame()
+    return series_or_frame
+
 
 def main(argv):
     print(tf.version.VERSION)
@@ -31,62 +64,93 @@ def main(argv):
 
     data = StockData(stock)
 
-    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(TIME_STEPS, inference_folder)
-    min_max = data.get_min_max()
+    raw_data = data.download_raw_data()
+    if raw_data.empty:
+        print("Error: No data available for inference.")
+        return
 
-    # load future data
     print('Latest Stock Price')
-    latest_close_price = test_data.Close.iloc[-1]
-    latest_date = test_data[-1:]['Close'].idxmin()
+    latest_close_price = raw_data['Close'].iloc[-1]
+    latest_date = raw_data.index[-1]
     print(latest_close_price)
     print('Latest Date')
     print(latest_date)
 
-    tomorrow_date = latest_date + timedelta(1)
-    # Specify the next 300 days
-    next_year = latest_date + timedelta(TIME_STEPS * 100)
-
-    print('Future Date')
-    print(tomorrow_date)
-
-    print('Future Timespan Date')
-    print(next_year)
-
-    x_test, y_test, test_data = data.generate_future_data(TIME_STEPS, min_max, tomorrow_date, next_year, latest_close_price)
-
-    # Check if the future data is not empty
-    if x_test.shape[0] > 0:
-        # load the weights from our best model
-        model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
-        model.summary()
-
-        # perform a prediction
-        test_predictions_baseline = model.predict(x_test)
-        test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
-        test_predictions_baseline = pd.DataFrame(test_predictions_baseline, columns=['Predicted_Price'])
-
-        # Combine the predicted values with dates from the test data
-        predicted_dates = pd.date_range(start=test_data.index[0], periods=len(test_predictions_baseline))
-        test_predictions_baseline['Date'] = predicted_dates
-        
-        # Reset the index for proper concatenation
-        test_data.reset_index(inplace=True)
-        
-        # Concatenate the test_data and predicted data
-        combined_data = pd.concat([test_data, test_predictions_baseline], ignore_index=True)
-        
-        # Plotting predictions
-        plt.figure(figsize=(14, 5))
-        plt.plot(combined_data['Date'], combined_data.Close, color='green', label='Simulated [' + STOCK_TICKER + '] price')
-        plt.plot(combined_data['Date'], combined_data['Predicted_Price'], color='red', label='Predicted [' + STOCK_TICKER + '] price')
-        plt.xlabel('Time')
-        plt.ylabel('Price [USD]')
-        plt.legend()
-        plt.title('Simulated vs Predicted Prices')
-        plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_comparison.png'))
-        plt.show()
+    model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
+    model.summary()
+    model_time_steps = model.input_shape[1]
+    if model_time_steps and model_time_steps != TIME_STEPS:
+        print('Warning: TIME_STEPS does not match model input. Using model value: ' + str(model_time_steps))
+        time_steps = model_time_steps
     else:
-        print("Error: Future data is empty.")
+        time_steps = TIME_STEPS
+
+    scaler = _load_scaler(inference_folder)
+    if USE_RETURNS:
+        series = np.log(raw_data['Close']).diff().dropna()
+        recent_window = series.tail(time_steps)
+    else:
+        recent_window = raw_data[['Close']].tail(time_steps)
+
+    if len(recent_window) < time_steps:
+        print("Error: Not enough data to build the inference window.")
+        return
+
+    if scaler is None:
+        print('Warning: min_max_scaler.pkl not found. Fitting scaler on full dataset for inference.')
+        scaler = data.get_min_max()
+        if USE_RETURNS:
+            scaler.fit(series.to_frame())
+        else:
+            scaler.fit(raw_data[['Close']])
+
+    if USE_RETURNS:
+        window_scaled = scaler.transform(_ensure_frame(recent_window))
+    else:
+        window_scaled = scaler.transform(recent_window)
+    window_scaled = window_scaled.reshape(1, time_steps, 1)
+
+    future_dates = _future_dates(latest_date, FORECAST_DAYS, USE_BUSINESS_DAYS)
+    predictions = []
+
+    for _ in range(len(future_dates)):
+        pred_scaled = model.predict(window_scaled, verbose=0)[0][0]
+        pred_value = scaler.inverse_transform([[pred_scaled]])[0][0]
+        predictions.append(pred_value)
+        window_scaled = np.concatenate([window_scaled[:, 1:, :], [[[pred_scaled]]]], axis=1)
+
+    if USE_RETURNS:
+        predicted_prices = _returns_to_prices(predictions, latest_close_price)
+    else:
+        predicted_prices = predictions
+        if CLIP_NEGATIVE:
+            predicted_prices = np.maximum(predicted_prices, 0)
+
+    forecast_df = pd.DataFrame(
+        {
+            'Date': future_dates,
+            'Predicted_Price': predicted_prices,
+            'Predicted_Return': predictions if USE_RETURNS else np.nan,
+        }
+    ).set_index('Date')
+    forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
+
+    if len(forecast_df) > 0:
+        first_pred = float(forecast_df['Predicted_Price'].iloc[0])
+        latest_price = float(latest_close_price)
+        delta_pct = ((first_pred - latest_price) / latest_price) * 100
+        print('Sanity check - next day delta: ' + f'{delta_pct:.2f}%')
+
+    history = raw_data[['Close']].tail(PLOT_HISTORY_DAYS)
+    plt.figure(figsize=(14, 5))
+    plt.plot(history.index, history.Close, color='green', label='Actual [' + STOCK_TICKER + '] price')
+    plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + STOCK_TICKER + '] price')
+    plt.xlabel('Time')
+    plt.ylabel('Price [USD]')
+    plt.legend()
+    plt.title('Actual vs Predicted Prices')
+    plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_forecast.png'))
+    plt.show()
 
 if __name__ == '__main__':
     TIME_STEPS = 3
@@ -101,4 +165,9 @@ if __name__ == '__main__':
     STOCK_VALIDATION_DATE = start_date + 0.8 * duration
     GITHUB_URL = "https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/"
     EPOCHS = 100
+    FORECAST_DAYS = 30
+    USE_BUSINESS_DAYS = True
+    PLOT_HISTORY_DAYS = 200
+    USE_RETURNS = False
+    CLIP_NEGATIVE = True
     app.run(main)
