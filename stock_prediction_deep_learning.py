@@ -16,6 +16,9 @@ import os
 import secrets
 import pandas as pd
 import argparse
+import pickle
+import numpy as np
+import json
 from datetime import datetime
 
 from stock_prediction_class import StockPrediction
@@ -27,11 +30,37 @@ from stock_prediction_readme_generator import ReadmeGenerator
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 
-def train_LSTM_network(stock):
+def _returns_to_prices(returns, start_price):
+    prices = []
+    current_price = start_price
+    for value in returns:
+        current_price = current_price * np.exp(value)
+        prices.append(current_price)
+    return prices
+
+
+def train_LSTM_network(stock, use_returns=False):
     data = StockData(stock)
     plotter = Plotter(True, stock.get_project_folder(), data.get_stock_short_name(), data.get_stock_currency(), stock.get_ticker())
-    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(stock.get_time_steps(), stock.get_project_folder())
+    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(
+        stock.get_time_steps(),
+        stock.get_project_folder(),
+        use_returns=use_returns,
+    )
     plotter.plot_histogram_data_split(training_data, test_data, stock.get_validation_date())
+    scaler_path = os.path.join(stock.get_project_folder(), 'min_max_scaler.pkl')
+    with open(scaler_path, 'wb') as scaler_file:
+        pickle.dump(data.get_min_max(), scaler_file)
+    config = {
+        'use_returns': use_returns,
+        'time_steps': stock.get_time_steps(),
+        'ticker': stock.get_ticker(),
+        'start_date': stock.get_start_date().strftime("%Y-%m-%d"),
+        'validation_date': stock.get_validation_date().strftime("%Y-%m-%d"),
+    }
+    config_path = os.path.join(stock.get_project_folder(), 'model_config.json')
+    with open(config_path, 'w', encoding='utf-8') as config_file:
+        json.dump(config, config_file, indent=2)
 
     lstm = LongShortTermMemory(stock.get_project_folder())
     model = lstm.create_model(x_train)
@@ -52,14 +81,20 @@ def train_LSTM_network(stock):
 
     print("plotting prediction results")
     test_predictions_baseline = model.predict(x_test)
-    test_predictions_baseline = data.get_min_max().inverse_transform(test_predictions_baseline)
-    test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
-    test_predictions_baseline.to_csv(os.path.join(stock.get_project_folder(), 'predictions.csv'))
-
-    test_predictions_baseline.rename(columns={0: stock.get_ticker() + '_predicted'}, inplace=True)
-    test_predictions_baseline = test_predictions_baseline.round(decimals=0)
-    test_predictions_baseline.index = test_data.index
-    plotter.project_plot_predictions(test_predictions_baseline, test_data)
+    test_predictions_baseline = data.get_min_max().inverse_transform(test_predictions_baseline).flatten()
+    if use_returns:
+        last_train_close = training_data['Close'].iloc[-1]
+        predicted_prices = _returns_to_prices(test_predictions_baseline, last_train_close)
+        predictions_df = pd.DataFrame(
+            {stock.get_ticker() + '_predicted': predicted_prices},
+            index=test_data.index,
+        )
+    else:
+        predictions_df = pd.DataFrame(test_predictions_baseline, index=test_data.index)
+        predictions_df.rename(columns={0: stock.get_ticker() + '_predicted'}, inplace=True)
+        predictions_df = predictions_df.round(decimals=0)
+    predictions_df.to_csv(os.path.join(stock.get_project_folder(), 'predictions.csv'))
+    plotter.project_plot_predictions(predictions_df, test_data)
 
     generator = ReadmeGenerator(stock.get_github_url(), stock.get_token(), data.get_stock_short_name())
     generator.write()

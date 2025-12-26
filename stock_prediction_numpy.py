@@ -44,10 +44,21 @@ class StockData:
     def get_stock_currency(self):
         return self._sec.info['currency']
 
-    def download_transform_to_numpy(self, time_steps, project_folder):
+    def _compute_log_returns(self, series):
+        return np.log(series).diff().dropna()
+
+    def download_raw_data(self, end_date=None):
+        if end_date is None:
+            end_date = datetime.today()
+        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
+        data = data.reset_index()
+        data = data.set_index('Date')
+        return data
+
+    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False):
         end_date = datetime.today()
         print('End Date: ' + end_date.strftime("%Y-%m-%d"))
-        data = yf.download([self._stock.get_ticker()], start=self._stock.get_start_date(), end=end_date)[['Close']]
+        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
         data = data.reset_index()
         data.to_csv(os.path.join(project_folder, 'downloaded_data_'+self._stock.get_ticker()+'.csv'))
         #print(data)
@@ -59,7 +70,14 @@ class StockData:
         test_data = test_data.set_index('Date')
         #print(test_data)
 
-        train_scaled = self._min_max.fit_transform(training_data)
+        if use_returns:
+            full_series = data.set_index('Date')['Close']
+            returns = self._compute_log_returns(full_series)
+            training_returns = returns[returns.index < self._stock.get_validation_date()]
+            test_returns = returns[returns.index >= self._stock.get_validation_date()]
+            train_scaled = self._min_max.fit_transform(training_returns.to_frame())
+        else:
+            train_scaled = self._min_max.fit_transform(training_data)
         self.__data_verification(train_scaled)
 
         # Training Data Transformation
@@ -72,9 +90,14 @@ class StockData:
         x_train, y_train = np.array(x_train), np.array(y_train)
         x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
 
-        total_data = pd.concat((training_data, test_data), axis=0)
-        inputs = total_data[len(total_data) - len(test_data) - time_steps:]
-        test_scaled = self._min_max.fit_transform(inputs)
+        if use_returns:
+            total_returns = pd.concat((training_returns, test_returns), axis=0)
+            inputs = total_returns[len(total_returns) - len(test_returns) - time_steps:]
+            test_scaled = self._min_max.transform(inputs.to_frame())
+        else:
+            total_data = pd.concat((training_data, test_data), axis=0)
+            inputs = total_data[len(total_data) - len(test_data) - time_steps:]
+            test_scaled = self._min_max.transform(inputs)
 
         # Testing Data Transformation
         x_test = []

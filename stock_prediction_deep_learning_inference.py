@@ -19,6 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import json
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
@@ -34,6 +35,14 @@ def _load_scaler(inference_folder):
         return None
     with open(scaler_path, 'rb') as scaler_file:
         return pickle.load(scaler_file)
+
+
+def _load_config(inference_folder):
+    config_path = os.path.join(inference_folder, 'model_config.json')
+    if not os.path.exists(config_path):
+        return None
+    with open(config_path, 'r', encoding='utf-8') as config_file:
+        return json.load(config_file)
 
 
 def _future_dates(last_date, forecast_days, use_business_days):
@@ -57,6 +66,13 @@ def _ensure_frame(series_or_frame):
     return series_or_frame
 
 
+def _get_close_series(raw_data):
+    close_data = raw_data['Close']
+    if isinstance(close_data, pd.DataFrame):
+        close_data = close_data.iloc[:, 0]
+    return close_data
+
+
 def main(argv):
     print(tf.version.VERSION)
     inference_folder = os.path.join(os.getcwd(), RUN_FOLDER)
@@ -69,8 +85,9 @@ def main(argv):
         print("Error: No data available for inference.")
         return
 
+    close_series = _get_close_series(raw_data)
     print('Latest Stock Price')
-    latest_close_price = raw_data['Close'].iloc[-1]
+    latest_close_price = float(close_series.iloc[-1])
     latest_date = raw_data.index[-1]
     print(latest_close_price)
     print('Latest Date')
@@ -86,11 +103,18 @@ def main(argv):
         time_steps = TIME_STEPS
 
     scaler = _load_scaler(inference_folder)
-    if USE_RETURNS:
-        series = np.log(raw_data['Close']).diff().dropna()
+    config = _load_config(inference_folder)
+    use_returns = USE_RETURNS
+    if config is not None:
+        use_returns = bool(config.get('use_returns', use_returns))
+        if use_returns != USE_RETURNS:
+            print('Warning: USE_RETURNS overridden by model_config.json')
+
+    if use_returns:
+        series = np.log(close_series).diff().dropna()
         recent_window = series.tail(time_steps)
     else:
-        recent_window = raw_data[['Close']].tail(time_steps)
+        recent_window = close_series.tail(time_steps).to_frame()
 
     if len(recent_window) < time_steps:
         print("Error: Not enough data to build the inference window.")
@@ -99,15 +123,15 @@ def main(argv):
     if scaler is None:
         print('Warning: min_max_scaler.pkl not found. Fitting scaler on full dataset for inference.')
         scaler = data.get_min_max()
-        if USE_RETURNS:
+        if use_returns:
             scaler.fit(series.to_frame())
         else:
-            scaler.fit(raw_data[['Close']])
+            scaler.fit(close_series.to_frame())
 
-    if USE_RETURNS:
+    if use_returns:
         window_scaled = scaler.transform(_ensure_frame(recent_window))
     else:
-        window_scaled = scaler.transform(recent_window)
+        window_scaled = scaler.transform(_ensure_frame(recent_window))
     window_scaled = window_scaled.reshape(1, time_steps, 1)
 
     future_dates = _future_dates(latest_date, FORECAST_DAYS, USE_BUSINESS_DAYS)
@@ -119,7 +143,7 @@ def main(argv):
         predictions.append(pred_value)
         window_scaled = np.concatenate([window_scaled[:, 1:, :], [[[pred_scaled]]]], axis=1)
 
-    if USE_RETURNS:
+    if use_returns:
         predicted_prices = _returns_to_prices(predictions, latest_close_price)
     else:
         predicted_prices = predictions
@@ -130,7 +154,7 @@ def main(argv):
         {
             'Date': future_dates,
             'Predicted_Price': predicted_prices,
-            'Predicted_Return': predictions if USE_RETURNS else np.nan,
+            'Predicted_Return': predictions if use_returns else np.nan,
         }
     ).set_index('Date')
     forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
@@ -141,9 +165,9 @@ def main(argv):
         delta_pct = ((first_pred - latest_price) / latest_price) * 100
         print('Sanity check - next day delta: ' + f'{delta_pct:.2f}%')
 
-    history = raw_data[['Close']].tail(PLOT_HISTORY_DAYS)
+    history = close_series.tail(PLOT_HISTORY_DAYS)
     plt.figure(figsize=(14, 5))
-    plt.plot(history.index, history.Close, color='green', label='Actual [' + STOCK_TICKER + '] price')
+    plt.plot(history.index, history, color='green', label='Actual [' + STOCK_TICKER + '] price')
     plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + STOCK_TICKER + '] price')
     plt.xlabel('Time')
     plt.ylabel('Price [USD]')
