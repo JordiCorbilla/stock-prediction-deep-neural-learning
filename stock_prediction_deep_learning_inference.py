@@ -13,13 +13,17 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import warnings
 from absl import app
-import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import json
+
+warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
+
+import tensorflow as tf
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
@@ -93,7 +97,10 @@ def main(argv):
     print('Latest Date')
     print(latest_date)
 
-    model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
+    model_path = os.path.join(inference_folder, 'model.keras')
+    if not os.path.exists(model_path):
+        model_path = os.path.join(inference_folder, 'model_weights.h5')
+    model = tf.keras.models.load_model(model_path)
     model.summary()
     model_time_steps = model.input_shape[1]
     if model_time_steps and model_time_steps != TIME_STEPS:

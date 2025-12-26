@@ -13,9 +13,13 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import warnings
+
+warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
+
 import tensorflow as tf
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dropout, Dense, LSTM
+from tensorflow.keras.layers import Dropout, Dense, LSTM, Input
 
 
 class LongShortTermMemory:
@@ -34,11 +38,12 @@ class LongShortTermMemory:
 
     def create_model(self, x_train):
         model = Sequential()
+        model.add(Input(shape=(x_train.shape[1], 1)))
         # 1st layer with Dropout regularisation
         # * units = add 100 neurons is the dimensionality of the output space
         # * return_sequences = True to stack LSTM layers so the next LSTM layer has a three-dimensional sequence input
         # * input_shape => Shape of the training dataset
-        model.add(LSTM(units=100, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+        model.add(LSTM(units=100, return_sequences=True))
         # 20% of the layers will be dropped
         model.add(Dropout(0.2))
         # 2nd LSTM layer

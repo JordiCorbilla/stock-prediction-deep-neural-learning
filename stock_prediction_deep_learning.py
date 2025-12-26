@@ -19,7 +19,10 @@ import argparse
 import pickle
 import numpy as np
 import json
+import warnings
 from datetime import datetime
+
+warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_lstm import LongShortTermMemory
@@ -67,8 +70,8 @@ def train_LSTM_network(stock, use_returns=False):
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=lstm.get_defined_metrics())
     history = model.fit(x_train, y_train, epochs=stock.get_epochs(), batch_size=stock.get_batch_size(), validation_data=(x_test, y_test),
                         callbacks=[lstm.get_callback()])
-    print("saving weights")
-    model.save(os.path.join(stock.get_project_folder(), 'model_weights.h5'))
+    print("saving model")
+    model.save(os.path.join(stock.get_project_folder(), 'model.keras'))
 
     plotter.plot_loss(history)
     plotter.plot_mse(history)
