@@ -14,8 +14,8 @@
 # ==============================================================================
 import os
 import tensorflow as tf
-from tensorflow.python.keras import Sequential
-from tensorflow.python.keras.layers import Dropout, Dense, LSTM
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dropout, Dense, LSTM
 
 
 class LongShortTermMemory:
