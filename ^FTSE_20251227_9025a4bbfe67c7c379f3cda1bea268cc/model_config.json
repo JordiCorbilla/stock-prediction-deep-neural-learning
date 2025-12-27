@@ -1,0 +1,7 @@
+{
+  "use_returns": false,
+  "time_steps": 60,
+  "ticker": "^FTSE",
+  "start_date": "2017-11-01",
+  "validation_date": "2021-09-01"
+}
