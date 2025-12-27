@@ -205,6 +205,6 @@ if __name__ == '__main__':
     FORECAST_DAYS = 30
     USE_BUSINESS_DAYS = True
     PLOT_HISTORY_DAYS = 200
-    USE_RETURNS = False
+    USE_RETURNS = True
     CLIP_NEGATIVE = True
     app.run(main)

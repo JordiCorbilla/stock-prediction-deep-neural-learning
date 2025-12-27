@@ -118,6 +118,7 @@ if __name__ == '__main__':
     parser.add_argument("-batch_size", default="10")
     parser.add_argument("-time_steps", default="3")
     parser.add_argument("-github_url", default="https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/")
+    parser.add_argument("-use_returns", default="true")
     
     args = parser.parse_args()
     
@@ -127,6 +128,7 @@ if __name__ == '__main__':
     EPOCHS = int(args.epochs)
     BATCH_SIZE = int(args.batch_size)
     TIME_STEPS = int(args.time_steps)
+    USE_RETURNS = str(args.use_returns).lower() in ("1", "true", "yes", "y")
     TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
     GITHUB_URL = args.github_url
@@ -149,4 +151,4 @@ if __name__ == '__main__':
                                        TOKEN,
                                        BATCH_SIZE)
     # Execute Deep Learning model
-    train_LSTM_network(stock_prediction)
+    train_LSTM_network(stock_prediction, use_returns=USE_RETURNS)
