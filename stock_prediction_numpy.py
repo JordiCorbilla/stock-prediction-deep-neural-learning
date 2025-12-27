@@ -72,7 +72,7 @@ class StockData:
 
         if use_returns:
             full_series = data.set_index('Date')['Close']
-            returns = self._compute_log_returns(full_series)
+            returns = self._compute_log_returns(full_series).rename('Close')
             training_returns = returns[returns.index < self._stock.get_validation_date()]
             test_returns = returns[returns.index >= self._stock.get_validation_date()]
             train_scaled = self._min_max.fit_transform(training_returns.to_frame())

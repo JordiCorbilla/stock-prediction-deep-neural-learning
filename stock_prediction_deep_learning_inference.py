@@ -70,6 +70,15 @@ def _ensure_frame(series_or_frame):
     return series_or_frame
 
 
+def _scale_input(scaler, data):
+    if hasattr(scaler, 'feature_names_in_'):
+        return scaler.transform(_ensure_frame(data))
+    array_data = np.asarray(data)
+    if array_data.ndim == 1:
+        array_data = array_data.reshape(-1, 1)
+    return scaler.transform(array_data)
+
+
 def _get_close_series(raw_data):
     close_data = raw_data['Close']
     if isinstance(close_data, pd.DataFrame):
@@ -118,7 +127,7 @@ def main(argv):
             print('Warning: USE_RETURNS overridden by model_config.json')
 
     if use_returns:
-        series = np.log(close_series).diff().dropna()
+        series = np.log(close_series).diff().dropna().rename('Close')
         recent_window = series.tail(time_steps)
     else:
         recent_window = close_series.tail(time_steps).to_frame()
@@ -135,10 +144,7 @@ def main(argv):
         else:
             scaler.fit(close_series.to_frame())
 
-    if use_returns:
-        window_scaled = scaler.transform(_ensure_frame(recent_window))
-    else:
-        window_scaled = scaler.transform(_ensure_frame(recent_window))
+    window_scaled = _scale_input(scaler, recent_window)
     window_scaled = window_scaled.reshape(1, time_steps, 1)
 
     future_dates = _future_dates(latest_date, FORECAST_DAYS, USE_BUSINESS_DAYS)
