@@ -47,6 +47,11 @@ class StockData:
     def _compute_log_returns(self, series):
         return np.log(series).diff().dropna()
 
+    def _ensure_series(self, series_or_frame):
+        if isinstance(series_or_frame, pd.DataFrame):
+            return series_or_frame.iloc[:, 0]
+        return series_or_frame
+
     def download_raw_data(self, end_date=None):
         if end_date is None:
             end_date = datetime.today()
@@ -71,7 +76,8 @@ class StockData:
         #print(test_data)
 
         if use_returns:
-            full_series = data.set_index('Date')['Close']
+            full_series = data.set_index('Date')[['Close']]
+            full_series = self._ensure_series(full_series)
             returns = self._compute_log_returns(full_series).rename('Close')
             training_returns = returns[returns.index < self._stock.get_validation_date()]
             test_returns = returns[returns.index >= self._stock.get_validation_date()]

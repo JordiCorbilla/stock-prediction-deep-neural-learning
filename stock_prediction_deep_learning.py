@@ -88,14 +88,15 @@ def train_LSTM_network(stock, use_returns=False):
     if use_returns:
         last_train_close = training_data['Close'].iloc[-1]
         predicted_prices = _returns_to_prices(test_predictions_baseline, last_train_close)
-        predictions_df = pd.DataFrame(
-            {stock.get_ticker() + '_predicted': predicted_prices},
-            index=test_data.index,
-        )
+        predictions_df = pd.DataFrame({stock.get_ticker() + '_predicted': predicted_prices})
     else:
         predictions_df = pd.DataFrame(test_predictions_baseline, index=test_data.index)
         predictions_df.rename(columns={0: stock.get_ticker() + '_predicted'}, inplace=True)
         predictions_df = predictions_df.round(decimals=0)
+    if len(predictions_df) != len(test_data):
+        predictions_df = predictions_df.tail(len(test_data))
+        test_data = test_data.tail(len(predictions_df))
+    predictions_df.index = test_data.index
     predictions_df.to_csv(os.path.join(stock.get_project_folder(), 'predictions.csv'))
     plotter.project_plot_predictions(predictions_df, test_data)
 

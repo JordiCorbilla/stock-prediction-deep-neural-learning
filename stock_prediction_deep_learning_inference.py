@@ -86,6 +86,23 @@ def _get_close_series(raw_data):
     return close_data
 
 
+def _load_in_sample_predictions(inference_folder, ticker):
+    predictions_path = os.path.join(inference_folder, 'predictions.csv')
+    if not os.path.exists(predictions_path):
+        return None
+    predictions = pd.read_csv(predictions_path, index_col=0, parse_dates=True)
+    if predictions.empty:
+        return None
+    expected_col = ticker + '_predicted'
+    if expected_col in predictions.columns:
+        series = predictions[[expected_col]]
+    else:
+        series = predictions.iloc[:, [0]]
+    series.index = pd.to_datetime(series.index, errors='coerce')
+    series = series.dropna()
+    return series
+
+
 def main(argv):
     print(tf.version.VERSION)
     inference_folder = os.path.join(os.getcwd(), RUN_FOLDER)
@@ -179,8 +196,11 @@ def main(argv):
         print('Sanity check - next day delta: ' + f'{delta_pct:.2f}%')
 
     history = close_series.tail(PLOT_HISTORY_DAYS)
+    in_sample = _load_in_sample_predictions(inference_folder, STOCK_TICKER)
     plt.figure(figsize=(14, 5))
     plt.plot(history.index, history, color='green', label='Actual [' + STOCK_TICKER + '] price')
+    if in_sample is not None and not in_sample.empty:
+        plt.plot(in_sample.index, in_sample.iloc[:, 0], color='orange', label='In-sample [' + STOCK_TICKER + '] predicted')
     plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + STOCK_TICKER + '] price')
     plt.xlabel('Time')
     plt.ylabel('Price [USD]')
@@ -205,6 +225,6 @@ if __name__ == '__main__':
     FORECAST_DAYS = 30
     USE_BUSINESS_DAYS = True
     PLOT_HISTORY_DAYS = 200
-    USE_RETURNS = True
+    USE_RETURNS = False
     CLIP_NEGATIVE = True
     app.run(main)
