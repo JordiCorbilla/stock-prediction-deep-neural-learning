@@ -672,7 +672,7 @@ STOCK_VALIDATION_DATE = start_date + 0.8 * duration
 
 Now we can call the `infer_data` method which will allow us to generate the stock prediction based on the training done over the training data. As a result, we will generate a csv file that contains the result of the prediction and also a chart that shows what's the real vs the estimation. 
 
-![image](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/assets/7347994/36ce113b-acf4-4245-bf1e-771e77aeb0a1)
+<img width="1111" height="444" alt="image" src="https://github.com/user-attachments/assets/db10aaa9-7a8a-4be9-a21e-8bfc8162eefb" />
 
 # 4) Usage
 
