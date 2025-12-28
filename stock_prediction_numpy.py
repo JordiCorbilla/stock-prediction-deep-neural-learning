@@ -74,6 +74,11 @@ class StockData:
             return series_or_frame.iloc[:, 0]
         return series_or_frame
 
+    def _ensure_frame(self, series_or_frame):
+        if isinstance(series_or_frame, pd.Series):
+            return series_or_frame.to_frame()
+        return series_or_frame
+
     def download_raw_data(self, end_date=None):
         if end_date is None:
             end_date = datetime.today()
@@ -202,6 +207,62 @@ class StockData:
         x_test, y_test = np.array(x_test), np.array(y_test)
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
         return (x_train, y_train), (x_test, y_test), (training_data, test_data)
+
+    def prepare_delta_direction_data(self, time_steps, validation_date):
+        end_date = datetime.today()
+        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
+        data = data.reset_index()
+        data = data.set_index('Date')
+
+        training_data = data[data.index < validation_date].copy()
+        test_data = data[data.index >= validation_date].copy()
+
+        close_series = pd.concat([training_data['Close'], test_data['Close']])
+        deltas = self._compute_deltas(close_series)
+        training_deltas = deltas[deltas.index < validation_date]
+        test_deltas = deltas[deltas.index >= validation_date]
+
+        close_scaled_train = self._input_scaler.fit_transform(training_data)
+        close_scaled_all = self._input_scaler.transform(pd.concat((training_data, test_data), axis=0))
+        close_scaled_aligned = close_scaled_all[1:]
+
+        magnitude = training_deltas.abs()
+        mag_scaled = self._min_max.fit_transform(self._ensure_frame(magnitude))
+
+        total_magnitude = pd.concat((training_deltas.abs(), test_deltas.abs()), axis=0)
+        total_mag_scaled = self._min_max.transform(self._ensure_frame(total_magnitude))
+
+        direction = (training_deltas > 0).astype(np.float32)
+        total_direction = (pd.concat((training_deltas, test_deltas), axis=0) > 0).astype(np.float32)
+
+        x_train = []
+        y_dir_train = []
+        y_mag_train = []
+        for i in range(time_steps, len(training_deltas)):
+            x_train.append(close_scaled_aligned[i - time_steps:i])
+            y_dir_train.append(direction.iloc[i])
+            y_mag_train.append(mag_scaled[i, 0])
+
+        x_test = []
+        y_dir_test = []
+        y_mag_test = []
+        test_start = len(training_deltas)
+        for i in range(test_start, len(total_magnitude)):
+            x_test.append(close_scaled_aligned[i - time_steps:i])
+            y_dir_test.append(total_direction.iloc[i])
+            y_mag_test.append(total_mag_scaled[i, 0])
+
+        x_train = np.array(x_train)
+        y_dir_train = np.array(y_dir_train)
+        y_mag_train = np.array(y_mag_train)
+        x_test = np.array(x_test)
+        y_dir_test = np.array(y_dir_test)
+        y_mag_test = np.array(y_mag_test)
+
+        x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+
+        return (x_train, y_dir_train, y_mag_train), (x_test, y_dir_test, y_mag_test), (training_data, test_data)
 
     def __date_range(self, start_date, end_date):
         for n in range(int((end_date - start_date).days)):

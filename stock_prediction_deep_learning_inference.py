@@ -130,6 +130,8 @@ class InferenceRunner:
         use_deltas,
         clip_negative,
         blend_alpha,
+        direction_threshold,
+        mag_clip_pct,
     ):
         self.run_folder = run_folder
         self.ticker = ticker
@@ -147,6 +149,8 @@ class InferenceRunner:
         self.use_deltas = use_deltas
         self.clip_negative = clip_negative
         self.blend_alpha = blend_alpha
+        self.direction_threshold = direction_threshold
+        self.mag_clip_pct = mag_clip_pct
 
     def run(self):
         print(tf.version.VERSION)
@@ -178,18 +182,6 @@ class InferenceRunner:
         print('Latest Date')
         print(latest_date)
 
-        model_path = os.path.join(inference_folder, 'model.keras')
-        if not os.path.exists(model_path):
-            model_path = os.path.join(inference_folder, 'model_weights.h5')
-        model = tf.keras.models.load_model(model_path, compile=False)
-        model.summary()
-        model_time_steps = model.input_shape[1]
-        if model_time_steps and model_time_steps != self.time_steps:
-            print('Warning: TIME_STEPS does not match model input. Using model value: ' + str(model_time_steps))
-            time_steps = model_time_steps
-        else:
-            time_steps = self.time_steps
-
         scaler = _load_scaler(inference_folder)
         config = _load_config(inference_folder)
         use_returns = self.use_returns
@@ -207,6 +199,27 @@ class InferenceRunner:
             trend_window = int(config.get('trend_window', trend_window))
             if use_returns != self.use_returns:
                 print('Warning: USE_RETURNS overridden by model_config.json')
+
+        if model_version == 'v7':
+            model_dir_path = os.path.join(inference_folder, 'model_direction.keras')
+            model_mag_path = os.path.join(inference_folder, 'model_magnitude.keras')
+            dir_model = tf.keras.models.load_model(model_dir_path, compile=False)
+            mag_model = tf.keras.models.load_model(model_mag_path, compile=False)
+            dir_model.summary()
+            model_time_steps = dir_model.input_shape[1]
+        else:
+            model_path = os.path.join(inference_folder, 'model.keras')
+            if not os.path.exists(model_path):
+                model_path = os.path.join(inference_folder, 'model_weights.h5')
+            model = tf.keras.models.load_model(model_path, compile=False)
+            model.summary()
+            model_time_steps = model.input_shape[1]
+
+        if model_time_steps and model_time_steps != self.time_steps:
+            print('Warning: TIME_STEPS does not match model input. Using model value: ' + str(model_time_steps))
+            time_steps = model_time_steps
+        else:
+            time_steps = self.time_steps
 
         if use_returns:
             series = np.log(close_series).diff().dropna().rename('Close')
@@ -252,15 +265,30 @@ class InferenceRunner:
 
         steps = len(future_dates)
         step_index = 0
+        recent_delta_abs = close_series.diff().abs().dropna()
+        if len(recent_delta_abs) > 0 and self.mag_clip_pct > 0:
+            mag_clip_value = np.percentile(recent_delta_abs.to_numpy(), self.mag_clip_pct)
+        else:
+            mag_clip_value = None
+
         while step_index < steps:
             if step_index % max(1, steps // 10) == 0:
                 print(f'Inference progress: {step_index}/{steps}')
-            pred_scaled = model.predict(window_scaled, verbose=0)[0]
-            if model_version in ('v5', 'v6'):
-                pred_scaled = pred_scaled[:forecast_horizon]
+            if model_version == 'v7':
+                dir_prob = dir_model.predict(window_scaled, verbose=0)[0][0]
+                mag_scaled = mag_model.predict(window_scaled, verbose=0)[0][0]
+                mag_value = scaler.inverse_transform([[mag_scaled]])[0][0]
+                if mag_clip_value is not None:
+                    mag_value = min(mag_value, mag_clip_value)
+                pred_values = [mag_value if dir_prob >= self.direction_threshold else -mag_value]
+                pred_scaled = [mag_scaled]
             else:
-                pred_scaled = [pred_scaled[0]]
-            pred_values = scaler.inverse_transform(np.array(pred_scaled).reshape(-1, 1)).flatten()
+                pred_scaled = model.predict(window_scaled, verbose=0)[0]
+                if model_version in ('v5', 'v6'):
+                    pred_scaled = pred_scaled[:forecast_horizon]
+                else:
+                    pred_scaled = [pred_scaled[0]]
+                pred_values = scaler.inverse_transform(np.array(pred_scaled).reshape(-1, 1)).flatten()
             if step_index == 0:
                 print(f'Predicted batch size: {len(pred_values)}')
             if len(pred_values) == 0:
@@ -337,7 +365,7 @@ class InferenceRunner:
 
 
 def main(argv):
-    runner = InferenceRunner(
+        runner = InferenceRunner(
         run_folder=RUN_FOLDER,
         ticker=STOCK_TICKER,
         start_date=STOCK_START_DATE,
@@ -354,8 +382,10 @@ def main(argv):
         use_deltas=USE_DELTAS,
         clip_negative=CLIP_NEGATIVE,
         blend_alpha=BLEND_ALPHA,
-    )
-    runner.run()
+        direction_threshold=DIRECTION_THRESHOLD,
+        mag_clip_pct=MAG_CLIP_PCT,
+        )
+        runner.run()
 
 if __name__ == '__main__':
     TIME_STEPS = 3
@@ -377,4 +407,6 @@ if __name__ == '__main__':
     USE_DELTAS = False
     CLIP_NEGATIVE = True
     BLEND_ALPHA = 0.6
+    DIRECTION_THRESHOLD = 0.55
+    MAG_CLIP_PCT = 90
     app.run(main)

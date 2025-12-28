@@ -59,6 +59,8 @@ class LongShortTermMemory:
             return self._create_model_v4(x_train)
         if version == 'v5':
             return self._create_model_v5(x_train, output_units)
+        if version == 'v7':
+            return self._create_model_v7(x_train, output_units)
         return self._create_model_v1(x_train)
 
     def _create_model_v1(self, x_train):
@@ -106,6 +108,17 @@ class LongShortTermMemory:
         model.add(LSTM(units=64))
         model.add(Dropout(0.2))
         model.add(Dense(units=output_units))
+        model.summary()
+        return model
+
+    def _create_model_v7(self, x_train, output_units, activation=None):
+        model = Sequential()
+        model.add(Input(shape=(x_train.shape[1], x_train.shape[2])))
+        model.add(LSTM(units=128, return_sequences=True))
+        model.add(Dropout(0.1))
+        model.add(LSTM(units=64))
+        model.add(Dropout(0.2))
+        model.add(Dense(units=output_units, activation=activation))
         model.summary()
         return model
 
