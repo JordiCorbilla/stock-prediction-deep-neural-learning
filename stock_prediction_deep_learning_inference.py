@@ -41,6 +41,14 @@ def _load_scaler(inference_folder):
         return pickle.load(scaler_file)
 
 
+def _load_input_scaler(inference_folder):
+    scaler_path = os.path.join(inference_folder, 'input_scaler.pkl')
+    if not os.path.exists(scaler_path):
+        return None
+    with open(scaler_path, 'rb') as scaler_file:
+        return pickle.load(scaler_file)
+
+
 def _load_config(inference_folder):
     config_path = os.path.join(inference_folder, 'model_config.json')
     if not os.path.exists(config_path):
@@ -138,8 +146,12 @@ def main(argv):
     scaler = _load_scaler(inference_folder)
     config = _load_config(inference_folder)
     use_returns = USE_RETURNS
+    use_deltas = USE_DELTAS
+    model_version = 'v1'
     if config is not None:
         use_returns = bool(config.get('use_returns', use_returns))
+        use_deltas = bool(config.get('use_deltas', use_deltas))
+        model_version = config.get('model_version', model_version)
         if use_returns != USE_RETURNS:
             print('Warning: USE_RETURNS overridden by model_config.json')
 
@@ -153,28 +165,50 @@ def main(argv):
         print("Error: Not enough data to build the inference window.")
         return
 
+    input_scaler = None
+    if use_deltas:
+        input_scaler = _load_input_scaler(inference_folder)
+        if input_scaler is None:
+            print('Warning: input_scaler.pkl not found. Fitting input scaler on full dataset for inference.')
+            input_scaler = data.get_input_scaler()
+            input_scaler.fit(close_series.to_frame())
+
     if scaler is None:
         print('Warning: min_max_scaler.pkl not found. Fitting scaler on full dataset for inference.')
         scaler = data.get_min_max()
         if use_returns:
             scaler.fit(series.to_frame())
+        elif use_deltas:
+            deltas = close_series.diff().dropna().rename('Close')
+            scaler.fit(deltas.to_frame())
         else:
             scaler.fit(close_series.to_frame())
 
-    window_scaled = _scale_input(scaler, recent_window)
+    if use_deltas:
+        window_scaled = _scale_input(input_scaler, recent_window)
+    else:
+        window_scaled = _scale_input(scaler, recent_window)
     window_scaled = window_scaled.reshape(1, time_steps, 1)
 
     future_dates = _future_dates(latest_date, FORECAST_DAYS, USE_BUSINESS_DAYS)
     predictions = []
+    current_close = latest_close_price
 
     for _ in range(len(future_dates)):
         pred_scaled = model.predict(window_scaled, verbose=0)[0][0]
         pred_value = scaler.inverse_transform([[pred_scaled]])[0][0]
         predictions.append(pred_value)
-        window_scaled = np.concatenate([window_scaled[:, 1:, :], [[[pred_scaled]]]], axis=1)
+        if use_deltas:
+            current_close = current_close + pred_value
+            next_scaled = _scale_input(input_scaler, pd.DataFrame({'Close': [current_close]}))
+            window_scaled = np.concatenate([window_scaled[:, 1:, :], next_scaled.reshape(1, 1, 1)], axis=1)
+        else:
+            window_scaled = np.concatenate([window_scaled[:, 1:, :], [[[pred_scaled]]]], axis=1)
 
     if use_returns:
         predicted_prices = _returns_to_prices(predictions, latest_close_price)
+    elif use_deltas:
+        predicted_prices = latest_close_price + np.cumsum(predictions)
     else:
         predicted_prices = predictions
         if CLIP_NEGATIVE:
@@ -185,6 +219,7 @@ def main(argv):
             'Date': future_dates,
             'Predicted_Price': predicted_prices,
             'Predicted_Return': predictions if use_returns else np.nan,
+            'Predicted_Delta': predictions if use_deltas else np.nan,
         }
     ).set_index('Date')
     forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
@@ -226,5 +261,6 @@ if __name__ == '__main__':
     USE_BUSINESS_DAYS = True
     PLOT_HISTORY_DAYS = 200
     USE_RETURNS = False
+    USE_DELTAS = False
     CLIP_NEGATIVE = True
     app.run(main)

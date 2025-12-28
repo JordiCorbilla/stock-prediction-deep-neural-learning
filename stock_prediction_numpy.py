@@ -28,6 +28,7 @@ class StockData:
         self._stock = stock
         self._sec = yf.Ticker(self._stock.get_ticker())
         self._min_max = MinMaxScaler(feature_range=(0, 1))
+        self._input_scaler = MinMaxScaler(feature_range=(0, 1))
 
     def __data_verification(self, train):
         print('mean:', train.mean(axis=0))
@@ -41,11 +42,17 @@ class StockData:
     def get_min_max(self):
         return self._min_max
 
+    def get_input_scaler(self):
+        return self._input_scaler
+
     def get_stock_currency(self):
         return self._sec.info['currency']
 
     def _compute_log_returns(self, series):
         return np.log(series).diff().dropna()
+
+    def _compute_deltas(self, series):
+        return series.diff().dropna()
 
     def _ensure_series(self, series_or_frame):
         if isinstance(series_or_frame, pd.DataFrame):
@@ -60,7 +67,7 @@ class StockData:
         data = data.set_index('Date')
         return data
 
-    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False):
+    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False):
         end_date = datetime.today()
         print('End Date: ' + end_date.strftime("%Y-%m-%d"))
         data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
@@ -75,6 +82,9 @@ class StockData:
         test_data = test_data.set_index('Date')
         #print(test_data)
 
+        if use_returns and use_deltas:
+            raise ValueError('use_returns and use_deltas cannot both be true')
+
         if use_returns:
             full_series = data.set_index('Date')[['Close']]
             full_series = self._ensure_series(full_series)
@@ -82,6 +92,15 @@ class StockData:
             training_returns = returns[returns.index < self._stock.get_validation_date()]
             test_returns = returns[returns.index >= self._stock.get_validation_date()]
             train_scaled = self._min_max.fit_transform(training_returns.to_frame())
+        elif use_deltas:
+            full_series = data.set_index('Date')[['Close']]
+            full_series = self._ensure_series(full_series)
+            deltas = self._compute_deltas(full_series).rename('Close')
+            training_deltas = deltas[deltas.index < self._stock.get_validation_date()]
+            test_deltas = deltas[deltas.index >= self._stock.get_validation_date()]
+            close_scaled = self._input_scaler.fit_transform(training_data)
+            delta_scaled = self._min_max.fit_transform(training_deltas.to_frame())
+            train_scaled = close_scaled
         else:
             train_scaled = self._min_max.fit_transform(training_data)
         self.__data_verification(train_scaled)
@@ -89,9 +108,15 @@ class StockData:
         # Training Data Transformation
         x_train = []
         y_train = []
-        for i in range(time_steps, train_scaled.shape[0]):
-            x_train.append(train_scaled[i - time_steps:i])
-            y_train.append(train_scaled[i, 0])
+        if use_deltas:
+            close_scaled_aligned = close_scaled[1:]
+            for i in range(time_steps, close_scaled_aligned.shape[0]):
+                x_train.append(close_scaled_aligned[i - time_steps:i])
+                y_train.append(delta_scaled[i, 0])
+        else:
+            for i in range(time_steps, train_scaled.shape[0]):
+                x_train.append(train_scaled[i - time_steps:i])
+                y_train.append(train_scaled[i, 0])
 
         x_train, y_train = np.array(x_train), np.array(y_train)
         x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
@@ -100,6 +125,17 @@ class StockData:
             total_returns = pd.concat((training_returns, test_returns), axis=0)
             inputs = total_returns[len(total_returns) - len(test_returns) - time_steps:]
             test_scaled = self._min_max.transform(inputs.to_frame())
+        elif use_deltas:
+            total_data = pd.concat((training_data, test_data), axis=0)
+            total_close_scaled = self._input_scaler.transform(total_data)
+            total_close_aligned = total_close_scaled[1:]
+
+            total_deltas = pd.concat((training_deltas, test_deltas), axis=0)
+            total_deltas_scaled = self._min_max.transform(total_deltas.to_frame())
+
+            test_start = len(training_deltas)
+            inputs_x = total_close_aligned[test_start - time_steps:]
+            inputs_y = total_deltas_scaled[test_start - time_steps:]
         else:
             total_data = pd.concat((training_data, test_data), axis=0)
             inputs = total_data[len(total_data) - len(test_data) - time_steps:]
@@ -108,9 +144,14 @@ class StockData:
         # Testing Data Transformation
         x_test = []
         y_test = []
-        for i in range(time_steps, test_scaled.shape[0]):
-            x_test.append(test_scaled[i - time_steps:i])
-            y_test.append(test_scaled[i, 0])
+        if use_deltas:
+            for i in range(time_steps, inputs_x.shape[0]):
+                x_test.append(inputs_x[i - time_steps:i])
+                y_test.append(inputs_y[i, 0])
+        else:
+            for i in range(time_steps, test_scaled.shape[0]):
+                x_test.append(test_scaled[i - time_steps:i])
+                y_test.append(test_scaled[i, 0])
 
         x_test, y_test = np.array(x_test), np.array(y_test)
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
