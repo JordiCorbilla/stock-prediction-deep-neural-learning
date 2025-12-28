@@ -42,8 +42,10 @@ def _returns_to_prices(returns, start_price):
     return prices
 
 
-def train_LSTM_network(stock, use_returns=False, model_version='v1'):
+def train_LSTM_network(stock, use_returns=False, model_version='v1', forecast_horizon=1):
     use_deltas = model_version == 'v3'
+    if model_version == 'v5':
+        use_deltas = True
     if use_deltas and use_returns:
         print('Error: model_version v3 uses deltas and cannot be combined with returns.')
         return
@@ -54,6 +56,7 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1'):
         stock.get_project_folder(),
         use_returns=use_returns,
         use_deltas=use_deltas,
+        forecast_horizon=forecast_horizon,
     )
     plotter.plot_histogram_data_split(training_data, test_data, stock.get_validation_date())
     scaler_path = os.path.join(stock.get_project_folder(), 'min_max_scaler.pkl')
@@ -67,6 +70,7 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1'):
         'use_returns': use_returns,
         'use_deltas': use_deltas,
         'model_version': model_version,
+        'forecast_horizon': forecast_horizon,
         'time_steps': stock.get_time_steps(),
         'ticker': stock.get_ticker(),
         'start_date': stock.get_start_date().strftime("%Y-%m-%d"),
@@ -77,7 +81,8 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1'):
         json.dump(config, config_file, indent=2)
 
     lstm = LongShortTermMemory(stock.get_project_folder())
-    model = lstm.create_model(x_train, version=model_version)
+    output_units = forecast_horizon if model_version == 'v5' else 1
+    model = lstm.create_model(x_train, version=model_version, output_units=output_units)
     model.compile(optimizer=lstm.get_optimizer(model_version), loss=lstm.get_loss(model_version), metrics=lstm.get_defined_metrics())
     history = model.fit(
         x_train,
@@ -101,7 +106,9 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1'):
 
     print("plotting prediction results")
     test_predictions_baseline = model.predict(x_test)
-    test_predictions_baseline = data.get_min_max().inverse_transform(test_predictions_baseline).flatten()
+    test_predictions_baseline = data.get_min_max().inverse_transform(test_predictions_baseline)
+    if model_version != 'v5':
+        test_predictions_baseline = test_predictions_baseline.flatten()
     if use_returns:
         last_train_close = training_data['Close'].iloc[-1]
         predicted_prices = _returns_to_prices(test_predictions_baseline, last_train_close)
@@ -110,7 +117,12 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1'):
         last_train_close = training_data['Close'].iloc[-1]
         base_close = test_data['Close'].shift(1)
         base_close.iloc[0] = last_train_close
-        predicted_prices = base_close.to_numpy().flatten() + test_predictions_baseline.flatten()
+        if model_version == 'v5':
+            step_deltas = test_predictions_baseline[:, 0]
+            predicted_prices = base_close.to_numpy().flatten()[:len(step_deltas)] + step_deltas
+            test_data = test_data.iloc[:len(step_deltas)]
+        else:
+            predicted_prices = base_close.to_numpy().flatten() + test_predictions_baseline.flatten()
         predictions_df = pd.DataFrame({stock.get_ticker() + '_predicted': predicted_prices}, index=test_data.index)
     else:
         predictions_df = pd.DataFrame(test_predictions_baseline, index=test_data.index)
@@ -143,7 +155,8 @@ if __name__ == '__main__':
     parser.add_argument("-time_steps", default="3")
     parser.add_argument("-github_url", default="https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/")
     parser.add_argument("-use_returns", default="true")
-    parser.add_argument("-model_version", default="v4")
+    parser.add_argument("-model_version", default="v5")
+    parser.add_argument("-forecast_horizon", default="10")
     
     args = parser.parse_args()
     
@@ -155,6 +168,7 @@ if __name__ == '__main__':
     TIME_STEPS = int(args.time_steps)
     USE_RETURNS = str(args.use_returns).lower() in ("1", "true", "yes", "y")
     MODEL_VERSION = args.model_version
+    FORECAST_HORIZON = int(args.forecast_horizon)
     TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
     GITHUB_URL = args.github_url
@@ -177,4 +191,9 @@ if __name__ == '__main__':
                                        TOKEN,
                                        BATCH_SIZE)
     # Execute Deep Learning model
-    train_LSTM_network(stock_prediction, use_returns=USE_RETURNS, model_version=MODEL_VERSION)
+    train_LSTM_network(
+        stock_prediction,
+        use_returns=USE_RETURNS,
+        model_version=MODEL_VERSION,
+        forecast_horizon=FORECAST_HORIZON,
+    )

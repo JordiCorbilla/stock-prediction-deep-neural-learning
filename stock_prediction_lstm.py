@@ -52,11 +52,13 @@ class LongShortTermMemory:
             )
         return callbacks
 
-    def create_model(self, x_train, version='v1'):
+    def create_model(self, x_train, version='v1', output_units=1):
         if version in ('v2', 'v3'):
             return self._create_model_v2(x_train)
         if version == 'v4':
             return self._create_model_v4(x_train)
+        if version == 'v5':
+            return self._create_model_v5(x_train, output_units)
         return self._create_model_v1(x_train)
 
     def _create_model_v1(self, x_train):
@@ -96,12 +98,23 @@ class LongShortTermMemory:
         model.summary()
         return model
 
+    def _create_model_v5(self, x_train, output_units):
+        model = Sequential()
+        model.add(Input(shape=(x_train.shape[1], x_train.shape[2])))
+        model.add(LSTM(units=128, return_sequences=True))
+        model.add(Dropout(0.1))
+        model.add(LSTM(units=64))
+        model.add(Dropout(0.2))
+        model.add(Dense(units=output_units))
+        model.summary()
+        return model
+
     def get_loss(self, version='v1'):
-        if version in ('v2', 'v3', 'v4'):
+        if version in ('v2', 'v3', 'v4', 'v5'):
             return Huber()
         return 'mean_squared_error'
 
     def get_optimizer(self, version='v1'):
-        if version == 'v4':
+        if version in ('v4', 'v5'):
             return Adam(learning_rate=0.001)
         return 'adam'

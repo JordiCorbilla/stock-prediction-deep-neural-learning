@@ -67,7 +67,7 @@ class StockData:
         data = data.set_index('Date')
         return data
 
-    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False):
+    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False, forecast_horizon=1):
         end_date = datetime.today()
         print('End Date: ' + end_date.strftime("%Y-%m-%d"))
         data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
@@ -110,9 +110,9 @@ class StockData:
         y_train = []
         if use_deltas:
             close_scaled_aligned = close_scaled[1:]
-            for i in range(time_steps, close_scaled_aligned.shape[0]):
+            for i in range(time_steps, close_scaled_aligned.shape[0] - forecast_horizon + 1):
                 x_train.append(close_scaled_aligned[i - time_steps:i])
-                y_train.append(delta_scaled[i, 0])
+                y_train.append(delta_scaled[i:i + forecast_horizon, 0])
         else:
             for i in range(time_steps, train_scaled.shape[0]):
                 x_train.append(train_scaled[i - time_steps:i])
@@ -134,8 +134,8 @@ class StockData:
             total_deltas_scaled = self._min_max.transform(total_deltas.to_frame())
 
             test_start = len(training_deltas)
-            inputs_x = total_close_aligned[test_start - time_steps:]
-            inputs_y = total_deltas_scaled[test_start - time_steps:]
+            inputs_x = total_close_aligned
+            inputs_y = total_deltas_scaled
         else:
             total_data = pd.concat((training_data, test_data), axis=0)
             inputs = total_data[len(total_data) - len(test_data) - time_steps:]
@@ -145,9 +145,9 @@ class StockData:
         x_test = []
         y_test = []
         if use_deltas:
-            for i in range(time_steps, inputs_x.shape[0]):
+            for i in range(test_start, inputs_y.shape[0] - forecast_horizon + 1):
                 x_test.append(inputs_x[i - time_steps:i])
-                y_test.append(inputs_y[i, 0])
+                y_test.append(inputs_y[i:i + forecast_horizon, 0])
         else:
             for i in range(time_steps, test_scaled.shape[0]):
                 x_test.append(test_scaled[i - time_steps:i])

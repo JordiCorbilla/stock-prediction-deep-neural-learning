@@ -111,138 +111,217 @@ def _load_in_sample_predictions(inference_folder, ticker):
     return series
 
 
-def main(argv):
-    print(tf.version.VERSION)
-    inference_folder = os.path.join(os.getcwd(), RUN_FOLDER)
-    stock = StockPrediction(STOCK_TICKER, STOCK_START_DATE, STOCK_VALIDATION_DATE, inference_folder, GITHUB_URL, EPOCHS, TIME_STEPS, TOKEN, BATCH_SIZE)
+class InferenceRunner:
+    def __init__(
+        self,
+        run_folder,
+        ticker,
+        start_date,
+        validation_date,
+        github_url,
+        epochs,
+        time_steps,
+        token,
+        batch_size,
+        forecast_days,
+        use_business_days,
+        plot_history_days,
+        use_returns,
+        use_deltas,
+        clip_negative,
+    ):
+        self.run_folder = run_folder
+        self.ticker = ticker
+        self.start_date = start_date
+        self.validation_date = validation_date
+        self.github_url = github_url
+        self.epochs = epochs
+        self.time_steps = time_steps
+        self.token = token
+        self.batch_size = batch_size
+        self.forecast_days = forecast_days
+        self.use_business_days = use_business_days
+        self.plot_history_days = plot_history_days
+        self.use_returns = use_returns
+        self.use_deltas = use_deltas
+        self.clip_negative = clip_negative
 
-    data = StockData(stock)
+    def run(self):
+        print(tf.version.VERSION)
+        inference_folder = os.path.join(os.getcwd(), self.run_folder)
+        stock = StockPrediction(
+            self.ticker,
+            self.start_date,
+            self.validation_date,
+            inference_folder,
+            self.github_url,
+            self.epochs,
+            self.time_steps,
+            self.token,
+            self.batch_size,
+        )
 
-    raw_data = data.download_raw_data()
-    if raw_data.empty:
-        print("Error: No data available for inference.")
-        return
+        data = StockData(stock)
 
-    close_series = _get_close_series(raw_data)
-    print('Latest Stock Price')
-    latest_close_price = float(close_series.iloc[-1])
-    latest_date = raw_data.index[-1]
-    print(latest_close_price)
-    print('Latest Date')
-    print(latest_date)
+        raw_data = data.download_raw_data()
+        if raw_data.empty:
+            print("Error: No data available for inference.")
+            return
 
-    model_path = os.path.join(inference_folder, 'model.keras')
-    if not os.path.exists(model_path):
-        model_path = os.path.join(inference_folder, 'model_weights.h5')
-    model = tf.keras.models.load_model(model_path)
-    model.summary()
-    model_time_steps = model.input_shape[1]
-    if model_time_steps and model_time_steps != TIME_STEPS:
-        print('Warning: TIME_STEPS does not match model input. Using model value: ' + str(model_time_steps))
-        time_steps = model_time_steps
-    else:
-        time_steps = TIME_STEPS
+        close_series = _get_close_series(raw_data)
+        print('Latest Stock Price')
+        latest_close_price = float(close_series.iloc[-1])
+        latest_date = raw_data.index[-1]
+        print(latest_close_price)
+        print('Latest Date')
+        print(latest_date)
 
-    scaler = _load_scaler(inference_folder)
-    config = _load_config(inference_folder)
-    use_returns = USE_RETURNS
-    use_deltas = USE_DELTAS
-    model_version = 'v1'
-    if config is not None:
-        use_returns = bool(config.get('use_returns', use_returns))
-        use_deltas = bool(config.get('use_deltas', use_deltas))
-        model_version = config.get('model_version', model_version)
-        if use_returns != USE_RETURNS:
-            print('Warning: USE_RETURNS overridden by model_config.json')
+        model_path = os.path.join(inference_folder, 'model.keras')
+        if not os.path.exists(model_path):
+            model_path = os.path.join(inference_folder, 'model_weights.h5')
+        model = tf.keras.models.load_model(model_path)
+        model.summary()
+        model_time_steps = model.input_shape[1]
+        if model_time_steps and model_time_steps != self.time_steps:
+            print('Warning: TIME_STEPS does not match model input. Using model value: ' + str(model_time_steps))
+            time_steps = model_time_steps
+        else:
+            time_steps = self.time_steps
 
-    if use_returns:
-        series = np.log(close_series).diff().dropna().rename('Close')
-        recent_window = series.tail(time_steps)
-    else:
-        recent_window = close_series.tail(time_steps).to_frame()
+        scaler = _load_scaler(inference_folder)
+        config = _load_config(inference_folder)
+        use_returns = self.use_returns
+        use_deltas = self.use_deltas
+        model_version = 'v1'
+        forecast_horizon = 1
+        if config is not None:
+            use_returns = bool(config.get('use_returns', use_returns))
+            use_deltas = bool(config.get('use_deltas', use_deltas))
+            model_version = config.get('model_version', model_version)
+            forecast_horizon = int(config.get('forecast_horizon', forecast_horizon))
+            if use_returns != self.use_returns:
+                print('Warning: USE_RETURNS overridden by model_config.json')
 
-    if len(recent_window) < time_steps:
-        print("Error: Not enough data to build the inference window.")
-        return
-
-    input_scaler = None
-    if use_deltas:
-        input_scaler = _load_input_scaler(inference_folder)
-        if input_scaler is None:
-            print('Warning: input_scaler.pkl not found. Fitting input scaler on full dataset for inference.')
-            input_scaler = data.get_input_scaler()
-            input_scaler.fit(close_series.to_frame())
-
-    if scaler is None:
-        print('Warning: min_max_scaler.pkl not found. Fitting scaler on full dataset for inference.')
-        scaler = data.get_min_max()
         if use_returns:
-            scaler.fit(series.to_frame())
-        elif use_deltas:
-            deltas = close_series.diff().dropna().rename('Close')
-            scaler.fit(deltas.to_frame())
+            series = np.log(close_series).diff().dropna().rename('Close')
+            recent_window = series.tail(time_steps)
         else:
-            scaler.fit(close_series.to_frame())
+            recent_window = close_series.tail(time_steps).to_frame()
 
-    if use_deltas:
-        window_scaled = _scale_input(input_scaler, recent_window)
-    else:
-        window_scaled = _scale_input(scaler, recent_window)
-    window_scaled = window_scaled.reshape(1, time_steps, 1)
+        if len(recent_window) < time_steps:
+            print("Error: Not enough data to build the inference window.")
+            return
 
-    future_dates = _future_dates(latest_date, FORECAST_DAYS, USE_BUSINESS_DAYS)
-    predictions = []
-    current_close = latest_close_price
-
-    for _ in range(len(future_dates)):
-        pred_scaled = model.predict(window_scaled, verbose=0)[0][0]
-        pred_value = scaler.inverse_transform([[pred_scaled]])[0][0]
-        predictions.append(pred_value)
+        input_scaler = None
         if use_deltas:
-            current_close = current_close + pred_value
-            next_scaled = _scale_input(input_scaler, pd.DataFrame({'Close': [current_close]}))
-            window_scaled = np.concatenate([window_scaled[:, 1:, :], next_scaled.reshape(1, 1, 1)], axis=1)
+            input_scaler = _load_input_scaler(inference_folder)
+            if input_scaler is None:
+                print('Warning: input_scaler.pkl not found. Fitting input scaler on full dataset for inference.')
+                input_scaler = data.get_input_scaler()
+                input_scaler.fit(close_series.to_frame())
+
+        if scaler is None:
+            print('Warning: min_max_scaler.pkl not found. Fitting scaler on full dataset for inference.')
+            scaler = data.get_min_max()
+            if use_returns:
+                scaler.fit(series.to_frame())
+            elif use_deltas:
+                deltas = close_series.diff().dropna().rename('Close')
+                scaler.fit(deltas.to_frame())
+            else:
+                scaler.fit(close_series.to_frame())
+
+        if use_deltas:
+            window_scaled = _scale_input(input_scaler, recent_window)
         else:
-            window_scaled = np.concatenate([window_scaled[:, 1:, :], [[[pred_scaled]]]], axis=1)
+            window_scaled = _scale_input(scaler, recent_window)
+        window_scaled = window_scaled.reshape(1, time_steps, 1)
 
-    if use_returns:
-        predicted_prices = _returns_to_prices(predictions, latest_close_price)
-    elif use_deltas:
-        predicted_prices = latest_close_price + np.cumsum(predictions)
-    else:
-        predicted_prices = predictions
-        if CLIP_NEGATIVE:
-            predicted_prices = np.maximum(predicted_prices, 0)
+        future_dates = _future_dates(latest_date, self.forecast_days, self.use_business_days)
+        predictions = []
+        current_close = latest_close_price
 
-    forecast_df = pd.DataFrame(
-        {
-            'Date': future_dates,
-            'Predicted_Price': predicted_prices,
-            'Predicted_Return': predictions if use_returns else np.nan,
-            'Predicted_Delta': predictions if use_deltas else np.nan,
-        }
-    ).set_index('Date')
-    forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
+        steps = len(future_dates)
+        step_index = 0
+        while step_index < steps:
+            pred_scaled = model.predict(window_scaled, verbose=0)[0]
+            if model_version == 'v5':
+                pred_scaled = pred_scaled[:forecast_horizon]
+            else:
+                pred_scaled = [pred_scaled[0]]
+            pred_values = scaler.inverse_transform(np.array(pred_scaled).reshape(-1, 1)).flatten()
+            for idx, pred_value in enumerate(pred_values):
+                if step_index >= steps:
+                    break
+                predictions.append(pred_value)
+                if use_deltas:
+                    current_close = current_close + pred_value
+                    next_scaled = _scale_input(input_scaler, pd.DataFrame({'Close': [current_close]}))
+                    window_scaled = np.concatenate([window_scaled[:, 1:, :], next_scaled.reshape(1, 1, 1)], axis=1)
+                else:
+                    pred_scaled_value = float(pred_scaled[idx])
+                    window_scaled = np.concatenate([window_scaled[:, 1:, :], [[[pred_scaled_value]]]], axis=1)
+                step_index += 1
 
-    if len(forecast_df) > 0:
-        first_pred = float(forecast_df['Predicted_Price'].iloc[0])
-        latest_price = float(latest_close_price)
-        delta_pct = ((first_pred - latest_price) / latest_price) * 100
-        print('Sanity check - next day delta: ' + f'{delta_pct:.2f}%')
+        if use_returns:
+            predicted_prices = _returns_to_prices(predictions, latest_close_price)
+        elif use_deltas:
+            predicted_prices = latest_close_price + np.cumsum(predictions)
+        else:
+            predicted_prices = predictions
+            if self.clip_negative:
+                predicted_prices = np.maximum(predicted_prices, 0)
 
-    history = close_series.tail(PLOT_HISTORY_DAYS)
-    in_sample = _load_in_sample_predictions(inference_folder, STOCK_TICKER)
-    plt.figure(figsize=(14, 5))
-    plt.plot(history.index, history, color='green', label='Actual [' + STOCK_TICKER + '] price')
-    if in_sample is not None and not in_sample.empty:
-        plt.plot(in_sample.index, in_sample.iloc[:, 0], color='orange', label='In-sample [' + STOCK_TICKER + '] predicted')
-    plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + STOCK_TICKER + '] price')
-    plt.xlabel('Time')
-    plt.ylabel('Price [USD]')
-    plt.legend()
-    plt.title('Actual vs Predicted Prices')
-    plt.savefig(os.path.join(inference_folder, STOCK_TICKER + '_future_forecast.png'))
-    plt.show()
+        forecast_df = pd.DataFrame(
+            {
+                'Date': future_dates,
+                'Predicted_Price': predicted_prices,
+                'Predicted_Return': predictions if use_returns else np.nan,
+                'Predicted_Delta': predictions if use_deltas else np.nan,
+            }
+        ).set_index('Date')
+        forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
+
+        if len(forecast_df) > 0:
+            first_pred = float(forecast_df['Predicted_Price'].iloc[0])
+            latest_price = float(latest_close_price)
+            delta_pct = ((first_pred - latest_price) / latest_price) * 100
+            print('Sanity check - next day delta: ' + f'{delta_pct:.2f}%')
+
+        history = close_series.tail(self.plot_history_days)
+        in_sample = _load_in_sample_predictions(inference_folder, self.ticker)
+        plt.figure(figsize=(14, 5))
+        plt.plot(history.index, history, color='green', label='Actual [' + self.ticker + '] price')
+        if in_sample is not None and not in_sample.empty:
+            plt.plot(in_sample.index, in_sample.iloc[:, 0], color='orange', label='In-sample [' + self.ticker + '] predicted')
+        plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + self.ticker + '] price')
+        plt.xlabel('Time')
+        plt.ylabel('Price [USD]')
+        plt.legend()
+        plt.title('Actual vs Predicted Prices')
+        plt.savefig(os.path.join(inference_folder, self.ticker + '_future_forecast.png'))
+        plt.show()
+
+
+def main(argv):
+    runner = InferenceRunner(
+        run_folder=RUN_FOLDER,
+        ticker=STOCK_TICKER,
+        start_date=STOCK_START_DATE,
+        validation_date=STOCK_VALIDATION_DATE,
+        github_url=GITHUB_URL,
+        epochs=EPOCHS,
+        time_steps=TIME_STEPS,
+        token=TOKEN,
+        batch_size=BATCH_SIZE,
+        forecast_days=FORECAST_DAYS,
+        use_business_days=USE_BUSINESS_DAYS,
+        plot_history_days=PLOT_HISTORY_DAYS,
+        use_returns=USE_RETURNS,
+        use_deltas=USE_DELTAS,
+        clip_negative=CLIP_NEGATIVE,
+    )
+    runner.run()
 
 if __name__ == '__main__':
     TIME_STEPS = 3
