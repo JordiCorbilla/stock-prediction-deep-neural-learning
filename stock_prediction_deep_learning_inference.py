@@ -181,7 +181,7 @@ class InferenceRunner:
         model_path = os.path.join(inference_folder, 'model.keras')
         if not os.path.exists(model_path):
             model_path = os.path.join(inference_folder, 'model_weights.h5')
-        model = tf.keras.models.load_model(model_path)
+        model = tf.keras.models.load_model(model_path, compile=False)
         model.summary()
         model_time_steps = model.input_shape[1]
         if model_time_steps and model_time_steps != self.time_steps:
@@ -194,13 +194,17 @@ class InferenceRunner:
         config = _load_config(inference_folder)
         use_returns = self.use_returns
         use_deltas = self.use_deltas
+        use_trend_residual = False
         model_version = 'v1'
         forecast_horizon = 1
+        trend_window = 60
         if config is not None:
             use_returns = bool(config.get('use_returns', use_returns))
             use_deltas = bool(config.get('use_deltas', use_deltas))
+            use_trend_residual = bool(config.get('use_trend_residual', use_trend_residual))
             model_version = config.get('model_version', model_version)
             forecast_horizon = int(config.get('forecast_horizon', forecast_horizon))
+            trend_window = int(config.get('trend_window', trend_window))
             if use_returns != self.use_returns:
                 print('Warning: USE_RETURNS overridden by model_config.json')
 
@@ -215,7 +219,7 @@ class InferenceRunner:
             return
 
         input_scaler = None
-        if use_deltas:
+        if use_deltas or use_trend_residual:
             input_scaler = _load_input_scaler(inference_folder)
             if input_scaler is None:
                 print('Warning: input_scaler.pkl not found. Fitting input scaler on full dataset for inference.')
@@ -230,10 +234,13 @@ class InferenceRunner:
             elif use_deltas:
                 deltas = close_series.diff().dropna().rename('Close')
                 scaler.fit(deltas.to_frame())
+            elif use_trend_residual:
+                residuals = data._compute_trend_residuals(close_series, trend_window).rename('Close')
+                scaler.fit(residuals.to_frame())
             else:
                 scaler.fit(close_series.to_frame())
 
-        if use_deltas:
+        if use_deltas or use_trend_residual:
             window_scaled = _scale_input(input_scaler, recent_window)
         else:
             window_scaled = _scale_input(scaler, recent_window)
@@ -246,17 +253,24 @@ class InferenceRunner:
         steps = len(future_dates)
         step_index = 0
         while step_index < steps:
+            if step_index % max(1, steps // 10) == 0:
+                print(f'Inference progress: {step_index}/{steps}')
             pred_scaled = model.predict(window_scaled, verbose=0)[0]
-            if model_version == 'v5':
+            if model_version in ('v5', 'v6'):
                 pred_scaled = pred_scaled[:forecast_horizon]
             else:
                 pred_scaled = [pred_scaled[0]]
             pred_values = scaler.inverse_transform(np.array(pred_scaled).reshape(-1, 1)).flatten()
+            if step_index == 0:
+                print(f'Predicted batch size: {len(pred_values)}')
+            if len(pred_values) == 0:
+                print('Error: model returned empty prediction batch. Check model_version and forecast_horizon.')
+                return
             for idx, pred_value in enumerate(pred_values):
                 if step_index >= steps:
                     break
                 predictions.append(pred_value)
-                if use_deltas:
+                if use_deltas or use_trend_residual:
                     current_close = current_close + pred_value
                     next_scaled = _scale_input(input_scaler, pd.DataFrame({'Close': [current_close]}))
                     window_scaled = np.concatenate([window_scaled[:, 1:, :], next_scaled.reshape(1, 1, 1)], axis=1)
@@ -264,10 +278,12 @@ class InferenceRunner:
                     pred_scaled_value = float(pred_scaled[idx])
                     window_scaled = np.concatenate([window_scaled[:, 1:, :], [[[pred_scaled_value]]]], axis=1)
                 step_index += 1
+            if step_index > 0 and step_index % max(1, steps // 10) == 0:
+                print(f'Inference progress: {step_index}/{steps}')
 
         if use_returns:
             predicted_prices_raw = _returns_to_prices(predictions, latest_close_price)
-        elif use_deltas:
+        elif use_deltas or use_trend_residual:
             predicted_prices_raw = latest_close_price + np.cumsum(predictions)
         else:
             predicted_prices_raw = predictions
@@ -283,6 +299,7 @@ class InferenceRunner:
                 'Predicted_Price_Raw': predicted_prices_raw,
                 'Predicted_Return': predictions if use_returns else np.nan,
                 'Predicted_Delta': predictions if use_deltas else np.nan,
+                'Predicted_Trend_Residual': predictions if use_trend_residual else np.nan,
             }
         ).set_index('Date')
         forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))

@@ -42,12 +42,11 @@ def _returns_to_prices(returns, start_price):
     return prices
 
 
-def train_LSTM_network(stock, use_returns=False, model_version='v1', forecast_horizon=1):
-    use_deltas = model_version == 'v3'
-    if model_version == 'v5':
-        use_deltas = True
-    if use_deltas and use_returns:
-        print('Error: model_version v3 uses deltas and cannot be combined with returns.')
+def train_LSTM_network(stock, use_returns=False, model_version='v1', forecast_horizon=1, trend_window=60):
+    use_deltas = model_version in ('v3', 'v5')
+    use_trend_residual = model_version == 'v6'
+    if use_returns and (use_deltas or use_trend_residual):
+        print('Error: returns cannot be combined with delta or trend-residual modes.')
         return
     data = StockData(stock)
     plotter = Plotter(True, stock.get_project_folder(), data.get_stock_short_name(), data.get_stock_currency(), stock.get_ticker())
@@ -56,21 +55,25 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1', forecast_ho
         stock.get_project_folder(),
         use_returns=use_returns,
         use_deltas=use_deltas,
+        use_trend_residual=use_trend_residual,
+        trend_window=trend_window,
         forecast_horizon=forecast_horizon,
     )
     plotter.plot_histogram_data_split(training_data, test_data, stock.get_validation_date())
     scaler_path = os.path.join(stock.get_project_folder(), 'min_max_scaler.pkl')
     with open(scaler_path, 'wb') as scaler_file:
         pickle.dump(data.get_min_max(), scaler_file)
-    if use_deltas:
+    if use_deltas or use_trend_residual:
         input_scaler_path = os.path.join(stock.get_project_folder(), 'input_scaler.pkl')
         with open(input_scaler_path, 'wb') as scaler_file:
             pickle.dump(data.get_input_scaler(), scaler_file)
     config = {
         'use_returns': use_returns,
         'use_deltas': use_deltas,
+        'use_trend_residual': use_trend_residual,
         'model_version': model_version,
         'forecast_horizon': forecast_horizon,
+        'trend_window': trend_window,
         'time_steps': stock.get_time_steps(),
         'ticker': stock.get_ticker(),
         'start_date': stock.get_start_date().strftime("%Y-%m-%d"),
@@ -81,7 +84,7 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1', forecast_ho
         json.dump(config, config_file, indent=2)
 
     lstm = LongShortTermMemory(stock.get_project_folder())
-    output_units = forecast_horizon if model_version == 'v5' else 1
+    output_units = forecast_horizon if model_version in ('v5', 'v6') else 1
     model = lstm.create_model(x_train, version=model_version, output_units=output_units)
     model.compile(optimizer=lstm.get_optimizer(model_version), loss=lstm.get_loss(model_version), metrics=lstm.get_defined_metrics())
     history = model.fit(
@@ -107,7 +110,7 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1', forecast_ho
     print("plotting prediction results")
     test_predictions_baseline = model.predict(x_test)
     test_predictions_baseline = data.get_min_max().inverse_transform(test_predictions_baseline)
-    if model_version != 'v5':
+    if model_version not in ('v5', 'v6'):
         test_predictions_baseline = test_predictions_baseline.flatten()
     if use_returns:
         last_train_close = training_data['Close'].iloc[-1]
@@ -121,6 +124,18 @@ def train_LSTM_network(stock, use_returns=False, model_version='v1', forecast_ho
             step_deltas = test_predictions_baseline[:, 0]
             predicted_prices = base_close.to_numpy().flatten()[:len(step_deltas)] + step_deltas
             test_data = test_data.iloc[:len(step_deltas)]
+        else:
+            predicted_prices = base_close.to_numpy().flatten() + test_predictions_baseline.flatten()
+        predictions_df = pd.DataFrame({stock.get_ticker() + '_predicted': predicted_prices}, index=test_data.index)
+    elif use_trend_residual:
+        full_series = pd.concat([training_data['Close'], test_data['Close']])
+        residuals = data._compute_trend_residuals(full_series, trend_window)
+        base_close = test_data['Close'].shift(1)
+        base_close.iloc[0] = training_data['Close'].iloc[-1]
+        if model_version == 'v6':
+            step_residuals = test_predictions_baseline[:, 0]
+            predicted_prices = base_close.to_numpy().flatten()[:len(step_residuals)] + step_residuals
+            test_data = test_data.iloc[:len(step_residuals)]
         else:
             predicted_prices = base_close.to_numpy().flatten() + test_predictions_baseline.flatten()
         predictions_df = pd.DataFrame({stock.get_ticker() + '_predicted': predicted_prices}, index=test_data.index)
@@ -155,8 +170,9 @@ if __name__ == '__main__':
     parser.add_argument("-time_steps", default="3")
     parser.add_argument("-github_url", default="https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/")
     parser.add_argument("-use_returns", default="true")
-    parser.add_argument("-model_version", default="v5")
+    parser.add_argument("-model_version", default="v6")
     parser.add_argument("-forecast_horizon", default="10")
+    parser.add_argument("-trend_window", default="60")
     
     args = parser.parse_args()
     
@@ -169,6 +185,7 @@ if __name__ == '__main__':
     USE_RETURNS = str(args.use_returns).lower() in ("1", "true", "yes", "y")
     MODEL_VERSION = args.model_version
     FORECAST_HORIZON = int(args.forecast_horizon)
+    TREND_WINDOW = int(args.trend_window)
     TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
     GITHUB_URL = args.github_url
@@ -196,4 +213,5 @@ if __name__ == '__main__':
         use_returns=USE_RETURNS,
         model_version=MODEL_VERSION,
         forecast_horizon=FORECAST_HORIZON,
+        trend_window=TREND_WINDOW,
     )

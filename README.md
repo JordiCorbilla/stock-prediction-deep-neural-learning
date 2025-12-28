@@ -697,7 +697,7 @@ Then edit the file "stock_prediction_deep_learning.py" to include the Stock you 
 
 ```cmd
 # all arguments are optional
-python stock_prediction_deep_learning.py -ticker=GOOG -start_date=2017-11-01 -validation_date=2022-09-01 -epochs=150 -batch_size=32 -time_steps=30 -use_returns=false -model_version=v5 -forecast_horizon=10
+python stock_prediction_deep_learning.py -ticker=GOOG -start_date=2017-11-01 -validation_date=2022-09-01 -epochs=150 -batch_size=32 -time_steps=30 -use_returns=false -model_version=v6 -forecast_horizon=10 -trend_window=60
 ```
 
 Also you can use the `Jupyter notebook` available here:

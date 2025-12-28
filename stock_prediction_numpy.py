@@ -54,6 +54,21 @@ class StockData:
     def _compute_deltas(self, series):
         return series.diff().dropna()
 
+    def _compute_trend_residuals(self, series, window):
+        values = series.to_numpy()
+        residuals = []
+        for i in range(1, len(values)):
+            start = max(0, i - window)
+            y = values[start:i]
+            if len(y) < 2:
+                residuals.append(values[i] - values[i - 1])
+                continue
+            x = np.arange(len(y))
+            slope, intercept = np.polyfit(x, y, 1)
+            trend_next = slope * len(y) + intercept
+            residuals.append(values[i] - trend_next)
+        return pd.Series(residuals, index=series.index[1:])
+
     def _ensure_series(self, series_or_frame):
         if isinstance(series_or_frame, pd.DataFrame):
             return series_or_frame.iloc[:, 0]
@@ -67,7 +82,7 @@ class StockData:
         data = data.set_index('Date')
         return data
 
-    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False, forecast_horizon=1):
+    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False, use_trend_residual=False, trend_window=60, forecast_horizon=1):
         end_date = datetime.today()
         print('End Date: ' + end_date.strftime("%Y-%m-%d"))
         data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
@@ -84,6 +99,8 @@ class StockData:
 
         if use_returns and use_deltas:
             raise ValueError('use_returns and use_deltas cannot both be true')
+        if use_trend_residual and use_returns:
+            raise ValueError('use_trend_residual cannot be combined with returns')
 
         if use_returns:
             full_series = data.set_index('Date')[['Close']]
@@ -101,6 +118,15 @@ class StockData:
             close_scaled = self._input_scaler.fit_transform(training_data)
             delta_scaled = self._min_max.fit_transform(training_deltas.to_frame())
             train_scaled = close_scaled
+        elif use_trend_residual:
+            full_series = data.set_index('Date')[['Close']]
+            full_series = self._ensure_series(full_series)
+            residuals = self._compute_trend_residuals(full_series, trend_window).rename('Close')
+            training_residuals = residuals[residuals.index < self._stock.get_validation_date()]
+            test_residuals = residuals[residuals.index >= self._stock.get_validation_date()]
+            close_scaled = self._input_scaler.fit_transform(training_data)
+            residual_scaled = self._min_max.fit_transform(training_residuals.to_frame())
+            train_scaled = close_scaled
         else:
             train_scaled = self._min_max.fit_transform(training_data)
         self.__data_verification(train_scaled)
@@ -113,6 +139,11 @@ class StockData:
             for i in range(time_steps, close_scaled_aligned.shape[0] - forecast_horizon + 1):
                 x_train.append(close_scaled_aligned[i - time_steps:i])
                 y_train.append(delta_scaled[i:i + forecast_horizon, 0])
+        elif use_trend_residual:
+            close_scaled_aligned = close_scaled[1:]
+            for i in range(time_steps, close_scaled_aligned.shape[0] - forecast_horizon + 1):
+                x_train.append(close_scaled_aligned[i - time_steps:i])
+                y_train.append(residual_scaled[i:i + forecast_horizon, 0])
         else:
             for i in range(time_steps, train_scaled.shape[0]):
                 x_train.append(train_scaled[i - time_steps:i])
@@ -136,6 +167,17 @@ class StockData:
             test_start = len(training_deltas)
             inputs_x = total_close_aligned
             inputs_y = total_deltas_scaled
+        elif use_trend_residual:
+            total_data = pd.concat((training_data, test_data), axis=0)
+            total_close_scaled = self._input_scaler.transform(total_data)
+            total_close_aligned = total_close_scaled[1:]
+
+            total_residuals = pd.concat((training_residuals, test_residuals), axis=0)
+            total_residuals_scaled = self._min_max.transform(total_residuals.to_frame())
+
+            test_start = len(training_residuals)
+            inputs_x = total_close_aligned
+            inputs_y = total_residuals_scaled
         else:
             total_data = pd.concat((training_data, test_data), axis=0)
             inputs = total_data[len(total_data) - len(test_data) - time_steps:]
@@ -145,6 +187,10 @@ class StockData:
         x_test = []
         y_test = []
         if use_deltas:
+            for i in range(test_start, inputs_y.shape[0] - forecast_horizon + 1):
+                x_test.append(inputs_x[i - time_steps:i])
+                y_test.append(inputs_y[i:i + forecast_horizon, 0])
+        elif use_trend_residual:
             for i in range(test_start, inputs_y.shape[0] - forecast_horizon + 1):
                 x_test.append(inputs_x[i - time_steps:i])
                 y_test.append(inputs_y[i:i + forecast_horizon, 0])
