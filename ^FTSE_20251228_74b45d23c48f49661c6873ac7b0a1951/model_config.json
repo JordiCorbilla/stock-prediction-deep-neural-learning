@@ -1,0 +1,12 @@
+{
+  "use_returns": false,
+  "use_deltas": true,
+  "use_trend_residual": false,
+  "model_version": "v7",
+  "forecast_horizon": 10,
+  "trend_window": 60,
+  "time_steps": 60,
+  "ticker": "^FTSE",
+  "start_date": "2017-01-01",
+  "validation_date": "2024-03-12"
+}

@@ -111,6 +111,18 @@ def _load_in_sample_predictions(inference_folder, ticker):
     return series
 
 
+def _estimate_noise_std(close_series, use_returns, use_deltas, use_trend_residual, lookback):
+    if use_returns:
+        base_series = np.log(close_series).diff().dropna()
+    else:
+        base_series = close_series.diff().dropna()
+    if lookback and lookback > 0:
+        base_series = base_series.tail(lookback)
+    if len(base_series) < 2:
+        return 0.0
+    return float(base_series.std())
+
+
 class InferenceRunner:
     def __init__(
         self,
@@ -132,6 +144,10 @@ class InferenceRunner:
         blend_alpha,
         direction_threshold,
         mag_clip_pct,
+        stochastic_paths,
+        stochastic_seed,
+        stochastic_sigma_mult,
+        stochastic_lookback,
     ):
         self.run_folder = run_folder
         self.ticker = ticker
@@ -151,6 +167,10 @@ class InferenceRunner:
         self.blend_alpha = blend_alpha
         self.direction_threshold = direction_threshold
         self.mag_clip_pct = mag_clip_pct
+        self.stochastic_paths = stochastic_paths
+        self.stochastic_seed = stochastic_seed
+        self.stochastic_sigma_mult = stochastic_sigma_mult
+        self.stochastic_lookback = stochastic_lookback
 
     def run(self):
         print(tf.version.VERSION)
@@ -319,6 +339,25 @@ class InferenceRunner:
                 predicted_prices_raw = np.maximum(predicted_prices_raw, 0)
 
         predicted_prices = self._blend_predictions(predicted_prices_raw, latest_close_price)
+        stochastic_paths = self._build_stochastic_paths(
+            predictions,
+            latest_close_price,
+            use_returns,
+            use_deltas,
+            use_trend_residual,
+            close_series,
+        )
+
+        stochastic_summary = {}
+        if stochastic_paths is not None and len(stochastic_paths) > 0:
+            p10 = np.percentile(stochastic_paths, 10, axis=0)
+            p50 = np.percentile(stochastic_paths, 50, axis=0)
+            p90 = np.percentile(stochastic_paths, 90, axis=0)
+            stochastic_summary = {
+                'Predicted_Price_P10': p10,
+                'Predicted_Price_P50': p50,
+                'Predicted_Price_P90': p90,
+            }
 
         forecast_df = pd.DataFrame(
             {
@@ -328,6 +367,7 @@ class InferenceRunner:
                 'Predicted_Return': predictions if use_returns else np.nan,
                 'Predicted_Delta': predictions if use_deltas else np.nan,
                 'Predicted_Trend_Residual': predictions if use_trend_residual else np.nan,
+                **stochastic_summary,
             }
         ).set_index('Date')
         forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
@@ -339,11 +379,31 @@ class InferenceRunner:
             print('Sanity check - next day delta: ' + f'{delta_pct:.2f}%')
 
         history = close_series.tail(self.plot_history_days)
-        in_sample = _load_in_sample_predictions(inference_folder, self.ticker)
+        in_sample = _load_in_sample_predictions(inference_folder, self.ticker).tail(self.plot_history_days)
         plt.figure(figsize=(14, 5))
         plt.plot(history.index, history, color='green', label='Actual [' + self.ticker + '] price')
         if in_sample is not None and not in_sample.empty:
             plt.plot(in_sample.index, in_sample.iloc[:, 0], color='orange', label='In-sample [' + self.ticker + '] predicted')
+        if stochastic_paths is not None and len(stochastic_paths) > 0:
+            max_paths = min(len(stochastic_paths), 20)
+            for idx in range(max_paths):
+                plt.plot(
+                    forecast_df.index,
+                    stochastic_paths[idx],
+                    color='gray',
+                    alpha=0.2,
+                    linewidth=1,
+                    label='Stochastic paths' if idx == 0 else None,
+                )
+            if {'Predicted_Price_P10', 'Predicted_Price_P90'}.issubset(forecast_df.columns):
+                plt.fill_between(
+                    forecast_df.index,
+                    forecast_df['Predicted_Price_P10'],
+                    forecast_df['Predicted_Price_P90'],
+                    color='gray',
+                    alpha=0.15,
+                    label='P10-P90 band',
+                )
         plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + self.ticker + '] price')
         plt.xlabel('Time')
         plt.ylabel('Price [USD]')
@@ -362,6 +422,51 @@ class InferenceRunner:
             blended.append(blended_value)
             current = blended_value
         return np.asarray(blended)
+
+    def _build_stochastic_paths(
+        self,
+        predictions,
+        latest_close_price,
+        use_returns,
+        use_deltas,
+        use_trend_residual,
+        close_series,
+    ):
+        if self.stochastic_paths <= 0:
+            return None
+        noise_std = _estimate_noise_std(
+            close_series,
+            use_returns,
+            use_deltas,
+            use_trend_residual,
+            self.stochastic_lookback,
+        )
+        if noise_std <= 0:
+            print('Warning: stochastic noise std is 0. Skipping stochastic paths.')
+            return None
+        noise_std *= max(self.stochastic_sigma_mult, 0.0)
+        rng = np.random.default_rng(self.stochastic_seed)
+        steps = len(predictions)
+        noise = rng.normal(0.0, noise_std, size=(self.stochastic_paths, steps))
+        predictions = np.asarray(predictions)
+        if use_returns:
+            paths = []
+            for idx in range(self.stochastic_paths):
+                returns = predictions + noise[idx]
+                paths.append(self._blend_predictions(_returns_to_prices(returns, latest_close_price), latest_close_price))
+            return np.asarray(paths)
+        if use_deltas or use_trend_residual:
+            paths = []
+            for idx in range(self.stochastic_paths):
+                deltas = predictions + noise[idx]
+                prices = latest_close_price + np.cumsum(deltas)
+                paths.append(self._blend_predictions(prices, latest_close_price))
+            return np.asarray(paths)
+        paths = []
+        for idx in range(self.stochastic_paths):
+            prices = predictions + noise[idx]
+            paths.append(self._blend_predictions(prices, latest_close_price))
+        return np.asarray(paths)
 
 
 def main(argv):
@@ -384,6 +489,10 @@ def main(argv):
         blend_alpha=BLEND_ALPHA,
         direction_threshold=DIRECTION_THRESHOLD,
         mag_clip_pct=MAG_CLIP_PCT,
+        stochastic_paths=STOCHASTIC_PATHS,
+        stochastic_seed=STOCHASTIC_SEED,
+        stochastic_sigma_mult=STOCHASTIC_SIGMA_MULT,
+        stochastic_lookback=STOCHASTIC_LOOKBACK,
         )
         runner.run()
 
@@ -409,4 +518,8 @@ if __name__ == '__main__':
     BLEND_ALPHA = 0.6
     DIRECTION_THRESHOLD = 0.55
     MAG_CLIP_PCT = 90
+    STOCHASTIC_PATHS = 50
+    STOCHASTIC_SEED = 42
+    STOCHASTIC_SIGMA_MULT = 0.6
+    STOCHASTIC_LOOKBACK = 120
     app.run(main)
