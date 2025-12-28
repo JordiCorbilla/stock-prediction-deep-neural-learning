@@ -129,6 +129,7 @@ class InferenceRunner:
         use_returns,
         use_deltas,
         clip_negative,
+        blend_alpha,
     ):
         self.run_folder = run_folder
         self.ticker = ticker
@@ -145,6 +146,7 @@ class InferenceRunner:
         self.use_returns = use_returns
         self.use_deltas = use_deltas
         self.clip_negative = clip_negative
+        self.blend_alpha = blend_alpha
 
     def run(self):
         print(tf.version.VERSION)
@@ -264,18 +266,21 @@ class InferenceRunner:
                 step_index += 1
 
         if use_returns:
-            predicted_prices = _returns_to_prices(predictions, latest_close_price)
+            predicted_prices_raw = _returns_to_prices(predictions, latest_close_price)
         elif use_deltas:
-            predicted_prices = latest_close_price + np.cumsum(predictions)
+            predicted_prices_raw = latest_close_price + np.cumsum(predictions)
         else:
-            predicted_prices = predictions
+            predicted_prices_raw = predictions
             if self.clip_negative:
-                predicted_prices = np.maximum(predicted_prices, 0)
+                predicted_prices_raw = np.maximum(predicted_prices_raw, 0)
+
+        predicted_prices = self._blend_predictions(predicted_prices_raw, latest_close_price)
 
         forecast_df = pd.DataFrame(
             {
                 'Date': future_dates,
                 'Predicted_Price': predicted_prices,
+                'Predicted_Price_Raw': predicted_prices_raw,
                 'Predicted_Return': predictions if use_returns else np.nan,
                 'Predicted_Delta': predictions if use_deltas else np.nan,
             }
@@ -302,6 +307,17 @@ class InferenceRunner:
         plt.savefig(os.path.join(inference_folder, self.ticker + '_future_forecast.png'))
         plt.show()
 
+    def _blend_predictions(self, predictions, anchor_price):
+        if self.blend_alpha >= 1.0:
+            return np.asarray(predictions)
+        blended = []
+        current = anchor_price
+        for value in predictions:
+            blended_value = (self.blend_alpha * value) + ((1.0 - self.blend_alpha) * current)
+            blended.append(blended_value)
+            current = blended_value
+        return np.asarray(blended)
+
 
 def main(argv):
     runner = InferenceRunner(
@@ -320,6 +336,7 @@ def main(argv):
         use_returns=USE_RETURNS,
         use_deltas=USE_DELTAS,
         clip_negative=CLIP_NEGATIVE,
+        blend_alpha=BLEND_ALPHA,
     )
     runner.run()
 
@@ -342,4 +359,5 @@ if __name__ == '__main__':
     USE_RETURNS = False
     USE_DELTAS = False
     CLIP_NEGATIVE = True
+    BLEND_ALPHA = 0.6
     app.run(main)
