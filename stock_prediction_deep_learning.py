@@ -43,7 +43,7 @@ def _returns_to_prices(returns, start_price):
     return prices
 
 
-def train_LSTM_network(stock, use_returns=False, model_version='v1', forecast_horizon=1, trend_window=60):
+def train_LSTM_network(stock, use_returns=False, model_version='v7', forecast_horizon=1, trend_window=60):
     use_deltas = model_version in ('v3', 'v5', 'v7')
     use_trend_residual = model_version == 'v6'
     if use_returns and (use_deltas or use_trend_residual):

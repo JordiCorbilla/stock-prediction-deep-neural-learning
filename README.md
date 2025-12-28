@@ -38,7 +38,7 @@ For our purposes, we will be using the ticker symbol "GOOG", which is a well-kno
 
 ### 2.1) Market Info Download
 
-To download the data info, we will need the `yFinance` library installed and then we will only need to perform the following operation to download all the relevant information of a given Stock using its ticker symbol. Please make sure you use the latest version of the library (`pip install yfinance==0.2.33`) as I have seen errors with previous versions.
+To download the data info, we will need the `yFinance` library installed and then we will only need to perform the following operation to download all the relevant information of a given Stock using its ticker symbol. Please make sure you use the latest version of the library (`pip install yfinance==0.2.54`) as I have seen errors with previous versions.
 
 Below is the output from the [download_market_data_info.py] file that is able to download financial data from Yahoo Finance. 
 
@@ -676,7 +676,7 @@ Now we can call the `infer_data` method which will allow us to generate the stoc
 
 # 4) Usage
 
-This has been built using Python 3.10 version.
+This has been built using Python 3.12.
 
 Download the source code and install the dependencies using one of the following:
 
@@ -693,12 +693,34 @@ pip install -r requirements.txt
 
 Note: If you change TensorFlow versions, align NumPy to the version constraints for that release.
 
+### 4.1) Default model (v7)
+
+v7 is the default model version. It trains two heads: direction (up/down) and magnitude (absolute move), then reconstructs price deltas.
+
+Training outputs for v7:
+- `model_direction.keras`
+- `model_magnitude.keras`
+- `model_config.json` (includes `model_version`, `forecast_horizon`, `use_returns`, `use_deltas`, `use_trend_residual`)
+- `min_max_scaler.pkl` and `input_scaler.pkl`
+
+### 4.2) Inference (stochastic trajectories)
+
+Inference uses `InferenceRunner` from `stock_prediction_deep_learning_inference.py` and can generate multiple stochastic paths:
+- `STOCHASTIC_PATHS`: number of trajectories
+- `STOCHASTIC_SIGMA_MULT`: noise scale multiplier
+- `STOCHASTIC_LOOKBACK`: lookback window for noise estimation
+- `STOCHASTIC_SEED`: RNG seed for reproducibility
+
+Output includes `future_predictions.csv` with `Predicted_Price`, `Predicted_Price_Raw`, and percentile bands (`Predicted_Price_P10`, `Predicted_Price_P50`, `Predicted_Price_P90`) when stochastic paths are enabled.
+
 Then edit the file "stock_prediction_deep_learning.py" to include the Stock you want to use and the relevant dates and execute:
 
 ```cmd
 # all arguments are optional
 python stock_prediction_deep_learning.py -ticker=GOOG -start_date=2017-11-01 -validation_date=2022-09-01 -epochs=150 -batch_size=32 -time_steps=30 -use_returns=false -model_version=v7 -forecast_horizon=1
 ```
+
+Note: `model_version` defaults to `v7`, so you can omit it if you want the default behavior.
 
 Also you can use the `Jupyter notebook` available here:
 
