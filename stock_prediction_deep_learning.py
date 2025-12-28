@@ -16,7 +16,14 @@ import os
 import secrets
 import pandas as pd
 import argparse
+import pickle
+import numpy as np
+import json
+import warnings
+from tensorflow.keras.losses import Huber
 from datetime import datetime
+
+warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
 
 from stock_prediction_class import StockPrediction
 from stock_prediction_lstm import LongShortTermMemory
@@ -27,39 +34,166 @@ from stock_prediction_readme_generator import ReadmeGenerator
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 
-def train_LSTM_network(stock):
+def _returns_to_prices(returns, start_price):
+    prices = []
+    current_price = start_price
+    for value in returns:
+        current_price = current_price * np.exp(value)
+        prices.append(current_price)
+    return prices
+
+
+def train_LSTM_network(stock, use_returns=False, model_version='v7', forecast_horizon=1, trend_window=60):
+    use_deltas = model_version in ('v3', 'v5', 'v7')
+    use_trend_residual = model_version == 'v6'
+    if use_returns and (use_deltas or use_trend_residual):
+        print('Error: returns cannot be combined with delta or trend-residual modes.')
+        return
     data = StockData(stock)
     plotter = Plotter(True, stock.get_project_folder(), data.get_stock_short_name(), data.get_stock_currency(), stock.get_ticker())
-    (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(stock.get_time_steps(), stock.get_project_folder())
+    if model_version == 'v7':
+        (x_train, y_dir_train, y_mag_train), (x_test, y_dir_test, y_mag_test), (training_data, test_data) = data.prepare_delta_direction_data(
+            stock.get_time_steps(),
+            stock.get_validation_date(),
+        )
+    else:
+        (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(
+            stock.get_time_steps(),
+            stock.get_project_folder(),
+            use_returns=use_returns,
+            use_deltas=use_deltas,
+            use_trend_residual=use_trend_residual,
+            trend_window=trend_window,
+            forecast_horizon=forecast_horizon,
+        )
     plotter.plot_histogram_data_split(training_data, test_data, stock.get_validation_date())
+    scaler_path = os.path.join(stock.get_project_folder(), 'min_max_scaler.pkl')
+    with open(scaler_path, 'wb') as scaler_file:
+        pickle.dump(data.get_min_max(), scaler_file)
+    if use_deltas or use_trend_residual:
+        input_scaler_path = os.path.join(stock.get_project_folder(), 'input_scaler.pkl')
+        with open(input_scaler_path, 'wb') as scaler_file:
+            pickle.dump(data.get_input_scaler(), scaler_file)
+    config = {
+        'use_returns': use_returns,
+        'use_deltas': use_deltas,
+        'use_trend_residual': use_trend_residual,
+        'model_version': model_version,
+        'forecast_horizon': forecast_horizon,
+        'trend_window': trend_window,
+        'time_steps': stock.get_time_steps(),
+        'ticker': stock.get_ticker(),
+        'start_date': stock.get_start_date().strftime("%Y-%m-%d"),
+        'validation_date': stock.get_validation_date().strftime("%Y-%m-%d"),
+    }
+    config_path = os.path.join(stock.get_project_folder(), 'model_config.json')
+    with open(config_path, 'w', encoding='utf-8') as config_file:
+        json.dump(config, config_file, indent=2)
 
     lstm = LongShortTermMemory(stock.get_project_folder())
-    model = lstm.create_model(x_train)
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=lstm.get_defined_metrics())
-    history = model.fit(x_train, y_train, epochs=stock.get_epochs(), batch_size=stock.get_batch_size(), validation_data=(x_test, y_test),
-                        callbacks=[lstm.get_callback()])
-    print("saving weights")
-    model.save(os.path.join(stock.get_project_folder(), 'model_weights.h5'))
+    if model_version == 'v7':
+        dir_model = lstm._create_model_v7(x_train, output_units=1, activation='sigmoid')
+        dir_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        dir_history = dir_model.fit(
+            x_train,
+            y_dir_train,
+            epochs=stock.get_epochs(),
+            batch_size=stock.get_batch_size(),
+            validation_data=(x_test, y_dir_test),
+            callbacks=lstm.get_callbacks('v4'),
+        )
+        mag_model = lstm._create_model_v7(x_train, output_units=1, activation=None)
+        mag_model.compile(optimizer=lstm.get_optimizer('v4'), loss=Huber(), metrics=lstm.get_defined_metrics())
+        mag_history = mag_model.fit(
+            x_train,
+            y_mag_train,
+            epochs=stock.get_epochs(),
+            batch_size=stock.get_batch_size(),
+            validation_data=(x_test, y_mag_test),
+            callbacks=lstm.get_callbacks('v4'),
+        )
+        print("saving models")
+        dir_model.save(os.path.join(stock.get_project_folder(), 'model_direction.keras'))
+        mag_model.save(os.path.join(stock.get_project_folder(), 'model_magnitude.keras'))
+        history = mag_history
+    else:
+        output_units = forecast_horizon if model_version in ('v5', 'v6') else 1
+        model = lstm.create_model(x_train, version=model_version, output_units=output_units)
+        model.compile(optimizer=lstm.get_optimizer(model_version), loss=lstm.get_loss(model_version), metrics=lstm.get_defined_metrics())
+        history = model.fit(
+            x_train,
+            y_train,
+            epochs=stock.get_epochs(),
+            batch_size=stock.get_batch_size(),
+            validation_data=(x_test, y_test),
+            callbacks=lstm.get_callbacks(model_version),
+        )
+        print("saving model")
+        model.save(os.path.join(stock.get_project_folder(), 'model.keras'))
 
     plotter.plot_loss(history)
     plotter.plot_mse(history)
 
     print("display the content of the model")
-    baseline_results = model.evaluate(x_test, y_test, verbose=2)
-    for name, value in zip(model.metrics_names, baseline_results):
-        print(name, ': ', value)
+    if model_version == 'v7':
+        baseline_results = mag_model.evaluate(x_test, y_mag_test, verbose=2)
+        for name, value in zip(mag_model.metrics_names, baseline_results):
+            print(name, ': ', value)
+    else:
+        baseline_results = model.evaluate(x_test, y_test, verbose=2)
+        for name, value in zip(model.metrics_names, baseline_results):
+            print(name, ': ', value)
     print()
 
     print("plotting prediction results")
-    test_predictions_baseline = model.predict(x_test)
-    test_predictions_baseline = data.get_min_max().inverse_transform(test_predictions_baseline)
-    test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
-    test_predictions_baseline.to_csv(os.path.join(stock.get_project_folder(), 'predictions.csv'))
-
-    test_predictions_baseline.rename(columns={0: stock.get_ticker() + '_predicted'}, inplace=True)
-    test_predictions_baseline = test_predictions_baseline.round(decimals=0)
-    test_predictions_baseline.index = test_data.index
-    plotter.project_plot_predictions(test_predictions_baseline, test_data)
+    if model_version == 'v7':
+        dir_pred = dir_model.predict(x_test)
+        mag_pred = mag_model.predict(x_test)
+        mag_pred = data.get_min_max().inverse_transform(mag_pred).flatten()
+        direction = (dir_pred.flatten() >= 0.5).astype(np.float32)
+        test_predictions_baseline = mag_pred * np.where(direction > 0, 1.0, -1.0)
+    else:
+        test_predictions_baseline = model.predict(x_test)
+        test_predictions_baseline = data.get_min_max().inverse_transform(test_predictions_baseline)
+        if model_version not in ('v5', 'v6'):
+            test_predictions_baseline = test_predictions_baseline.flatten()
+    if use_returns:
+        last_train_close = training_data['Close'].iloc[-1]
+        predicted_prices = _returns_to_prices(test_predictions_baseline, last_train_close)
+        predictions_df = pd.DataFrame({stock.get_ticker() + '_predicted': predicted_prices})
+    elif use_deltas:
+        last_train_close = training_data['Close'].iloc[-1]
+        base_close = test_data['Close'].shift(1)
+        base_close.iloc[0] = last_train_close
+        if model_version == 'v5':
+            step_deltas = test_predictions_baseline[:, 0]
+            predicted_prices = base_close.to_numpy().flatten()[:len(step_deltas)] + step_deltas
+            test_data = test_data.iloc[:len(step_deltas)]
+        else:
+            predicted_prices = base_close.to_numpy().flatten() + test_predictions_baseline.flatten()
+        predictions_df = pd.DataFrame({stock.get_ticker() + '_predicted': predicted_prices}, index=test_data.index)
+    elif use_trend_residual:
+        full_series = pd.concat([training_data['Close'], test_data['Close']])
+        residuals = data._compute_trend_residuals(full_series, trend_window)
+        base_close = test_data['Close'].shift(1)
+        base_close.iloc[0] = training_data['Close'].iloc[-1]
+        if model_version == 'v6':
+            step_residuals = test_predictions_baseline[:, 0]
+            predicted_prices = base_close.to_numpy().flatten()[:len(step_residuals)] + step_residuals
+            test_data = test_data.iloc[:len(step_residuals)]
+        else:
+            predicted_prices = base_close.to_numpy().flatten() + test_predictions_baseline.flatten()
+        predictions_df = pd.DataFrame({stock.get_ticker() + '_predicted': predicted_prices}, index=test_data.index)
+    else:
+        predictions_df = pd.DataFrame(test_predictions_baseline, index=test_data.index)
+        predictions_df.rename(columns={0: stock.get_ticker() + '_predicted'}, inplace=True)
+        predictions_df = predictions_df.round(decimals=0)
+    if len(predictions_df) != len(test_data):
+        predictions_df = predictions_df.tail(len(test_data))
+        test_data = test_data.tail(len(predictions_df))
+    predictions_df.index = test_data.index
+    predictions_df.to_csv(os.path.join(stock.get_project_folder(), 'predictions.csv'))
+    plotter.project_plot_predictions(predictions_df, test_data)
 
     generator = ReadmeGenerator(stock.get_github_url(), stock.get_token(), data.get_stock_short_name())
     generator.write()
@@ -80,6 +214,10 @@ if __name__ == '__main__':
     parser.add_argument("-batch_size", default="10")
     parser.add_argument("-time_steps", default="3")
     parser.add_argument("-github_url", default="https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/raw/master/")
+    parser.add_argument("-use_returns", default="true")
+    parser.add_argument("-model_version", default="v7")
+    parser.add_argument("-forecast_horizon", default="10")
+    parser.add_argument("-trend_window", default="60")
     
     args = parser.parse_args()
     
@@ -89,6 +227,10 @@ if __name__ == '__main__':
     EPOCHS = int(args.epochs)
     BATCH_SIZE = int(args.batch_size)
     TIME_STEPS = int(args.time_steps)
+    USE_RETURNS = str(args.use_returns).lower() in ("1", "true", "yes", "y")
+    MODEL_VERSION = args.model_version
+    FORECAST_HORIZON = int(args.forecast_horizon)
+    TREND_WINDOW = int(args.trend_window)
     TODAY_RUN = datetime.today().strftime("%Y%m%d")
     TOKEN = STOCK_TICKER + '_' + TODAY_RUN + '_' + secrets.token_hex(16)
     GITHUB_URL = args.github_url
@@ -111,4 +253,10 @@ if __name__ == '__main__':
                                        TOKEN,
                                        BATCH_SIZE)
     # Execute Deep Learning model
-    train_LSTM_network(stock_prediction)
+    train_LSTM_network(
+        stock_prediction,
+        use_returns=USE_RETURNS,
+        model_version=MODEL_VERSION,
+        forecast_horizon=FORECAST_HORIZON,
+        trend_window=TREND_WINDOW,
+    )

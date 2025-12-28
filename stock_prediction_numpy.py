@@ -28,6 +28,7 @@ class StockData:
         self._stock = stock
         self._sec = yf.Ticker(self._stock.get_ticker())
         self._min_max = MinMaxScaler(feature_range=(0, 1))
+        self._input_scaler = MinMaxScaler(feature_range=(0, 1))
 
     def __data_verification(self, train):
         print('mean:', train.mean(axis=0))
@@ -41,13 +42,55 @@ class StockData:
     def get_min_max(self):
         return self._min_max
 
+    def get_input_scaler(self):
+        return self._input_scaler
+
     def get_stock_currency(self):
         return self._sec.info['currency']
 
-    def download_transform_to_numpy(self, time_steps, project_folder):
+    def _compute_log_returns(self, series):
+        return np.log(series).diff().dropna()
+
+    def _compute_deltas(self, series):
+        return series.diff().dropna()
+
+    def _compute_trend_residuals(self, series, window):
+        values = series.to_numpy()
+        residuals = []
+        for i in range(1, len(values)):
+            start = max(0, i - window)
+            y = values[start:i]
+            if len(y) < 2:
+                residuals.append(values[i] - values[i - 1])
+                continue
+            x = np.arange(len(y))
+            slope, intercept = np.polyfit(x, y, 1)
+            trend_next = slope * len(y) + intercept
+            residuals.append(values[i] - trend_next)
+        return pd.Series(residuals, index=series.index[1:])
+
+    def _ensure_series(self, series_or_frame):
+        if isinstance(series_or_frame, pd.DataFrame):
+            return series_or_frame.iloc[:, 0]
+        return series_or_frame
+
+    def _ensure_frame(self, series_or_frame):
+        if isinstance(series_or_frame, pd.Series):
+            return series_or_frame.to_frame()
+        return series_or_frame
+
+    def download_raw_data(self, end_date=None):
+        if end_date is None:
+            end_date = datetime.today()
+        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
+        data = data.reset_index()
+        data = data.set_index('Date')
+        return data
+
+    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False, use_trend_residual=False, trend_window=60, forecast_horizon=1):
         end_date = datetime.today()
         print('End Date: ' + end_date.strftime("%Y-%m-%d"))
-        data = yf.download([self._stock.get_ticker()], start=self._stock.get_start_date(), end=end_date)[['Close']]
+        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
         data = data.reset_index()
         data.to_csv(os.path.join(project_folder, 'downloaded_data_'+self._stock.get_ticker()+'.csv'))
         #print(data)
@@ -59,33 +102,167 @@ class StockData:
         test_data = test_data.set_index('Date')
         #print(test_data)
 
-        train_scaled = self._min_max.fit_transform(training_data)
+        if use_returns and use_deltas:
+            raise ValueError('use_returns and use_deltas cannot both be true')
+        if use_trend_residual and use_returns:
+            raise ValueError('use_trend_residual cannot be combined with returns')
+
+        if use_returns:
+            full_series = data.set_index('Date')[['Close']]
+            full_series = self._ensure_series(full_series)
+            returns = self._compute_log_returns(full_series).rename('Close')
+            training_returns = returns[returns.index < self._stock.get_validation_date()]
+            test_returns = returns[returns.index >= self._stock.get_validation_date()]
+            train_scaled = self._min_max.fit_transform(training_returns.to_frame())
+        elif use_deltas:
+            full_series = data.set_index('Date')[['Close']]
+            full_series = self._ensure_series(full_series)
+            deltas = self._compute_deltas(full_series).rename('Close')
+            training_deltas = deltas[deltas.index < self._stock.get_validation_date()]
+            test_deltas = deltas[deltas.index >= self._stock.get_validation_date()]
+            close_scaled = self._input_scaler.fit_transform(training_data)
+            delta_scaled = self._min_max.fit_transform(training_deltas.to_frame())
+            train_scaled = close_scaled
+        elif use_trend_residual:
+            full_series = data.set_index('Date')[['Close']]
+            full_series = self._ensure_series(full_series)
+            residuals = self._compute_trend_residuals(full_series, trend_window).rename('Close')
+            training_residuals = residuals[residuals.index < self._stock.get_validation_date()]
+            test_residuals = residuals[residuals.index >= self._stock.get_validation_date()]
+            close_scaled = self._input_scaler.fit_transform(training_data)
+            residual_scaled = self._min_max.fit_transform(training_residuals.to_frame())
+            train_scaled = close_scaled
+        else:
+            train_scaled = self._min_max.fit_transform(training_data)
         self.__data_verification(train_scaled)
 
         # Training Data Transformation
         x_train = []
         y_train = []
-        for i in range(time_steps, train_scaled.shape[0]):
-            x_train.append(train_scaled[i - time_steps:i])
-            y_train.append(train_scaled[i, 0])
+        if use_deltas:
+            close_scaled_aligned = close_scaled[1:]
+            for i in range(time_steps, close_scaled_aligned.shape[0] - forecast_horizon + 1):
+                x_train.append(close_scaled_aligned[i - time_steps:i])
+                y_train.append(delta_scaled[i:i + forecast_horizon, 0])
+        elif use_trend_residual:
+            close_scaled_aligned = close_scaled[1:]
+            for i in range(time_steps, close_scaled_aligned.shape[0] - forecast_horizon + 1):
+                x_train.append(close_scaled_aligned[i - time_steps:i])
+                y_train.append(residual_scaled[i:i + forecast_horizon, 0])
+        else:
+            for i in range(time_steps, train_scaled.shape[0]):
+                x_train.append(train_scaled[i - time_steps:i])
+                y_train.append(train_scaled[i, 0])
 
         x_train, y_train = np.array(x_train), np.array(y_train)
         x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
 
-        total_data = pd.concat((training_data, test_data), axis=0)
-        inputs = total_data[len(total_data) - len(test_data) - time_steps:]
-        test_scaled = self._min_max.fit_transform(inputs)
+        if use_returns:
+            total_returns = pd.concat((training_returns, test_returns), axis=0)
+            inputs = total_returns[len(total_returns) - len(test_returns) - time_steps:]
+            test_scaled = self._min_max.transform(inputs.to_frame())
+        elif use_deltas:
+            total_data = pd.concat((training_data, test_data), axis=0)
+            total_close_scaled = self._input_scaler.transform(total_data)
+            total_close_aligned = total_close_scaled[1:]
+
+            total_deltas = pd.concat((training_deltas, test_deltas), axis=0)
+            total_deltas_scaled = self._min_max.transform(total_deltas.to_frame())
+
+            test_start = len(training_deltas)
+            inputs_x = total_close_aligned
+            inputs_y = total_deltas_scaled
+        elif use_trend_residual:
+            total_data = pd.concat((training_data, test_data), axis=0)
+            total_close_scaled = self._input_scaler.transform(total_data)
+            total_close_aligned = total_close_scaled[1:]
+
+            total_residuals = pd.concat((training_residuals, test_residuals), axis=0)
+            total_residuals_scaled = self._min_max.transform(total_residuals.to_frame())
+
+            test_start = len(training_residuals)
+            inputs_x = total_close_aligned
+            inputs_y = total_residuals_scaled
+        else:
+            total_data = pd.concat((training_data, test_data), axis=0)
+            inputs = total_data[len(total_data) - len(test_data) - time_steps:]
+            test_scaled = self._min_max.transform(inputs)
 
         # Testing Data Transformation
         x_test = []
         y_test = []
-        for i in range(time_steps, test_scaled.shape[0]):
-            x_test.append(test_scaled[i - time_steps:i])
-            y_test.append(test_scaled[i, 0])
+        if use_deltas:
+            for i in range(test_start, inputs_y.shape[0] - forecast_horizon + 1):
+                x_test.append(inputs_x[i - time_steps:i])
+                y_test.append(inputs_y[i:i + forecast_horizon, 0])
+        elif use_trend_residual:
+            for i in range(test_start, inputs_y.shape[0] - forecast_horizon + 1):
+                x_test.append(inputs_x[i - time_steps:i])
+                y_test.append(inputs_y[i:i + forecast_horizon, 0])
+        else:
+            for i in range(time_steps, test_scaled.shape[0]):
+                x_test.append(test_scaled[i - time_steps:i])
+                y_test.append(test_scaled[i, 0])
 
         x_test, y_test = np.array(x_test), np.array(y_test)
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
         return (x_train, y_train), (x_test, y_test), (training_data, test_data)
+
+    def prepare_delta_direction_data(self, time_steps, validation_date):
+        end_date = datetime.today()
+        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
+        data = data.reset_index()
+        data = data.set_index('Date')
+
+        training_data = data[data.index < validation_date].copy()
+        test_data = data[data.index >= validation_date].copy()
+
+        close_series = pd.concat([training_data['Close'], test_data['Close']])
+        deltas = self._compute_deltas(close_series)
+        training_deltas = deltas[deltas.index < validation_date]
+        test_deltas = deltas[deltas.index >= validation_date]
+
+        close_scaled_train = self._input_scaler.fit_transform(training_data)
+        close_scaled_all = self._input_scaler.transform(pd.concat((training_data, test_data), axis=0))
+        close_scaled_aligned = close_scaled_all[1:]
+
+        magnitude = training_deltas.abs()
+        mag_scaled = self._min_max.fit_transform(self._ensure_frame(magnitude))
+
+        total_magnitude = pd.concat((training_deltas.abs(), test_deltas.abs()), axis=0)
+        total_mag_scaled = self._min_max.transform(self._ensure_frame(total_magnitude))
+
+        direction = (training_deltas > 0).astype(np.float32)
+        total_direction = (pd.concat((training_deltas, test_deltas), axis=0) > 0).astype(np.float32)
+
+        x_train = []
+        y_dir_train = []
+        y_mag_train = []
+        for i in range(time_steps, len(training_deltas)):
+            x_train.append(close_scaled_aligned[i - time_steps:i])
+            y_dir_train.append(direction.iloc[i])
+            y_mag_train.append(mag_scaled[i, 0])
+
+        x_test = []
+        y_dir_test = []
+        y_mag_test = []
+        test_start = len(training_deltas)
+        for i in range(test_start, len(total_magnitude)):
+            x_test.append(close_scaled_aligned[i - time_steps:i])
+            y_dir_test.append(total_direction.iloc[i])
+            y_mag_test.append(total_mag_scaled[i, 0])
+
+        x_train = np.array(x_train)
+        y_dir_train = np.array(y_dir_train)
+        y_mag_train = np.array(y_mag_train)
+        x_test = np.array(x_test)
+        y_dir_test = np.array(y_dir_test)
+        y_mag_test = np.array(y_mag_test)
+
+        x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+
+        return (x_train, y_dir_train, y_mag_train), (x_test, y_dir_test, y_mag_test), (training_data, test_data)
 
     def __date_range(self, start_date, end_date):
         for n in range(int((end_date - start_date).days)):

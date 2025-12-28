@@ -1,0 +1,7 @@
+absl-py
+matplotlib
+numpy
+pandas
+scikit-learn
+tensorflow==2.18.1
+yfinance==1.0

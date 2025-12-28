@@ -13,10 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import warnings
 from absl import app
-import tensorflow as tf
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+
+warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
+
+import tensorflow as tf
 
 from stock_prediction_numpy import StockData
 from datetime import date

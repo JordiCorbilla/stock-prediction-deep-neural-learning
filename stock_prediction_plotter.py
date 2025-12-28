@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import pandas as pd
 import matplotlib.pyplot as plt
 
 
@@ -68,9 +69,14 @@ class Plotter:
 
     def project_plot_predictions(self, price_predicted, test_data):
         print("plotting predictions")
+        predicted_series = pd.to_numeric(price_predicted[self.stock_ticker + '_predicted'], errors='coerce')
+        actual_values = test_data['Close']
+        if isinstance(actual_values, pd.DataFrame):
+            actual_values = actual_values.iloc[:, 0]
+        actual_series = pd.to_numeric(actual_values, errors='coerce')
         plt.figure(figsize=(14, 5))
-        plt.plot(price_predicted[self.stock_ticker + '_predicted'], color='red', label='Predicted [' + self.short_name + '] price')
-        plt.plot(test_data.Close, color='green', label='Actual [' + self.short_name + '] price')
+        plt.plot(predicted_series.to_numpy(), color='red', label='Predicted [' + self.short_name + '] price')
+        plt.plot(actual_series.to_numpy(), color='green', label='Actual [' + self.short_name + '] price')
         plt.xlabel('Time')
         plt.ylabel('Price [' + self.currency + ']')
         plt.legend()
