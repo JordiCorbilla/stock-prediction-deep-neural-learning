@@ -144,6 +144,8 @@ The migration is deliberately compatibility-first: stable research components ar
 
 See [Architecture](docs/ARCHITECTURE.md) and [Methodology](docs/METHODOLOGY.md).
 
+See also the [Model catalogue](docs/MODELS.md) for the exact semantics of v1-v8.
+
 ## Evaluation protocol
 
 The training path separates three roles:
@@ -236,6 +238,20 @@ docs/assets/legacy/
 ~~~
 
 Generated ticker/date experiment directories are intentionally removed from the project root. They remain recoverable from Git history, while new runs are ignored by Git.
+
+## Forecasting a saved run
+
+A known-good v7 FTSE reference run is retained under `examples/runs/reference-v7-ftse`, so the inference workflow remains executable after generated runs were removed from the repository root.
+
+~~~bash
+python stock_prediction_forecasting.py \
+  --run-folder examples/runs/reference-v7-ftse \
+  --ticker ^FTSE \
+  --calendar XLON \
+  --forecast-days 30
+~~~
+
+The calendar parameter is passed to `exchange_calendars`, so the reference forecast uses actual London Stock Exchange sessions rather than treating every weekday as tradable. For US equities use `XNYS`; for continuous markets an appropriate always-open calendar can be supplied.
 
 ## Data
 
