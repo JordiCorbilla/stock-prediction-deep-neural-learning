@@ -32,7 +32,7 @@ class Plotter:
         plt.plot(test_data.Close, color='red')
         plt.ylabel('Price [' + self.currency + ']')
         plt.xlabel("Date")
-        plt.legend(["Training Data", "Validation Data >= " + validation_date.strftime("%Y-%m-%d")])
+        plt.legend(["Pre-test data", "Held-out test data >= " + validation_date.strftime("%Y-%m-%d")])
         plt.title(self.short_name)
         plt.savefig(os.path.join(self.project_folder, self.short_name.strip().replace('.', '') + '_price.png'))
 
