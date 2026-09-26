@@ -1,3 +1,45 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-*.pyc
-__pycache__/stock_prediction_plotter.cpython-36.pyc
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE / notebook state
+.idea/
+.vscode/
+.ipynb_checkpoints/
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local secrets and environment
+.env
+.env.*
+!.env.example
+
+# Generated project outputs
+runs/
+artifacts/
+reports/generated/
+*_20??????_*/
+
+# Generated model artifacts outside a run directory
+*.keras
+*.h5
+*.pkl
