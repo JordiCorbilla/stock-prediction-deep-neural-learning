@@ -39,6 +39,7 @@ from quant_forecast_lab.config import (
     validate_model_options,
 )
 from quant_forecast_lab.evaluation import evaluate_price_forecast
+from quant_forecast_lab.experiment import runtime_metadata, sha256_file
 from quant_forecast_lab.reproducibility import set_global_seed
 
 
@@ -110,6 +111,11 @@ def train_LSTM_network(
         )
 
     plotter.plot_histogram_data_split(training_data, test_data, stock.get_validation_date())
+
+    market_data = pd.concat((training_data, test_data), axis=0).sort_index()
+    market_data_path = os.path.join(stock.get_project_folder(), 'market_data.csv')
+    market_data.to_csv(market_data_path)
+
     scaler_path = os.path.join(stock.get_project_folder(), 'min_max_scaler.pkl')
     with open(scaler_path, 'wb') as scaler_file:
         pickle.dump(data.get_min_max(), scaler_file)
@@ -128,8 +134,14 @@ def train_LSTM_network(
         'ticker': stock.get_ticker(),
         'start_date': stock.get_start_date().strftime("%Y-%m-%d"),
         'validation_date': stock.get_validation_date().strftime("%Y-%m-%d"),
+        'test_start_date': stock.get_validation_date().strftime("%Y-%m-%d"),
         'validation_fraction': validation_fraction,
         'seed': seed,
+        'training_observations': int(len(training_data)),
+        'test_observations': int(len(test_data)),
+        'market_data_file': 'market_data.csv',
+        'market_data_sha256': sha256_file(market_data_path),
+        'runtime': runtime_metadata(cwd=os.getcwd()),
     }
     config_path = os.path.join(stock.get_project_folder(), 'model_config.json')
     with open(config_path, 'w', encoding='utf-8') as config_file:
