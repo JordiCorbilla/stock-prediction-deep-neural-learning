@@ -19,6 +19,8 @@ The quant_forecast_lab package contains dependency-light components that can be 
 
 - config.py — shared model/target compatibility rules;
 - evaluation.py — forecast error, direction and naive-relative skill;
+- experiment.py — data hashing and runtime provenance;
+- arena.py — cross-asset/horizon out-of-sample comparison and HTML reporting;
 - validation.py — chronological expanding-window folds;
 - uncertainty.py — distribution-free conformal intervals;
 - backtest.py — explicit transaction-cost-aware diagnostics;
