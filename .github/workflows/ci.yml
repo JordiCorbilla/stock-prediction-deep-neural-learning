@@ -37,3 +37,45 @@ jobs:
 
       - name: Run unit tests
         run: pytest
+
+  legacy-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -e . --no-deps
+          python -m pip check
+
+      - name: Import legacy entry points
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python -c "import stock_prediction_deep_learning, stock_prediction_deep_learning_inference, stock_prediction_lstm, stock_prediction_numpy"
+
+      - name: Build and execute v8 model contract
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python - <<'PY'
+          import numpy as np
+          from stock_prediction_lstm import LongShortTermMemory
+
+          x = np.zeros((8, 3, 1), dtype=np.float32)
+          model = LongShortTermMemory(".").create_multitask_model(x)
+          output = model.predict(x[:1], verbose=0)
+
+          assert set(output) == {"direction", "magnitude"}
+          assert output["direction"].shape == (1, 1)
+          assert output["magnitude"].shape == (1, 1)
+          assert 0.0 <= float(output["direction"][0, 0]) <= 1.0
+          assert float(output["magnitude"][0, 0]) >= 0.0
+          PY
