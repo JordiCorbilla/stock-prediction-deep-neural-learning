@@ -36,8 +36,16 @@ class StockData:
         print('min', train.min())
         print('Std dev:', train.std(axis=0))
 
+    def _get_security_info(self):
+        try:
+            return self._sec.info or {}
+        except Exception as exc:
+            print('Warning: unable to download ticker metadata:', exc)
+            return {}
+
     def get_stock_short_name(self):
-        return self._sec.info['shortName']
+        info = self._get_security_info()
+        return info.get('shortName') or info.get('longName') or self._stock.get_ticker()
 
     def get_min_max(self):
         return self._min_max
@@ -46,7 +54,7 @@ class StockData:
         return self._input_scaler
 
     def get_stock_currency(self):
-        return self._sec.info['currency']
+        return self._get_security_info().get('currency') or ''
 
     def _compute_log_returns(self, series):
         return np.log(series).diff().dropna()
@@ -79,19 +87,42 @@ class StockData:
             return series_or_frame.to_frame()
         return series_or_frame
 
+    def _download_close_frame(self, end_date):
+        raw = yf.download(
+            self._stock.get_ticker(),
+            start=self._stock.get_start_date(),
+            end=end_date,
+            progress=False,
+            auto_adjust=False,
+        )
+        if raw.empty:
+            raise ValueError('No market data returned for ticker ' + self._stock.get_ticker())
+        if 'Close' not in raw.columns:
+            raise ValueError('Downloaded market data does not contain a Close column.')
+
+        close = raw['Close']
+        if isinstance(close, pd.DataFrame):
+            ticker = self._stock.get_ticker()
+            if ticker in close.columns:
+                close = close[ticker]
+            else:
+                close = close.iloc[:, 0]
+
+        close = pd.to_numeric(close, errors='coerce').dropna()
+        frame = close.rename('Close').to_frame()
+        frame.index = pd.to_datetime(frame.index)
+        frame.index.name = 'Date'
+        return frame
+
     def download_raw_data(self, end_date=None):
         if end_date is None:
             end_date = datetime.today()
-        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
-        data = data.reset_index()
-        data = data.set_index('Date')
-        return data
+        return self._download_close_frame(end_date)
 
     def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False, use_trend_residual=False, trend_window=60, forecast_horizon=1):
         end_date = datetime.today()
         print('End Date: ' + end_date.strftime("%Y-%m-%d"))
-        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
-        data = data.reset_index()
+        data = self._download_close_frame(end_date).reset_index()
         data.to_csv(os.path.join(project_folder, 'downloaded_data_'+self._stock.get_ticker()+'.csv'))
         #print(data)
 
@@ -210,8 +241,7 @@ class StockData:
 
     def prepare_delta_direction_data(self, time_steps, validation_date):
         end_date = datetime.today()
-        data = yf.download(self._stock.get_ticker(), start=self._stock.get_start_date(), end=end_date, progress=False, auto_adjust=False)[['Close']]
-        data = data.reset_index()
+        data = self._download_close_frame(end_date).reset_index()
         data = data.set_index('Date')
 
         training_data = data[data.index < validation_date].copy()
