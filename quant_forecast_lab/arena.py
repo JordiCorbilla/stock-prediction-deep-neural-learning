@@ -34,6 +34,7 @@ def arena_frame(
     actual_col: str,
     prediction_cols: list[str],
     group_cols: list[str] | None = None,
+    time_col: str | None = None,
     previous_actual_col: str | None = None,
     transaction_cost_bps: float = 0.0,
 ) -> pd.DataFrame:
@@ -45,6 +46,8 @@ def arena_frame(
     """
     group_cols = list(group_cols or [])
     required = [actual_col, *prediction_cols, *group_cols]
+    if time_col:
+        required.append(time_col)
     if previous_actual_col:
         required.append(previous_actual_col)
     missing = [column for column in required if column not in frame.columns]
@@ -55,6 +58,8 @@ def arena_frame(
     rows: list[dict[str, object]] = []
 
     for key, group in grouped:
+        if time_col:
+            group = group.sort_values(time_col)
         keys = key if isinstance(key, tuple) else (key,)
         group_values = dict(zip(group_cols, keys, strict=True))
 
