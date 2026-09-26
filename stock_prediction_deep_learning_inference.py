@@ -437,7 +437,7 @@ class InferenceRunner:
         plt.figure(figsize=(14, 5))
         plt.plot(history.index, history, color='green', label='Actual [' + self.ticker + '] price')
         if in_sample is not None and not in_sample.empty:
-            plt.plot(in_sample.index, in_sample.iloc[:, 0], color='orange', label='In-sample [' + self.ticker + '] predicted')
+            plt.plot(in_sample.index, in_sample.iloc[:, 0], color='orange', label='Historical held-out [' + self.ticker + '] predicted')
         if stochastic_paths is not None and len(stochastic_paths) > 0:
             max_paths = min(len(stochastic_paths), 20)
             for idx in range(max_paths):
