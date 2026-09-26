@@ -56,7 +56,7 @@ class LongShortTermMemory:
             return self._create_model_v2(x_train)
         if version == 'v4':
             return self._create_model_v4(x_train)
-        if version == 'v5':
+        if version in ('v5', 'v6'):
             return self._create_model_v5(x_train, output_units)
         if version == 'v7':
             return self._create_model_v7(x_train, output_units)
