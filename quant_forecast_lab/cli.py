@@ -49,6 +49,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Optional grouping column such as Ticker or Horizon; repeat as needed.",
     )
+    arena.add_argument("--time-col", help="Optional chronological sort column such as Date.")
     arena.add_argument("--previous-actual-col")
     arena.add_argument("--cost-bps", type=float, default=0.0)
     arena.add_argument("--output", default="reports/generated/arena.html")
@@ -80,6 +81,7 @@ def main(argv=None) -> int:
             actual_col=args.actual_col,
             prediction_cols=args.prediction_cols,
             group_cols=args.group_cols,
+            time_col=args.time_col,
             previous_actual_col=args.previous_actual_col,
             transaction_cost_bps=args.cost_bps,
         )
