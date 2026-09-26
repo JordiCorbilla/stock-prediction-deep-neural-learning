@@ -29,6 +29,7 @@ from stock_prediction_class import StockPrediction
 from stock_prediction_numpy import StockData
 from datetime import timedelta, datetime
 from pandas.tseries.offsets import BDay
+import exchange_calendars as xcals
 
 from stocklab.uncertainty import symmetric_conformal_interval
 
@@ -57,7 +58,14 @@ def _load_config(inference_folder):
         return json.load(config_file)
 
 
-def _future_dates(last_date, forecast_days, use_business_days):
+def _future_dates(last_date, forecast_days, use_business_days, exchange_calendar=None):
+    if exchange_calendar:
+        calendar = xcals.get_calendar(exchange_calendar)
+        first_session = calendar.date_to_session(
+            pd.Timestamp(last_date).normalize() + pd.Timedelta(days=1),
+            direction='next',
+        )
+        return calendar.sessions_window(first_session, forecast_days)
     if use_business_days:
         return pd.bdate_range(last_date + BDay(1), periods=forecast_days)
     return pd.date_range(last_date + timedelta(1), periods=forecast_days)
@@ -149,6 +157,7 @@ class InferenceRunner:
         stochastic_sigma_mult,
         stochastic_lookback,
         conformal_coverage,
+        exchange_calendar=None,
     ):
         self.run_folder = run_folder
         self.ticker = ticker
@@ -173,6 +182,7 @@ class InferenceRunner:
         self.stochastic_sigma_mult = stochastic_sigma_mult
         self.stochastic_lookback = stochastic_lookback
         self.conformal_coverage = conformal_coverage
+        self.exchange_calendar = exchange_calendar
 
     def run(self):
         print(tf.version.VERSION)
@@ -286,7 +296,12 @@ class InferenceRunner:
             window_scaled = _scale_input(scaler, recent_window)
         window_scaled = window_scaled.reshape(1, time_steps, 1)
 
-        future_dates = _future_dates(latest_date, self.forecast_days, self.use_business_days)
+        future_dates = _future_dates(
+            latest_date,
+            self.forecast_days,
+            self.use_business_days,
+            self.exchange_calendar,
+        )
         predictions = []
         current_close = latest_close_price
 
@@ -544,6 +559,7 @@ def main(argv):
         stochastic_sigma_mult=STOCHASTIC_SIGMA_MULT,
         stochastic_lookback=STOCHASTIC_LOOKBACK,
         conformal_coverage=CONFORMAL_COVERAGE,
+        exchange_calendar=EXCHANGE_CALENDAR,
         )
         runner.run()
 
@@ -574,4 +590,5 @@ if __name__ == '__main__':
     STOCHASTIC_SIGMA_MULT = 0.6
     STOCHASTIC_LOOKBACK = 120
     CONFORMAL_COVERAGE = 0.90
+    EXCHANGE_CALENDAR = 'XLON'
     app.run(main)
