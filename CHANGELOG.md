@@ -3,7 +3,7 @@
 ## Unreleased — architecture-clean-up
 
 ### Added
-- Maintained stocklab research utility package.
+- Maintained quant_forecast_lab research utility package.
 - Naive-relative forecast evaluation.
 - Expanding-window validation primitives.
 - Conformal interval utilities.
