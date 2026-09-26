@@ -7,6 +7,7 @@ def test_arena_groups_assets_and_ranks_forecasts(tmp_path):
     frame = pd.DataFrame(
         {
             "ticker": ["AAA"] * 5 + ["BBB"] * 5,
+            "date": [5, 1, 4, 2, 3, 5, 1, 4, 2, 3],
             "actual": [100, 101, 99, 103, 102, 50, 51, 50, 52, 53],
             "perfect": [100, 101, 99, 103, 102, 50, 51, 50, 52, 53],
             "lagged": [100, 100, 101, 99, 103, 50, 50, 51, 50, 52],
@@ -18,6 +19,7 @@ def test_arena_groups_assets_and_ranks_forecasts(tmp_path):
         actual_col="actual",
         prediction_cols=["perfect", "lagged"],
         group_cols=["ticker"],
+        time_col="date",
         transaction_cost_bps=5,
     )
 
