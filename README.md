@@ -66,7 +66,7 @@ For development:
 python -m pip install -e ".[dev]" --no-deps
 python -m pip install -r requirements.txt
 pytest
-ruff check stocklab tests
+ruff check quant_forecast_lab tests
 ~~~
 
 ## Train the compatibility model
@@ -111,7 +111,7 @@ Date,Actual,LSTM,MultiTask
 run:
 
 ~~~bash
-stocklab benchmark   --csv results.csv   --actual-col Actual   --prediction-col LSTM   --prediction-col MultiTask
+quant-forecast benchmark   --csv results.csv   --actual-col Actual   --prediction-col LSTM   --prediction-col MultiTask
 ~~~
 
 The output includes RMSE, MAE, directional accuracy and RMSE skill versus the previous-price naive baseline.
@@ -120,7 +120,7 @@ The output includes RMSE, MAE, directional accuracy and RMSE skill versus the pr
 
 ~~~text
 .
-├── stocklab/                     # maintained, testable research utilities
+├── quant_forecast_lab/                     # maintained, testable research utilities
 │   ├── backtest.py
 │   ├── benchmark.py
 │   ├── config.py
@@ -157,7 +157,7 @@ The training path separates three roles:
 The fixed date split remains available for compatibility. For research comparisons, prefer chronological expanding windows:
 
 ~~~python
-from stocklab.validation import expanding_window_splits
+from quant_forecast_lab.validation import expanding_window_splits
 
 folds = expanding_window_splits(
     n_samples=2500,
@@ -177,7 +177,7 @@ The inference implementation can generate stochastic trajectories by perturbing 
 Where enough held-out prediction residuals are available, inference also reports a symmetric conformal interval. The same primitive is exposed directly:
 
 ~~~python
-from stocklab.uncertainty import symmetric_conformal_interval
+from quant_forecast_lab.uncertainty import symmetric_conformal_interval
 
 lower, upper = symmetric_conformal_interval(
     point_forecast,
@@ -194,7 +194,7 @@ Empirical interval coverage should still be measured on observations that were n
 A low RMSE does not imply a profitable strategy. The research package includes an intentionally small directional diagnostic:
 
 ~~~python
-from stocklab.backtest import backtest_directional_strategy
+from quant_forecast_lab.backtest import backtest_directional_strategy
 
 metrics = backtest_directional_strategy(
     actual_returns,
@@ -210,7 +210,7 @@ It reports annualised return/volatility, Sharpe, maximum drawdown and turnover. 
 The training CLI accepts an explicit seed. The shared helper seeds Python, NumPy and TensorFlow and requests deterministic TensorFlow operations where supported.
 
 ~~~python
-from stocklab.reproducibility import set_global_seed
+from quant_forecast_lab.reproducibility import set_global_seed
 
 set_global_seed(42)
 ~~~
