@@ -15,7 +15,7 @@ This prevents old commands, notebooks and external links from breaking.
 
 ## Maintained research layer
 
-The stocklab package contains dependency-light components that can be tested without downloading market data or starting TensorFlow:
+The quant_forecast_lab package contains dependency-light components that can be tested without downloading market data or starting TensorFlow:
 
 - config.py — shared model/target compatibility rules;
 - evaluation.py — forecast error, direction and naive-relative skill;
