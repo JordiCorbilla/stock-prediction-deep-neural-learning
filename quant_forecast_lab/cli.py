@@ -11,7 +11,7 @@ from .benchmark import benchmark_frame
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="stocklab")
+    parser = argparse.ArgumentParser(prog="quant-forecast")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     benchmark = subparsers.add_parser(
