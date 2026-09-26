@@ -116,11 +116,41 @@ quant-forecast benchmark   --csv results.csv   --actual-col Actual   --predictio
 
 The output includes RMSE, MAE, directional accuracy and RMSE skill versus the previous-price naive baseline.
 
+## Financial Forecasting Arena
+
+For a multi-asset or multi-horizon comparison, use the arena. It consumes **already out-of-sample** predictions rather than training models inside the evaluator, keeping model fitting and evaluation cleanly separated.
+
+~~~bash
+quant-forecast arena \
+  --csv benchmark.csv \
+  --actual-col Actual \
+  --prediction-col LSTM \
+  --prediction-col MultiTask \
+  --group-col Ticker \
+  --group-col Horizon \
+  --cost-bps 5 \
+  --output reports/generated/arena.html
+~~~
+
+The arena produces a self-contained HTML report and a table containing:
+
+- RMSE and MAE;
+- directional accuracy;
+- RMSE skill versus the previous-price naive forecast;
+- annualised directional-strategy return and volatility;
+- Sharpe-like diagnostic;
+- maximum drawdown;
+- average turnover;
+- explicit transaction-cost assumption.
+
+Published benchmark results belong under [benchmarks/](benchmarks/README.md) and should never be generated from training observations or a hand-picked single run.
+
 ## Repository architecture
 
 ~~~text
 .
 ├── quant_forecast_lab/                     # maintained, testable research utilities
+│   ├── arena.py
 │   ├── backtest.py
 │   ├── benchmark.py
 │   ├── config.py
