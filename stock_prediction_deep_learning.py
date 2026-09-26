@@ -31,15 +31,15 @@ from stock_prediction_lstm import LongShortTermMemory
 from stock_prediction_numpy import StockData
 from stock_prediction_plotter import Plotter
 from stock_prediction_readme_generator import ReadmeGenerator
-from stocklab.config import (
+from quant_forecast_lab.config import (
     DEFAULT_MODEL_VERSION,
     DEFAULT_SEED,
     DEFAULT_USE_RETURNS,
     DEFAULT_VALIDATION_FRACTION,
     validate_model_options,
 )
-from stocklab.evaluation import evaluate_price_forecast
-from stocklab.reproducibility import set_global_seed
+from quant_forecast_lab.evaluation import evaluate_price_forecast
+from quant_forecast_lab.reproducibility import set_global_seed
 
 
 def _returns_to_prices(returns, start_price):
