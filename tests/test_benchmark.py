@@ -1,6 +1,6 @@
 import pandas as pd
 
-from stocklab.benchmark import benchmark_frame
+from quant_forecast_lab.benchmark import benchmark_frame
 
 
 def test_benchmark_ranks_perfect_model_ahead_of_naive_like_model():
