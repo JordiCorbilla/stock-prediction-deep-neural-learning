@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
 import warnings
 
 warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
@@ -40,7 +39,7 @@ class LongShortTermMemory:
 
     def get_callbacks(self, version='v1'):
         callbacks = [self.get_callback()]
-        if version == 'v4':
+        if version in ('v4', 'v8'):
             callbacks.append(
                 tf.keras.callbacks.ReduceLROnPlateau(
                     monitor='val_loss',
@@ -119,6 +118,24 @@ class LongShortTermMemory:
         model.add(LSTM(units=64))
         model.add(Dropout(0.2))
         model.add(Dense(units=output_units, activation=activation))
+        model.summary()
+        return model
+
+    def create_multitask_model(self, x_train):
+        inputs = Input(shape=(x_train.shape[1], x_train.shape[2]), name='market_window')
+        shared = LSTM(units=128, return_sequences=True, name='shared_lstm_1')(inputs)
+        shared = Dropout(0.1, name='shared_dropout_1')(shared)
+        shared = LSTM(units=64, name='shared_lstm_2')(shared)
+        shared = Dropout(0.2, name='shared_dropout_2')(shared)
+
+        direction = Dense(units=1, activation='sigmoid', name='direction')(shared)
+        magnitude = Dense(units=1, activation='softplus', name='magnitude')(shared)
+
+        model = tf.keras.Model(
+            inputs=inputs,
+            outputs={'direction': direction, 'magnitude': magnitude},
+            name='multitask_lstm_v8',
+        )
         model.summary()
         return model
 
