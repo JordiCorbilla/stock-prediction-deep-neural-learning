@@ -114,8 +114,12 @@ jobs:
           from stock_prediction_lstm import LongShortTermMemory
 
           x = np.zeros((8, 3, 1), dtype=np.float32)
-          model = LongShortTermMemory(".").create_multitask_model(x)
+          helper = LongShortTermMemory(".")
+          model = helper.create_multitask_model(x)
           output = model.predict(x[:1], verbose=0)
+
+          v6 = helper.create_model(x, version="v6", output_units=5)
+          assert v6.output_shape == (None, 5)
 
           assert set(output) == {"direction", "magnitude"}
           assert output["direction"].shape == (1, 1)
