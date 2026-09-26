@@ -292,7 +292,7 @@ def train_LSTM_network(
         json.dump(metrics.as_dict(), metrics_file, indent=2)
     print('Forecast metrics:', metrics.as_dict())
 
-    generator = ReadmeGenerator(stock.get_github_url(), stock.get_token(), data.get_stock_short_name())
+    generator = ReadmeGenerator(stock.get_github_url(), stock.get_project_folder(), data.get_stock_short_name())
     generator.write()
 
     print("prediction is finished")
