@@ -1,6 +1,6 @@
 import numpy as np
 
-from stocklab.backtest import backtest_directional_strategy
+from quant_forecast_lab.backtest import backtest_directional_strategy
 
 
 def test_transaction_costs_reduce_directional_strategy_return():
