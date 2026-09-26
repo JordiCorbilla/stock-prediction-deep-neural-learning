@@ -26,6 +26,7 @@ quant-forecast arena \
   --prediction-col MultiTask \
   --group-col Ticker \
   --group-col Horizon \
+  --time-col Date \
   --cost-bps 5 \
   --output reports/generated/arena.html
 ~~~
