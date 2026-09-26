@@ -549,8 +549,8 @@ def main(argv):
 
 if __name__ == '__main__':
     TIME_STEPS = 3
-    RUN_FOLDER = '^FTSE_20240103_edae6b8f5fc742031805151aeba98571'
-    TOKEN = 'edae6b8f5fc742031805151aeba98571'
+    RUN_FOLDER = os.path.join('examples', 'runs', 'reference-v7-ftse')
+    TOKEN = 'reference-v7-ftse'
     STOCK_TICKER = '^FTSE'
     BATCH_SIZE = 10
     STOCK_START_DATE = pd.to_datetime('2017-11-01')
