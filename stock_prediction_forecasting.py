@@ -34,6 +34,7 @@ def build_parser():
     parser.add_argument("--forecast-days", type=int, default=30)
     parser.add_argument("--time-steps", type=int, default=60)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--calendar", default="XLON", help="exchange_calendars name, e.g. XLON or XNYS")
     return parser
 
 
@@ -64,7 +65,7 @@ def main(argv=None):
         stochastic_sigma_mult=0.6,
         stochastic_lookback=120,
         conformal_coverage=0.90,
-        exchange_calendar="XLON",
+        exchange_calendar=args.calendar or None,
     )
     runner.run()
 
