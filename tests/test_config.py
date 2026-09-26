@@ -1,6 +1,6 @@
 import pytest
 
-from stocklab.config import DEFAULT_MODEL_VERSION, DEFAULT_USE_RETURNS, validate_model_options
+from quant_forecast_lab.config import DEFAULT_MODEL_VERSION, DEFAULT_USE_RETURNS, validate_model_options
 
 
 def test_default_configuration_is_compatible():
