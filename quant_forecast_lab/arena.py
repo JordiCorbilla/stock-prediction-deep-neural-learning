@@ -11,7 +11,6 @@ import pandas as pd
 from .backtest import backtest_directional_strategy
 from .evaluation import evaluate_price_forecast
 
-
 FORECAST_COLUMNS = [
     "rmse",
     "mae",
