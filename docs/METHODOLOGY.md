@@ -20,7 +20,7 @@ Positive skill indicates lower RMSE than the naive predictor; zero is equivalent
 
 Random train/test shuffling is inappropriate for this project. Use chronological splits and, when comparing research variants, expanding-window walk-forward evaluation.
 
-stocklab.validation.expanding_window_splits provides deterministic fold boundaries while leaving model training policy to the caller.
+quant_forecast_lab.validation.expanding_window_splits provides deterministic fold boundaries while leaving model training policy to the caller.
 
 ## Direction
 
@@ -36,7 +36,7 @@ sign(actual_price[t] - actual_price[t-1])
 
 The historical stochastic trajectories are scenario simulations obtained by perturbing a point forecast with noise estimated from recent history. They should not be interpreted as calibrated prediction intervals.
 
-stocklab.uncertainty provides a symmetric conformal interval based on held-out residuals. Coverage should still be measured empirically on out-of-sample data.
+quant_forecast_lab.uncertainty provides a symmetric conformal interval based on held-out residuals. Coverage should still be measured empirically on out-of-sample data.
 
 ## Trading diagnostics
 
