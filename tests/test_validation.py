@@ -1,4 +1,4 @@
-from stocklab.validation import expanding_window_splits
+from quant_forecast_lab.validation import expanding_window_splits
 
 
 def test_walk_forward_splits_are_chronological_and_non_overlapping():
