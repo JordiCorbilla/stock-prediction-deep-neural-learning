@@ -1,6 +1,6 @@
 import numpy as np
 
-from stocklab.evaluation import evaluate_price_forecast
+from quant_forecast_lab.evaluation import evaluate_price_forecast
 
 
 def test_perfect_forecast_beats_naive():
