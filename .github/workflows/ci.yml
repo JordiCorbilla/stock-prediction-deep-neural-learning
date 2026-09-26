@@ -61,6 +61,18 @@ jobs:
         run: |
           python -c "import stock_prediction_deep_learning, stock_prediction_deep_learning_inference, stock_prediction_lstm, stock_prediction_numpy"
 
+      - name: Verify exchange-session calendar
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          from stock_prediction_deep_learning_inference import _future_dates
+
+          dates = _future_dates(pd.Timestamp("2025-12-24"), 3, True, "XLON")
+          assert pd.Timestamp("2025-12-25") not in dates
+          assert pd.Timestamp("2025-12-26") not in dates
+          assert pd.Timestamp("2025-12-29") in dates
+          PY
+
       - name: Build and execute v8 model contract
         env:
           MPLBACKEND: Agg
