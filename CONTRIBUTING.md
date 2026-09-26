@@ -9,7 +9,7 @@ python -m venv .venv
 # activate the environment for your platform
 python -m pip install -e ".[dev]"
 pytest
-ruff check stocklab tests
+ruff check quant_forecast_lab tests
 ~~~
 
 ## Research changes
