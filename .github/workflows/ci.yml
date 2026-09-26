@@ -30,10 +30,10 @@ jobs:
           python -m pip install numpy pandas pytest ruff
 
       - name: Compile Python sources
-        run: python -m compileall -q stocklab *.py
+        run: python -m compileall -q quant_forecast_lab *.py
 
       - name: Lint maintained package and tests
-        run: ruff check stocklab tests
+        run: ruff check quant_forecast_lab tests
 
       - name: Run unit tests
         run: pytest
