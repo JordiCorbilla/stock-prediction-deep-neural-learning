@@ -31,7 +31,7 @@ from datetime import timedelta, datetime
 from pandas.tseries.offsets import BDay
 import exchange_calendars as xcals
 
-from stocklab.uncertainty import symmetric_conformal_interval
+from quant_forecast_lab.uncertainty import symmetric_conformal_interval
 
 
 def _load_scaler(inference_folder):
