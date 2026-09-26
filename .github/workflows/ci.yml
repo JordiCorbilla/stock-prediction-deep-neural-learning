@@ -99,6 +99,7 @@ jobs:
           from stock_prediction_deep_learning_inference import _future_dates
 
           dates = _future_dates(pd.Timestamp("2025-12-24"), 3, True, "XLON")
+          assert len(dates) == 3
           assert pd.Timestamp("2025-12-25") not in dates
           assert pd.Timestamp("2025-12-26") not in dates
           assert pd.Timestamp("2025-12-29") in dates
