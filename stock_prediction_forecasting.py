@@ -64,6 +64,7 @@ def main(argv=None):
         stochastic_sigma_mult=0.6,
         stochastic_lookback=120,
         conformal_coverage=0.90,
+        exchange_calendar="XLON",
     )
     runner.run()
 
