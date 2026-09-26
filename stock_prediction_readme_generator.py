@@ -5,26 +5,28 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 # ==============================================================================
+"""Generate a portable README for a local experiment directory."""
+
 import os
 
 
 class ReadmeGenerator:
     def __init__(self, base_url, project_folder, short_name):
+        # base_url is retained for backwards API compatibility. Experiment
+        # READMEs now use relative links so they remain valid off GitHub too.
         self.base_url = base_url
         self.project_folder = project_folder
-        self.short_name = short_name.strip().replace('.', '').replace(' ', '%20')
+        self.short_name = short_name.strip().replace(".", "")
 
     def write(self):
-        my_file = open(os.path.join(self.project_folder, 'README.md'), "w+")
-        my_file.write('![](' + self.base_url + self.project_folder + '/' + self.short_name + '_price.png)\n')
-        my_file.write('![](' + self.base_url + self.project_folder + '/' + self.short_name + '_hist.png)\n')
-        my_file.write('![](' + self.base_url + self.project_folder + '/' + self.short_name + '_prediction.png)\n')
-        my_file.write('![](' + self.base_url + self.project_folder + '/' + 'MSE.png)\n')
-        my_file.write('![](' + self.base_url + self.project_folder + '/' + 'loss.png)\n')
+        images = [
+            self.short_name + "_price.png",
+            self.short_name + "_hist.png",
+            self.short_name + "_prediction.png",
+            "MSE.png",
+            "loss.png",
+        ]
+        with open(os.path.join(self.project_folder, "README.md"), "w", encoding="utf-8") as handle:
+            for image in images:
+                handle.write(f"![]({image.replace(' ', '%20')})\n")
