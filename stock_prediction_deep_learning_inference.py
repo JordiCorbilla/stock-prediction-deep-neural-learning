@@ -30,7 +30,7 @@ from stock_prediction_numpy import StockData
 from datetime import timedelta, datetime
 from pandas.tseries.offsets import BDay
 
-os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+from stocklab.uncertainty import symmetric_conformal_interval
 
 
 def _load_scaler(inference_folder):
@@ -148,6 +148,7 @@ class InferenceRunner:
         stochastic_seed,
         stochastic_sigma_mult,
         stochastic_lookback,
+        conformal_coverage,
     ):
         self.run_folder = run_folder
         self.ticker = ticker
@@ -171,6 +172,7 @@ class InferenceRunner:
         self.stochastic_seed = stochastic_seed
         self.stochastic_sigma_mult = stochastic_sigma_mult
         self.stochastic_lookback = stochastic_lookback
+        self.conformal_coverage = conformal_coverage
 
     def run(self):
         print(tf.version.VERSION)
@@ -227,6 +229,11 @@ class InferenceRunner:
             mag_model = tf.keras.models.load_model(model_mag_path, compile=False)
             dir_model.summary()
             model_time_steps = dir_model.input_shape[1]
+        elif model_version == 'v8':
+            multitask_model_path = os.path.join(inference_folder, 'model_multitask.keras')
+            multitask_model = tf.keras.models.load_model(multitask_model_path, compile=False)
+            multitask_model.summary()
+            model_time_steps = multitask_model.input_shape[1]
         else:
             model_path = os.path.join(inference_folder, 'model.keras')
             if not os.path.exists(model_path):
@@ -302,6 +309,15 @@ class InferenceRunner:
                     mag_value = min(mag_value, mag_clip_value)
                 pred_values = [mag_value if dir_prob >= self.direction_threshold else -mag_value]
                 pred_scaled = [mag_scaled]
+            elif model_version == 'v8':
+                multitask_pred = multitask_model.predict(window_scaled, verbose=0)
+                dir_prob = float(multitask_pred['direction'][0][0])
+                mag_scaled = float(multitask_pred['magnitude'][0][0])
+                mag_value = scaler.inverse_transform([[mag_scaled]])[0][0]
+                if mag_clip_value is not None:
+                    mag_value = min(mag_value, mag_clip_value)
+                pred_values = [mag_value if dir_prob >= self.direction_threshold else -mag_value]
+                pred_scaled = [mag_scaled]
             else:
                 pred_scaled = model.predict(window_scaled, verbose=0)[0]
                 if model_version in ('v5', 'v6'):
@@ -370,6 +386,26 @@ class InferenceRunner:
                 **stochastic_summary,
             }
         ).set_index('Date')
+
+        in_sample_full = _load_in_sample_predictions(inference_folder, self.ticker)
+        if in_sample_full is not None and len(in_sample_full) >= 10:
+            calibration = pd.DataFrame(
+                {
+                    'actual': close_series.reindex(in_sample_full.index),
+                    'predicted': in_sample_full.iloc[:, 0],
+                }
+            ).dropna()
+            if len(calibration) >= 10:
+                lower, upper = symmetric_conformal_interval(
+                    forecast_df['Predicted_Price'].to_numpy(),
+                    calibration['actual'].to_numpy(),
+                    calibration['predicted'].to_numpy(),
+                    coverage=self.conformal_coverage,
+                )
+                coverage_pct = int(round(self.conformal_coverage * 100))
+                forecast_df[f'Predicted_Price_C{coverage_pct}_Lower'] = lower
+                forecast_df[f'Predicted_Price_C{coverage_pct}_Upper'] = upper
+
         forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
 
         if len(forecast_df) > 0:
@@ -379,7 +415,10 @@ class InferenceRunner:
             print('Sanity check - next day delta: ' + f'{delta_pct:.2f}%')
 
         history = close_series.tail(self.plot_history_days)
-        in_sample = _load_in_sample_predictions(inference_folder, self.ticker).tail(self.plot_history_days)
+        if in_sample_full is not None:
+            in_sample = in_sample_full.tail(self.plot_history_days)
+        else:
+            in_sample = None
         plt.figure(figsize=(14, 5))
         plt.plot(history.index, history, color='green', label='Actual [' + self.ticker + '] price')
         if in_sample is not None and not in_sample.empty:
@@ -393,7 +432,7 @@ class InferenceRunner:
                     color='gray',
                     alpha=0.2,
                     linewidth=1,
-                    label='Stochastic paths' if idx == 0 else None,
+                    label='Scenario paths' if idx == 0 else None,
                 )
             if {'Predicted_Price_P10', 'Predicted_Price_P90'}.issubset(forecast_df.columns):
                 plt.fill_between(
@@ -402,8 +441,19 @@ class InferenceRunner:
                     forecast_df['Predicted_Price_P90'],
                     color='gray',
                     alpha=0.15,
-                    label='P10-P90 band',
+                    label='Scenario P10-P90 band',
                 )
+        conformal_lower = [column for column in forecast_df.columns if column.startswith('Predicted_Price_C') and column.endswith('_Lower')]
+        if conformal_lower:
+            lower_col = conformal_lower[0]
+            upper_col = lower_col.replace('_Lower', '_Upper')
+            plt.fill_between(
+                forecast_df.index,
+                forecast_df[lower_col],
+                forecast_df[upper_col],
+                alpha=0.12,
+                label=f'Conformal interval ({int(round(self.conformal_coverage * 100))}%)',
+            )
         plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + self.ticker + '] price')
         plt.xlabel('Time')
         plt.ylabel('Price [USD]')
@@ -493,6 +543,7 @@ def main(argv):
         stochastic_seed=STOCHASTIC_SEED,
         stochastic_sigma_mult=STOCHASTIC_SIGMA_MULT,
         stochastic_lookback=STOCHASTIC_LOOKBACK,
+        conformal_coverage=CONFORMAL_COVERAGE,
         )
         runner.run()
 
@@ -522,4 +573,5 @@ if __name__ == '__main__':
     STOCHASTIC_SEED = 42
     STOCHASTIC_SIGMA_MULT = 0.6
     STOCHASTIC_LOOKBACK = 120
+    CONFORMAL_COVERAGE = 0.90
     app.run(main)
