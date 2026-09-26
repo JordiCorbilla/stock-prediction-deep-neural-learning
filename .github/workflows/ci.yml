@@ -59,7 +59,28 @@ jobs:
         env:
           MPLBACKEND: Agg
         run: |
-          python -c "import stock_prediction_deep_learning, stock_prediction_deep_learning_inference, stock_prediction_lstm, stock_prediction_numpy"
+          python -c "import stock_prediction_deep_learning, stock_prediction_deep_learning_inference, stock_prediction_forecasting, stock_prediction_download_market_data, stock_prediction_download_market_data_info, stock_prediction_lstm, stock_prediction_numpy, stock_prediction_plotter, stock_prediction_readme_generator"
+          python stock_prediction_deep_learning.py --help
+          python stock_prediction_forecasting.py --help
+
+      - name: Load reference v7 artifacts
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python - <<'PY'
+          import json
+          import tensorflow as tf
+
+          folder = "examples/runs/reference-v7-ftse"
+          with open(f"{folder}/model_config.json", encoding="utf-8") as handle:
+              config = json.load(handle)
+          assert config["model_version"] == "v7"
+
+          direction = tf.keras.models.load_model(f"{folder}/model_direction.keras", compile=False)
+          magnitude = tf.keras.models.load_model(f"{folder}/model_magnitude.keras", compile=False)
+          assert direction.input_shape[1] == config["time_steps"]
+          assert magnitude.input_shape[1] == config["time_steps"]
+          PY
 
       - name: Verify exchange-session calendar
         run: |
