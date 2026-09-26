@@ -1,6 +1,6 @@
 import numpy as np
 
-from stocklab.uncertainty import conformal_radius, symmetric_conformal_interval
+from quant_forecast_lab.uncertainty import conformal_radius, symmetric_conformal_interval
 
 
 def test_conformal_interval_is_symmetric_and_contains_point():
