@@ -13,7 +13,7 @@ def test_walk_forward_splits_are_chronological_and_non_overlapping():
         )
     )
 
-    assert len(folds) == 3
+    assert len(folds) == 4
     first = folds[0]
     assert first.train == slice(0, 10)
     assert first.validation == slice(10, 13)
