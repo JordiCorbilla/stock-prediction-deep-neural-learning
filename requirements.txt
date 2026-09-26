@@ -1,4 +1,5 @@
 absl-py
+exchange-calendars==4.13.2
 matplotlib
 numpy
 pandas
