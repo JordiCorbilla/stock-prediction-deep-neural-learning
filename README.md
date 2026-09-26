@@ -74,7 +74,17 @@ ruff check quant_forecast_lab tests
 The historical CLI remains supported:
 
 ~~~bash
-python stock_prediction_deep_learning.py   -ticker=GOOG   -start_date=2017-11-01   -validation_date=2022-09-01   -epochs=150   -batch_size=32   -time_steps=30   -use_returns=false   -model_version=v7   -forecast_horizon=1   -seed=42
+python stock_prediction_deep_learning.py \
+  -ticker=GOOG \
+  -start_date=2017-11-01 \
+  -validation_date=2022-09-01 \
+  -epochs=150 \
+  -batch_size=32 \
+  -time_steps=30 \
+  -use_returns=false \
+  -model_version=v7 \
+  -forecast_horizon=1 \
+  -seed=42
 ~~~
 
 The cleanup keeps v7 as the compatibility default so existing users do not silently receive different model semantics.
@@ -92,7 +102,16 @@ input --> LSTM --> LSTM -|
 Run it with:
 
 ~~~bash
-python stock_prediction_deep_learning.py   -ticker=GOOG   -start_date=2017-11-01   -validation_date=2022-09-01   -epochs=150   -batch_size=32   -time_steps=30   -use_returns=false   -model_version=v8   -seed=42
+python stock_prediction_deep_learning.py \
+  -ticker=GOOG \
+  -start_date=2017-11-01 \
+  -validation_date=2022-09-01 \
+  -epochs=150 \
+  -batch_size=32 \
+  -time_steps=30 \
+  -use_returns=false \
+  -model_version=v8 \
+  -seed=42
 ~~~
 
 v7 remains available unchanged for historical comparisons.
@@ -111,7 +130,11 @@ Date,Actual,LSTM,MultiTask
 run:
 
 ~~~bash
-quant-forecast benchmark   --csv results.csv   --actual-col Actual   --prediction-col LSTM   --prediction-col MultiTask
+quant-forecast benchmark \
+  --csv results.csv \
+  --actual-col Actual \
+  --prediction-col LSTM \
+  --prediction-col MultiTask
 ~~~
 
 The output includes RMSE, MAE, directional accuracy and RMSE skill versus the previous-price naive baseline.
@@ -128,6 +151,7 @@ quant-forecast arena \
   --prediction-col MultiTask \
   --group-col Ticker \
   --group-col Horizon \
+  --time-col Date \
   --cost-bps 5 \
   --output reports/generated/arena.html
 ~~~
@@ -155,6 +179,7 @@ Published benchmark results belong under [benchmarks/](benchmarks/README.md) and
 │   ├── benchmark.py
 │   ├── config.py
 │   ├── evaluation.py
+│   ├── experiment.py
 │   ├── reproducibility.py
 │   ├── uncertainty.py
 │   └── validation.py
@@ -245,7 +270,7 @@ from quant_forecast_lab.reproducibility import set_global_seed
 set_global_seed(42)
 ~~~
 
-Run configuration is written alongside the model artifacts.
+Each run writes its configuration alongside the model artifacts, saves the exact close-price snapshot as `market_data.csv`, records its SHA-256 digest, and captures Python, TensorFlow, NumPy, Pandas and Git revision metadata when available.
 
 ## GPU notes
 
