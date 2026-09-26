@@ -57,8 +57,23 @@ class Plotter:
 
     def plot_mse(self, history):
         print("plotting MSE")
-        plt.plot(history.history['MSE'], label='MSE')
-        plt.plot(history.history['val_MSE'], label='val_MSE')
+        metric_key = 'MSE' if 'MSE' in history.history else None
+        if metric_key is None:
+            candidates = [
+                key for key in history.history
+                if key.lower().endswith('mse') and not key.startswith('val_')
+            ]
+            metric_key = candidates[0] if candidates else None
+
+        if metric_key is None:
+            print("MSE metric is not present in this training history; skipping MSE plot.")
+            return
+
+        validation_key = 'val_' + metric_key
+        plt.figure()
+        plt.plot(history.history[metric_key], label=metric_key)
+        if validation_key in history.history:
+            plt.plot(history.history[validation_key], label=validation_key)
         plt.xlabel('Epoch')
         plt.ylabel('MSE')
         plt.title('MSE/Validation MSE')
