@@ -3,7 +3,7 @@ requires = ["setuptools>=75", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "stocklab"
+name = "quant-forecast-lab"
 version = "1.0.0a1"
 description = "Reproducible utilities for financial time-series forecasting experiments."
 readme = "README.md"
@@ -29,10 +29,10 @@ dev = [
 ]
 
 [project.scripts]
-stocklab = "stocklab.cli:main"
+quant-forecast = "quant_forecast_lab.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["stocklab*"]
+include = ["quant_forecast_lab*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
