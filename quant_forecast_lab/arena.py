@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import html as html_lib
+from html import escape
 from pathlib import Path
 
 import numpy as np
@@ -139,7 +139,7 @@ def render_html_report(metrics: pd.DataFrame, output_path, *, title: str = "Fina
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{html_lib.escape(title)}</title>
+<title>{escape(title)}</title>
 <style>
 body {{ font-family: system-ui, sans-serif; max-width: 1400px; margin: 40px auto; padding: 0 24px; }}
 h1 {{ margin-bottom: 0.25rem; }}
@@ -152,7 +152,7 @@ code {{ background: #f5f5f5; padding: 2px 4px; }}
 </style>
 </head>
 <body>
-<h1>{html_lib.escape(title)}</h1>
+<h1>{escape(title)}</h1>
 <p>
 Metrics are computed from supplied out-of-sample predictions. RMSE skill is relative to the
 last-observation naive forecast. Strategy diagnostics use forecast direction and include
