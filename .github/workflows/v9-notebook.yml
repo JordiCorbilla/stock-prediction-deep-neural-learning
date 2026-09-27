@@ -1,6 +1,6 @@
 name: v9 Project Notebook
 
-# Executed notebook commits do not retrigger this workflow.
+# Executed notebook commits do not retrigger this workflow; source changes do.
 
 on:
   workflow_dispatch:
