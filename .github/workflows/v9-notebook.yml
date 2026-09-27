@@ -1,5 +1,7 @@
 name: v9 Project Notebook
 
+# Executed notebook commits do not retrigger this workflow.
+
 on:
   workflow_dispatch:
   push:
