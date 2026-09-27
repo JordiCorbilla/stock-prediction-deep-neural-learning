@@ -13,9 +13,9 @@ _TREND_MODELS = {"v6"}
 
 def validate_model_options(model_version: str, use_returns: bool) -> None:
     """Raise ValueError for incompatible model and target combinations."""
-    if model_version not in {"v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"}:
+    if model_version not in {"v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"}:
         raise ValueError(f"Unknown model version: {model_version}")
-    if use_returns and model_version in (_DELTA_MODELS | _TREND_MODELS):
+    if model_version == "v9" and not use_returns:\n        raise ValueError("v9 is a return-first model and requires --use_returns=true.")\n    if use_returns and model_version in (_DELTA_MODELS | _TREND_MODELS):
         raise ValueError(
             f"{model_version} predicts deltas/residuals and cannot be combined with --use_returns=true."
         )
