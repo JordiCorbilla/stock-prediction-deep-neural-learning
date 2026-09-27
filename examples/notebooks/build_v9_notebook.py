@@ -475,13 +475,13 @@ def build_notebook() -> nbf.NotebookNode:
             ax.axis("off")
 
             boxes = {
-                "features": (0.04, 0.39, 0.20, 0.22, "30-session window\nreturns · vol · momentum"),
+                "features": (0.04, 0.39, 0.20, 0.22, "30-session window\\nreturns · vol · momentum"),
                 "lstm1": (0.31, 0.52, 0.16, 0.16, "LSTM 64"),
                 "lstm2": (0.31, 0.25, 0.16, 0.16, "LSTM 32"),
-                "direction": (0.57, 0.67, 0.18, 0.15, "Direction head\nP(up)"),
-                "return": (0.57, 0.42, 0.18, 0.15, "Return head\nE[r(t+1)]"),
-                "quantile": (0.57, 0.17, 0.18, 0.15, "Quantile head\nq10 · q50 · q90"),
-                "eval": (0.81, 0.39, 0.16, 0.22, "2026 held-out\nbenchmark"),
+                "direction": (0.57, 0.67, 0.18, 0.15, "Direction head\\nP(up)"),
+                "return": (0.57, 0.42, 0.18, 0.15, "Return head\\nE[r(t+1)]"),
+                "quantile": (0.57, 0.17, 0.18, 0.15, "Quantile head\\nq10 · q50 · q90"),
+                "eval": (0.81, 0.39, 0.16, 0.22, "2026 held-out\\nbenchmark"),
             }
 
             for x0, y0, width, height, label in boxes.values():
