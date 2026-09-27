@@ -60,13 +60,15 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ~~~
 
+Run the `stock_prediction_*.py` compatibility scripts and notebooks from a source checkout. The published package installs the `quant-forecast` CLI and library; it does not bundle those root scripts or historical notebooks.
+
 For development:
 
 ~~~bash
 python -m pip install -e ".[dev]" --no-deps
 python -m pip install -r requirements.txt
 pytest
-ruff check quant_forecast_lab tests
+ruff check quant_forecast_lab tests tests_runtime
 ~~~
 
 ## Train the compatibility model
@@ -114,7 +116,7 @@ python stock_prediction_deep_learning.py \
   -seed=42
 ~~~
 
-v7 remains available unchanged for historical comparisons.
+v7 remains the compatibility default for historical comparisons. New training runs fit scalers only on the chronological fit window, so their numerical outputs can differ from earlier runs.
 
 ## Explore the v9 return model
 

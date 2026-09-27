@@ -87,12 +87,15 @@ class StockData:
         return series_or_frame
 
     @staticmethod
-    def _fit_sample_count(total_samples, validation_fraction):
+    def _fit_sample_count(total_samples, validation_fraction, purge=0):
         if not 0.0 < validation_fraction < 0.5:
             raise ValueError('validation_fraction must be between 0 and 0.5.')
         if total_samples < 3:
             raise ValueError('At least three training samples are required for a validation split.')
-        return max(1, min(total_samples - 1, int(total_samples * (1.0 - validation_fraction))))
+        split = max(1, min(total_samples - 1, int(total_samples * (1.0 - validation_fraction))))
+        if purge < 0 or split <= purge:
+            raise ValueError('Not enough fit samples after the forecast-horizon purge.')
+        return split - purge
 
     def _download_close_frame(self, end_date):
         raw = yf.download(
@@ -160,9 +163,9 @@ class StockData:
             deltas = self._compute_deltas(full_series).rename('Close')
             training_deltas = deltas[deltas.index < self._stock.get_validation_date()]
             test_deltas = deltas[deltas.index >= self._stock.get_validation_date()]
-            fit_count = self._fit_sample_count(len(training_deltas) - time_steps - forecast_horizon + 1, validation_fraction)
+            fit_count = self._fit_sample_count(len(training_deltas) - time_steps - forecast_horizon + 1, validation_fraction, forecast_horizon - 1)
             fit_end = time_steps + fit_count + forecast_horizon - 1
-            self._input_scaler.fit(training_data.iloc[:fit_end + 1])
+            self._input_scaler.fit(training_data.iloc[:time_steps + fit_count])
             self._min_max.fit(training_deltas.iloc[:fit_end].to_frame())
             close_scaled = self._input_scaler.transform(training_data)
             delta_scaled = self._min_max.transform(training_deltas.to_frame())
@@ -173,9 +176,9 @@ class StockData:
             residuals = self._compute_trend_residuals(full_series, trend_window).rename('Close')
             training_residuals = residuals[residuals.index < self._stock.get_validation_date()]
             test_residuals = residuals[residuals.index >= self._stock.get_validation_date()]
-            fit_count = self._fit_sample_count(len(training_residuals) - time_steps - forecast_horizon + 1, validation_fraction)
+            fit_count = self._fit_sample_count(len(training_residuals) - time_steps - forecast_horizon + 1, validation_fraction, forecast_horizon - 1)
             fit_end = time_steps + fit_count + forecast_horizon - 1
-            self._input_scaler.fit(training_data.iloc[:fit_end + 1])
+            self._input_scaler.fit(training_data.iloc[:time_steps + fit_count])
             self._min_max.fit(training_residuals.iloc[:fit_end].to_frame())
             close_scaled = self._input_scaler.transform(training_data)
             residual_scaled = self._min_max.transform(training_residuals.to_frame())
@@ -308,7 +311,7 @@ class StockData:
 
         fit_count = self._fit_sample_count(len(training_deltas) - time_steps, validation_fraction)
         fit_end = time_steps + fit_count
-        self._input_scaler.fit(training_data.iloc[:fit_end + 1])
+        self._input_scaler.fit(training_data.iloc[:fit_end])
         self._min_max.fit(training_deltas.abs().iloc[:fit_end].to_frame())
         close_scaled_all = self._input_scaler.transform(pd.concat((training_data, test_data), axis=0))
         close_scaled_aligned = close_scaled_all[1:]

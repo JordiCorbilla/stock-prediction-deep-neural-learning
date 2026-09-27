@@ -5,10 +5,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 import tensorflow as tf
 
 from quant_forecast_lab.legacy_keras import load_legacy_h5
 from stock_prediction_class import StockPrediction
+from stock_prediction_deep_learning import _chronological_validation_split
 from stock_prediction_deep_learning_inference import _future_dates
 from stock_prediction_numpy import StockData
 
@@ -42,6 +44,28 @@ def test_return_scaler_excludes_validation_extreme(tmp_path, monkeypatch):
     assert len(x_train) == 26
 
 
+@pytest.mark.parametrize("version", ["delta_horizon_two", "v7_direction"])
+def test_input_scaler_stops_at_last_fit_input(tmp_path, monkeypatch, version):
+    dates = pd.bdate_range("2024-01-01", periods=40)
+    closes = 100.0 + np.arange(40, dtype=float)
+    boundary = 22 if version == "delta_horizon_two" else 23
+    closes[boundary] = 1000.0  # First close outside all fit input windows.
+    frame = pd.DataFrame({"Close": closes}, index=dates)
+    frame.index.name = "Date"
+    stock = _stock(tmp_path, dates[30])
+    data = StockData(stock)
+    monkeypatch.setattr(data, "_download_close_frame", lambda _: frame)
+
+    if version == "delta_horizon_two":
+        data.download_transform_to_numpy(
+            3, str(tmp_path), use_deltas=True, forecast_horizon=2,
+            validation_fraction=0.2,
+        )
+    else:
+        data.prepare_delta_direction_data(3, dates[30], validation_fraction=0.2)
+    assert data.get_input_scaler().data_max_[0] == 100.0 + boundary - 1
+
+
 def test_legacy_h5_weights_load_under_keras_3(tmp_path):
     model = tf.keras.Sequential([
         tf.keras.Input(shape=(3, 1)),
@@ -69,7 +93,11 @@ def test_reference_v7_models_are_present_and_loadable():
 
 
 def test_forecast_horizon_must_be_positive():
-    import pytest
-
     with pytest.raises(ValueError, match="positive integer"):
         _future_dates(pd.Timestamp("2026-09-27"), 0, True, "XLON")
+
+
+def test_multi_horizon_validation_purges_overlapping_targets():
+    (fit, validation), = _chronological_validation_split(np.arange(20), fraction=0.2, purge=2)
+    assert fit[-1] == 13
+    assert validation[0] == 16

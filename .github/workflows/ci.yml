@@ -34,10 +34,10 @@ jobs:
           python -m pip install numpy pandas pytest ruff
 
       - name: Compile Python sources
-        run: python -m compileall -q quant_forecast_lab *.py
+        run: python -m compileall -q quant_forecast_lab benchmarks *.py
 
       - name: Lint maintained package and tests
-        run: ruff check quant_forecast_lab tests
+        run: ruff check quant_forecast_lab tests tests_runtime
 
       - name: Run unit tests
         run: pytest
@@ -101,7 +101,7 @@ jobs:
           MPLBACKEND: Agg
         run: |
           python -m pip install pytest
-          pytest -q tests_runtime
+          python -m pytest -q tests_runtime
 
       - name: Verify exchange-session calendar
         run: |

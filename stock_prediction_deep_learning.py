@@ -68,7 +68,7 @@ def _returns_to_prices(returns, start_price):
     return prices
 
 
-def _chronological_validation_split(*arrays, fraction=DEFAULT_VALIDATION_FRACTION):
+def _chronological_validation_split(*arrays, fraction=DEFAULT_VALIDATION_FRACTION, purge=0):
     if not 0.0 < fraction < 0.5:
         raise ValueError("validation_fraction must be between 0 and 0.5.")
     if not arrays:
@@ -79,7 +79,9 @@ def _chronological_validation_split(*arrays, fraction=DEFAULT_VALIDATION_FRACTIO
     if size < 3:
         raise ValueError("At least three training samples are required for a validation split.")
     split = max(1, min(size - 1, int(size * (1.0 - fraction))))
-    return tuple((array[:split], array[split:]) for array in arrays)
+    if purge < 0 or split <= purge:
+        raise ValueError("Not enough fit samples after the forecast-horizon purge.")
+    return tuple((array[:split - purge], array[split:]) for array in arrays)
 
 
 def train_LSTM_network(
@@ -92,6 +94,10 @@ def train_LSTM_network(
     seed=DEFAULT_SEED,
 ):
     validate_model_options(model_version, use_returns)
+    if forecast_horizon < 1:
+        raise ValueError('forecast_horizon must be a positive integer.')
+    if stock.get_time_steps() < 1:
+        raise ValueError('time_steps must be a positive integer.')
     set_global_seed(seed)
     use_deltas = model_version in ('v3', 'v5', 'v7', 'v8')
     use_trend_residual = model_version == 'v6'
@@ -139,6 +145,7 @@ def train_LSTM_network(
             x_train,
             y_train,
             fraction=validation_fraction,
+            purge=forecast_horizon - 1 if model_version in ('v5', 'v6') else 0,
         )
 
     plotter.plot_histogram_data_split(training_data, test_data, stock.get_validation_date())
@@ -175,6 +182,9 @@ def train_LSTM_network(
         'validation_date': stock.get_validation_date().strftime("%Y-%m-%d"),
         'test_start_date': stock.get_validation_date().strftime("%Y-%m-%d"),
         'validation_fraction': validation_fraction,
+        'fit_samples': int(len(x_fit)),
+        'validation_samples': int(len(x_val)),
+        'purged_samples': int(forecast_horizon - 1 if model_version in ('v5', 'v6') else 0),
         'seed': seed,
         'training_observations': int(len(training_data)),
         'test_observations': int(len(test_data)),
