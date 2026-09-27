@@ -12,9 +12,9 @@ class ForecastMetrics:
     rmse: float
     mae: float
     directional_accuracy: float
-    rmse_skill_vs_naive: float
+    rmse_skill_vs_naive: float | None
 
-    def as_dict(self) -> dict[str, float]:
+    def as_dict(self) -> dict[str, float | None]:
         return asdict(self)
 
 
@@ -59,7 +59,7 @@ def evaluate_price_forecast(actual, predicted, previous_actual) -> ForecastMetri
     model_rmse = rmse(actual, predicted)
     naive_rmse = rmse(actual, previous_actual)
     if naive_rmse == 0:
-        skill = 0.0 if model_rmse == 0 else float("-inf")
+        skill = 0.0 if model_rmse == 0 else None
     else:
         skill = 1.0 - (model_rmse / naive_rmse)
 
@@ -67,5 +67,5 @@ def evaluate_price_forecast(actual, predicted, previous_actual) -> ForecastMetri
         rmse=model_rmse,
         mae=mae(actual, predicted),
         directional_accuracy=directional_accuracy(actual, predicted, previous_actual),
-        rmse_skill_vs_naive=float(skill),
+        rmse_skill_vs_naive=skill,
     )

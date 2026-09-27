@@ -13,14 +13,13 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import random
+from datetime import datetime, timedelta
 
 import numpy as np
-from datetime import timedelta
-import random
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
-from datetime import datetime
 import yfinance as yf
+from sklearn.preprocessing import MinMaxScaler
 
 
 class StockData:
@@ -87,6 +86,14 @@ class StockData:
             return series_or_frame.to_frame()
         return series_or_frame
 
+    @staticmethod
+    def _fit_sample_count(total_samples, validation_fraction):
+        if not 0.0 < validation_fraction < 0.5:
+            raise ValueError('validation_fraction must be between 0 and 0.5.')
+        if total_samples < 3:
+            raise ValueError('At least three training samples are required for a validation split.')
+        return max(1, min(total_samples - 1, int(total_samples * (1.0 - validation_fraction))))
+
     def _download_close_frame(self, end_date):
         raw = yf.download(
             self._stock.get_ticker(),
@@ -119,7 +126,7 @@ class StockData:
             end_date = datetime.today()
         return self._download_close_frame(end_date)
 
-    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False, use_trend_residual=False, trend_window=60, forecast_horizon=1):
+    def download_transform_to_numpy(self, time_steps, project_folder, use_returns=False, use_deltas=False, use_trend_residual=False, trend_window=60, forecast_horizon=1, validation_fraction=0.15):
         end_date = datetime.today()
         print('End Date: ' + end_date.strftime("%Y-%m-%d"))
         data = self._download_close_frame(end_date).reset_index()
@@ -144,15 +151,21 @@ class StockData:
             returns = self._compute_log_returns(full_series).rename('Close')
             training_returns = returns[returns.index < self._stock.get_validation_date()]
             test_returns = returns[returns.index >= self._stock.get_validation_date()]
-            train_scaled = self._min_max.fit_transform(training_returns.to_frame())
+            fit_count = self._fit_sample_count(len(training_returns) - time_steps, validation_fraction)
+            self._min_max.fit(training_returns.iloc[:time_steps + fit_count].to_frame())
+            train_scaled = self._min_max.transform(training_returns.to_frame())
         elif use_deltas:
             full_series = data.set_index('Date')[['Close']]
             full_series = self._ensure_series(full_series)
             deltas = self._compute_deltas(full_series).rename('Close')
             training_deltas = deltas[deltas.index < self._stock.get_validation_date()]
             test_deltas = deltas[deltas.index >= self._stock.get_validation_date()]
-            close_scaled = self._input_scaler.fit_transform(training_data)
-            delta_scaled = self._min_max.fit_transform(training_deltas.to_frame())
+            fit_count = self._fit_sample_count(len(training_deltas) - time_steps - forecast_horizon + 1, validation_fraction)
+            fit_end = time_steps + fit_count + forecast_horizon - 1
+            self._input_scaler.fit(training_data.iloc[:fit_end + 1])
+            self._min_max.fit(training_deltas.iloc[:fit_end].to_frame())
+            close_scaled = self._input_scaler.transform(training_data)
+            delta_scaled = self._min_max.transform(training_deltas.to_frame())
             train_scaled = close_scaled
         elif use_trend_residual:
             full_series = data.set_index('Date')[['Close']]
@@ -160,11 +173,17 @@ class StockData:
             residuals = self._compute_trend_residuals(full_series, trend_window).rename('Close')
             training_residuals = residuals[residuals.index < self._stock.get_validation_date()]
             test_residuals = residuals[residuals.index >= self._stock.get_validation_date()]
-            close_scaled = self._input_scaler.fit_transform(training_data)
-            residual_scaled = self._min_max.fit_transform(training_residuals.to_frame())
+            fit_count = self._fit_sample_count(len(training_residuals) - time_steps - forecast_horizon + 1, validation_fraction)
+            fit_end = time_steps + fit_count + forecast_horizon - 1
+            self._input_scaler.fit(training_data.iloc[:fit_end + 1])
+            self._min_max.fit(training_residuals.iloc[:fit_end].to_frame())
+            close_scaled = self._input_scaler.transform(training_data)
+            residual_scaled = self._min_max.transform(training_residuals.to_frame())
             train_scaled = close_scaled
         else:
-            train_scaled = self._min_max.fit_transform(training_data)
+            fit_count = self._fit_sample_count(len(training_data) - time_steps, validation_fraction)
+            self._min_max.fit(training_data.iloc[:time_steps + fit_count])
+            train_scaled = self._min_max.transform(training_data)
         self.__data_verification(train_scaled)
 
         # Training Data Transformation
@@ -239,7 +258,7 @@ class StockData:
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
         return (x_train, y_train), (x_test, y_test), (training_data, test_data)
 
-    def prepare_return_multitask_data(self, time_steps, project_folder):
+    def prepare_return_multitask_data(self, time_steps, project_folder, validation_fraction=0.15):
         """Prepare v9 scaled log-return windows with return and direction targets."""
         (x_train, y_return_train), (x_test, y_return_test), (training_data, test_data) = self.download_transform_to_numpy(
             time_steps,
@@ -248,6 +267,7 @@ class StockData:
             use_deltas=False,
             use_trend_residual=False,
             forecast_horizon=1,
+            validation_fraction=validation_fraction,
         )
 
         train_returns = self._min_max.inverse_transform(
@@ -273,7 +293,7 @@ class StockData:
             test_data,
         )
 
-    def prepare_delta_direction_data(self, time_steps, validation_date):
+    def prepare_delta_direction_data(self, time_steps, validation_date, validation_fraction=0.15):
         end_date = datetime.today()
         data = self._download_close_frame(end_date).reset_index()
         data = data.set_index('Date')
@@ -286,12 +306,15 @@ class StockData:
         training_deltas = deltas[deltas.index < validation_date]
         test_deltas = deltas[deltas.index >= validation_date]
 
-        close_scaled_train = self._input_scaler.fit_transform(training_data)
+        fit_count = self._fit_sample_count(len(training_deltas) - time_steps, validation_fraction)
+        fit_end = time_steps + fit_count
+        self._input_scaler.fit(training_data.iloc[:fit_end + 1])
+        self._min_max.fit(training_deltas.abs().iloc[:fit_end].to_frame())
         close_scaled_all = self._input_scaler.transform(pd.concat((training_data, test_data), axis=0))
         close_scaled_aligned = close_scaled_all[1:]
 
         magnitude = training_deltas.abs()
-        mag_scaled = self._min_max.fit_transform(self._ensure_frame(magnitude))
+        mag_scaled = self._min_max.transform(self._ensure_frame(magnitude))
 
         total_magnitude = pd.concat((training_deltas.abs(), test_deltas.abs()), axis=0)
         total_mag_scaled = self._min_max.transform(self._ensure_frame(total_magnitude))

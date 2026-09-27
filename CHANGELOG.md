@@ -14,7 +14,7 @@
 
 ### Changed
 - Repository layout cleaned so generated experiments no longer dominate the project root.
-- Project licensing made consistently Apache-2.0.
+- Current source distribution uses Apache-2.0. Earlier CC0 distributions remain governed by their original terms.
 - Documentation reorganised around reproducibility and out-of-sample evaluation.
 
 ### Compatibility

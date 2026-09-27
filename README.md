@@ -16,12 +16,12 @@ This repository began as an LSTM stock-price forecasting experiment in 2020. The
 - TensorFlow LSTM models for price, return, delta and trend-residual targets.
 - v7 direction + magnitude forecasting with recursive future inference.
 - v8 shared multi-task LSTM architecture for direction and magnitude.
-- Deterministic experiment seeding.
+- Recorded experiment seeds and runtime metadata; exact numeric reproducibility can vary by hardware and backend.
 - Training/validation/test separation for model fitting and evaluation.
 - Naive last-price benchmark and naive-relative RMSE skill.
 - Directional accuracy.
 - Expanding-window walk-forward split primitives.
-- Distribution-free conformal intervals.
+- One-step held-out residual bands, explicitly labelled as unvalidated for recursive horizons.
 - Transaction-cost-aware directional strategy diagnostics.
 - CSV benchmark CLI.
 - CI, tests, packaging metadata and contributor templates.
@@ -116,6 +116,10 @@ python stock_prediction_deep_learning.py \
 
 v7 remains available unchanged for historical comparisons.
 
+## Explore the v9 return model
+
+The [v9 notebook](examples/notebooks/stock_prediction_lstm_v9.ipynb) trains a shared LSTM with return, direction, and ordered quantile heads. It saves the model, scalers, input-data hash, test metrics, future forecast, and inference settings. The future forecast includes independent raw and anchored recursive paths. The model remains opt-in because the current held-out FTSE run did not beat the zero-return baseline on RMSE; see [model semantics](docs/MODELS.md).
+
 ## Benchmark saved predictions
 
 Given an aligned CSV such as:
@@ -152,6 +156,7 @@ quant-forecast arena \
   --group-col Ticker \
   --group-col Horizon \
   --time-col Date \
+  --previous-actual-col OriginClose \
   --cost-bps 5 \
   --output reports/generated/arena.html
 ~~~
@@ -199,7 +204,7 @@ The migration is deliberately compatibility-first: stable research components ar
 
 See [Architecture](docs/ARCHITECTURE.md) and [Methodology](docs/METHODOLOGY.md).
 
-See also the [Model catalogue](docs/MODELS.md) for the exact semantics of v1-v8.
+See also the [Model catalogue](docs/MODELS.md) for the exact semantics of v1-v9.
 
 ## Evaluation protocol
 
@@ -229,7 +234,7 @@ The splitter is intentionally independent of TensorFlow so the evaluation protoc
 
 The inference implementation can generate stochastic trajectories by perturbing the model forecast using volatility estimated from recent history. These are **scenario paths**, not automatically calibrated probability statements.
 
-Where enough held-out prediction residuals are available, inference also reports a symmetric conformal interval. The same primitive is exposed directly:
+Where enough held-out one-step prediction residuals are available, inference reports a symmetric **one-step residual band**. It has no validated coverage guarantee for recursive multi-session forecasts. The underlying conformal primitive is also exposed directly for experiments whose calibration and evaluation observations satisfy its assumptions:
 
 ~~~python
 from quant_forecast_lab.uncertainty import symmetric_conformal_interval

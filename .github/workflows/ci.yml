@@ -79,6 +79,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          from pathlib import Path
           import tensorflow as tf
 
           folder = "examples/runs/reference-v7-ftse"
@@ -86,11 +87,21 @@ jobs:
               config = json.load(handle)
           assert config["model_version"] == "v7"
 
+          for name in ("model_direction.keras", "model_magnitude.keras", "min_max_scaler.pkl", "input_scaler.pkl"):
+              assert (Path(folder) / name).is_file(), f"Missing reference fixture: {name}"
+
           direction = tf.keras.models.load_model(f"{folder}/model_direction.keras", compile=False)
           magnitude = tf.keras.models.load_model(f"{folder}/model_magnitude.keras", compile=False)
           assert direction.input_shape[1] == config["time_steps"]
           assert magnitude.input_shape[1] == config["time_steps"]
           PY
+
+      - name: Run runtime compatibility tests
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python -m pip install pytest
+          pytest -q tests_runtime
 
       - name: Verify exchange-session calendar
         run: |

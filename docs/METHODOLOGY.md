@@ -36,7 +36,7 @@ sign(actual_price[t] - actual_price[t-1])
 
 The historical stochastic trajectories are scenario simulations obtained by perturbing a point forecast with noise estimated from recent history. They should not be interpreted as calibrated prediction intervals.
 
-quant_forecast_lab.uncertainty provides a symmetric conformal interval based on held-out residuals. Coverage should still be measured empirically on out-of-sample data.
+quant_forecast_lab.uncertainty provides a symmetric conformal interval based on held-out residuals. The inference script applies one-step residuals to recursive future forecasts and labels the result a one-step residual band, since horizon-specific coverage has not been established. Quantile heads are also nominal until empirical coverage is checked on untouched observations.
 
 ## Trading diagnostics
 

@@ -12,25 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
-import secrets
-import pandas as pd
 import argparse
-import pickle
-import numpy as np
 import json
+import os
+import pickle
+import secrets
 import warnings
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.losses import Huber
-from datetime import datetime
 
 warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
 
-from stock_prediction_class import StockPrediction
-from stock_prediction_lstm import LongShortTermMemory
-from stock_prediction_numpy import StockData
-from stock_prediction_plotter import Plotter
-from stock_prediction_readme_generator import ReadmeGenerator
 from quant_forecast_lab.config import (
     DEFAULT_MODEL_VERSION,
     DEFAULT_SEED,
@@ -41,6 +37,11 @@ from quant_forecast_lab.config import (
 from quant_forecast_lab.evaluation import evaluate_price_forecast
 from quant_forecast_lab.experiment import runtime_metadata, sha256_file
 from quant_forecast_lab.reproducibility import set_global_seed
+from stock_prediction_class import StockPrediction
+from stock_prediction_lstm import LongShortTermMemory
+from stock_prediction_numpy import StockData
+from stock_prediction_plotter import Plotter
+from stock_prediction_readme_generator import ReadmeGenerator
 
 
 @tf.keras.utils.register_keras_serializable(package='StockPrediction')
@@ -50,6 +51,11 @@ def v9_quantile_pinball_loss(y_true, y_pred):
     y_true = tf.cast(tf.reshape(y_true, (-1, 1)), tf.float32)
     error = y_true - tf.cast(y_pred, tf.float32)
     return tf.reduce_mean(tf.maximum(quantiles * error, (quantiles - 1.0) * error))
+
+
+def load_v9_model(path, *, compile_model=False):
+    """Load a saved v9 model, registering its quantile loss first."""
+    return tf.keras.models.load_model(path, compile=compile_model)
 
 
 
@@ -95,11 +101,13 @@ def train_LSTM_network(
         (x_train, y_dir_train, y_mag_train), (x_test, y_dir_test, y_mag_test), (training_data, test_data) = data.prepare_delta_direction_data(
             stock.get_time_steps(),
             stock.get_validation_date(),
+            validation_fraction=validation_fraction,
         )
     elif model_version == 'v9':
         (x_train, y_dir_train, y_return_train), (x_test, y_dir_test, y_return_test), (training_data, test_data) = data.prepare_return_multitask_data(
             stock.get_time_steps(),
             stock.get_project_folder(),
+            validation_fraction=validation_fraction,
         )
     else:
         (x_train, y_train), (x_test, y_test), (training_data, test_data) = data.download_transform_to_numpy(
@@ -110,6 +118,7 @@ def train_LSTM_network(
             use_trend_residual=use_trend_residual,
             trend_window=trend_window,
             forecast_horizon=forecast_horizon,
+            validation_fraction=validation_fraction,
         )
     if model_version in ('v7', 'v8'):
         (x_fit, x_val), (y_dir_fit, y_dir_val), (y_mag_fit, y_mag_val) = _chronological_validation_split(
@@ -149,6 +158,8 @@ def train_LSTM_network(
     if model_version == 'v9':
         training_close = pd.to_numeric(training_data['Close'], errors='coerce').dropna()
         training_log_returns = np.log(training_close).diff().dropna()
+        fit_count = StockData._fit_sample_count(len(training_log_returns) - stock.get_time_steps(), validation_fraction)
+        training_log_returns = training_log_returns.iloc[:stock.get_time_steps() + fit_count]
         return_anchor_mean = float(training_log_returns.mean()) if len(training_log_returns) else 0.0
 
     config = {
@@ -182,7 +193,7 @@ def train_LSTM_network(
     if model_version == 'v7':
         dir_model = lstm._create_model_v7(x_fit, output_units=1, activation='sigmoid')
         dir_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-        dir_history = dir_model.fit(
+        dir_model.fit(
             x_fit,
             y_dir_fit,
             epochs=stock.get_epochs(),
@@ -292,7 +303,7 @@ def train_LSTM_network(
     print("display the content of the model")
     if model_version == 'v7':
         baseline_results = mag_model.evaluate(x_test, y_mag_test, verbose=2)
-        for name, value in zip(mag_model.metrics_names, baseline_results):
+        for name, value in zip(mag_model.metrics_names, baseline_results, strict=True):
             print(name, ': ', value)
     elif model_version == 'v8':
         baseline_results = multitask_model.evaluate(
@@ -318,7 +329,7 @@ def train_LSTM_network(
             print(name, ': ', value)
     else:
         baseline_results = model.evaluate(x_test, y_test, verbose=2)
-        for name, value in zip(model.metrics_names, baseline_results):
+        for name, value in zip(model.metrics_names, baseline_results, strict=True):
             print(name, ': ', value)
     print()
 
@@ -376,7 +387,7 @@ def train_LSTM_network(
             return_ic = (
                 float(np.corrcoef(actual_returns, test_predictions_baseline)[0, 1])
                 if np.std(actual_returns) > 0.0 and np.std(test_predictions_baseline) > 0.0
-                else float('nan')
+                else None
             )
             interval_coverage = float(
                 np.mean(
@@ -387,18 +398,22 @@ def train_LSTM_network(
             return_metrics = {
                 'return_rmse': return_rmse,
                 'return_mae': return_mae,
-                'rmse_skill_vs_zero': 1.0 - (return_rmse / zero_rmse) if zero_rmse > 0.0 else 0.0,
+                'rmse_skill_vs_zero': 1.0 - (return_rmse / zero_rmse) if zero_rmse > 0.0 else (0.0 if return_rmse == 0.0 else None),
                 'direction_accuracy': return_direction_accuracy,
                 'direction_head_accuracy': direction_head_accuracy,
                 'delta_ic': return_ic,
                 'q10_q90_coverage': interval_coverage,
+                'q10_empirical_cdf': float(np.mean(actual_returns <= quantile_predictions[:, 0])),
+                'q50_empirical_cdf': float(np.mean(actual_returns <= quantile_predictions[:, 1])),
+                'q90_empirical_cdf': float(np.mean(actual_returns <= quantile_predictions[:, 2])),
+                'q10_q90_nominal_coverage': 0.80,
             }
             with open(
                 os.path.join(stock.get_project_folder(), 'return_forecast_metrics.json'),
                 'w',
                 encoding='utf-8',
             ) as return_metrics_file:
-                json.dump(return_metrics, return_metrics_file, indent=2)
+                json.dump(return_metrics, return_metrics_file, indent=2, allow_nan=False)
             print('Return forecast metrics:', return_metrics)
         else:
             predicted_prices = _returns_to_prices(test_predictions_baseline, last_train_close)
@@ -415,8 +430,6 @@ def train_LSTM_network(
             predicted_prices = base_close.to_numpy().flatten() + test_predictions_baseline.flatten()
         predictions_df = pd.DataFrame({stock.get_ticker() + '_predicted': predicted_prices}, index=test_data.index)
     elif use_trend_residual:
-        full_series = pd.concat([training_data['Close'], test_data['Close']])
-        residuals = data._compute_trend_residuals(full_series, trend_window)
         base_close = test_data['Close'].shift(1)
         base_close.iloc[0] = training_data['Close'].iloc[-1]
         if model_version == 'v6':
@@ -448,7 +461,7 @@ def train_LSTM_network(
         previous_actual.to_numpy(),
     )
     with open(os.path.join(stock.get_project_folder(), 'forecast_metrics.json'), 'w', encoding='utf-8') as metrics_file:
-        json.dump(metrics.as_dict(), metrics_file, indent=2)
+        json.dump(metrics.as_dict(), metrics_file, indent=2, allow_nan=False)
     print('Forecast metrics:', metrics.as_dict())
 
     generator = ReadmeGenerator(stock.get_github_url(), stock.get_project_folder(), data.get_stock_short_name())

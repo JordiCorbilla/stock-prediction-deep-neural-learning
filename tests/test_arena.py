@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from quant_forecast_lab.arena import arena_frame, render_html_report
 
@@ -32,3 +33,19 @@ def test_arena_groups_assets_and_ranks_forecasts(tmp_path):
     report = render_html_report(result, tmp_path / "arena.html")
     assert report.exists()
     assert "Financial Forecasting Arena" in report.read_text(encoding="utf-8")
+
+
+def test_multi_horizon_requires_origin_close():
+    frame = pd.DataFrame({
+        "Horizon": [3, 3, 3],
+        "Actual": [110.0, 111.0, 112.0],
+        "Forecast": [109.0, 110.0, 113.0],
+        "OriginClose": [100.0, 101.0, 102.0],
+    })
+    with pytest.raises(ValueError, match="forecast origin"):
+        arena_frame(frame, actual_col="Actual", prediction_cols=["Forecast"], group_cols=["Horizon"])
+    result = arena_frame(
+        frame, actual_col="Actual", prediction_cols=["Forecast"],
+        group_cols=["Horizon"], previous_actual_col="OriginClose",
+    )
+    assert result.loc[0, "observations"] == 3

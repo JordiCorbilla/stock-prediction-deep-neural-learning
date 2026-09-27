@@ -1,9 +1,12 @@
 name: v9 Project Notebook
 
-# Executed notebook commits do not retrigger this workflow; source changes do.
+# Execute and publish notebook output as an artifact for every relevant change.
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - master
   push:
     branches:
       - architecture-clean-up
@@ -13,12 +16,12 @@ on:
       - stock_prediction_lstm.py
       - stock_prediction_numpy.py
       - stock_prediction_plotter.py
-      - quant_forecast_lab/config.py
+      - 'quant_forecast_lab/**'
       - examples/notebooks/stock_prediction_lstm_v9.ipynb
       - .github/workflows/v9-notebook.yml
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   execute:
@@ -27,8 +30,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: architecture-clean-up
 
       - uses: actions/setup-python@v7
         with:
@@ -138,18 +139,6 @@ jobs:
           cp "$RUN_DIR/v9_architecture.png" notebook-artifact/
           cp "$RUN_DIR/"*"_prediction.png" notebook-artifact/ 2>/dev/null || true
           cp "$RUN_DIR/"*"_future_forecast.png" notebook-artifact/ 2>/dev/null || true
-
-      - name: Commit executed notebook
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f examples/notebooks/stock_prediction_lstm_v9.ipynb
-          if git diff --cached --quiet; then
-            echo "No executed notebook changes to commit."
-          else
-            git commit -m "Execute integrated v9 project notebook"
-            git push origin HEAD:architecture-clean-up
-          fi
 
       - uses: actions/upload-artifact@v4
         with:

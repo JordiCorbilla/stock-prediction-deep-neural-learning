@@ -26,6 +26,8 @@ def backtest_directional_strategy(
     transaction_cost_bps: float = 0.0,
     periods_per_year: int = 252,
 ) -> StrategyMetrics:
+    if periods_per_year < 1:
+        raise ValueError("periods_per_year must be positive.")
     actual = np.asarray(actual_returns, dtype=float).reshape(-1)
     predicted = np.asarray(predicted_returns, dtype=float).reshape(-1)
     if len(actual) != len(predicted):

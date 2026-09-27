@@ -12,10 +12,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import sys
 import time
-from dataclasses import asdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -33,9 +31,9 @@ from tensorflow.keras.optimizers import Adam
 
 from quant_forecast_lab.backtest import backtest_directional_strategy
 from quant_forecast_lab.evaluation import evaluate_price_forecast
+from quant_forecast_lab.experiment import sha256_file
 from quant_forecast_lab.reproducibility import set_global_seed
 from stock_prediction_lstm import LongShortTermMemory
-
 
 TEST_YEARS = (2020, 2022, 2024, 2026)
 
@@ -68,6 +66,18 @@ def _download_close(ticker: str, start: str, end: str, attempts: int = 3) -> pd.
             if attempt < attempts:
                 time.sleep(5 * attempt)
     raise RuntimeError(f"Unable to download {ticker}: {last_error}") from last_error
+
+
+def _load_close_snapshot(path: str) -> pd.Series:
+    frame = pd.read_csv(path, parse_dates=[0], index_col=0)
+    if list(frame.columns) != ["Close"]:
+        raise ValueError("Input snapshot must contain exactly one Close column.")
+    close = pd.to_numeric(frame["Close"], errors="raise").astype(float)
+    if close.isna().any() or not np.isfinite(close).all() or (close <= 0).any():
+        raise ValueError("Input Close prices must be finite and positive.")
+    if close.index.has_duplicates or not close.index.is_monotonic_increasing:
+        raise ValueError("Input dates must be unique and chronologically sorted.")
+    return close
 
 
 def _samples(
@@ -138,13 +148,14 @@ def _callbacks():
     ]
 
 
-def _strategy_metrics(actual_delta, predicted_delta, previous, cost_bps: float):
+def _strategy_metrics(actual_delta, predicted_delta, previous, cost_bps: float, periods_per_year=252):
     actual_returns = np.asarray(actual_delta, dtype=float) / np.asarray(previous, dtype=float)
     predicted_returns = np.asarray(predicted_delta, dtype=float) / np.asarray(previous, dtype=float)
     return backtest_directional_strategy(
         actual_returns,
         predicted_returns,
         transaction_cost_bps=cost_bps,
+        periods_per_year=periods_per_year,
     )
 
 
@@ -156,9 +167,9 @@ def _ic(actual_delta, predicted_delta) -> float:
     return float(np.corrcoef(actual, predicted)[0, 1])
 
 
-def _evaluate_predictions(actual, predicted_price, previous, actual_delta, predicted_delta, cost_bps):
+def _evaluate_predictions(actual, predicted_price, previous, actual_delta, predicted_delta, cost_bps, periods_per_year=252):
     forecast = evaluate_price_forecast(actual, predicted_price, previous)
-    strategy = _strategy_metrics(actual_delta, predicted_delta, previous, cost_bps)
+    strategy = _strategy_metrics(actual_delta, predicted_delta, previous, cost_bps, periods_per_year)
     return {
         **forecast.as_dict(),
         "delta_ic": _ic(actual_delta, predicted_delta),
@@ -237,10 +248,11 @@ def run_benchmark(args) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     prefix = args.label.replace("^", "").replace("-", "").replace(" ", "_")
 
-    close = _download_close(args.ticker, args.start, args.end)
+    close = _load_close_snapshot(args.input_csv) if args.input_csv else _download_close(args.ticker, args.start, args.end)
     snapshot = close.to_frame()
     snapshot_path = output_dir / f"market_data_{prefix}.csv"
     snapshot.to_csv(snapshot_path)
+    input_sha256 = sha256_file(args.input_csv) if args.input_csv else sha256_file(snapshot_path)
 
     rows: list[dict] = []
     prediction_rows: list[dict] = []
@@ -310,6 +322,7 @@ def run_benchmark(args) -> dict:
             actual_delta,
             naive_delta,
             args.cost_bps,
+            365 if args.ticker.upper() == "BTC-USD" else 252,
         )
         rows.append(
             {
@@ -379,6 +392,7 @@ def run_benchmark(args) -> dict:
                 actual_delta,
                 predicted_delta,
                 args.cost_bps,
+                365 if args.ticker.upper() == "BTC-USD" else 252,
             )
             elapsed = time.perf_counter() - started
 
@@ -431,6 +445,7 @@ def run_benchmark(args) -> dict:
             actual_delta,
             predicted_delta,
             args.cost_bps,
+            365 if args.ticker.upper() == "BTC-USD" else 252,
         )
         fold_rows = metrics[metrics["model"] == model_name]
         combined.update(
@@ -459,6 +474,10 @@ def run_benchmark(args) -> dict:
             "seed": args.seed,
             "transaction_cost_bps": args.cost_bps,
             "auto_adjust": True,
+            "input_source": args.input_csv or "yfinance download",
+            "input_sha256": input_sha256,
+            "market_data_file": snapshot_path.name,
+            "periods_per_year": 365 if args.ticker.upper() == "BTC-USD" else 252,
             "forecast_type": "rolling one-step-ahead using observed history",
             "shuffle": False,
         },
@@ -480,6 +499,7 @@ def build_parser():
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--start", default="2015-01-01")
     parser.add_argument("--end", default="2026-09-27")
+    parser.add_argument("--input-csv", help="Frozen Date,Close snapshot; skips the mutable Yahoo download.")
     parser.add_argument("--window", type=int, default=30)
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=64)

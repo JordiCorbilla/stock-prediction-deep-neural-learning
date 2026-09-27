@@ -52,6 +52,7 @@ def _build_parser() -> argparse.ArgumentParser:
     arena.add_argument("--time-col", help="Optional chronological sort column such as Date.")
     arena.add_argument("--previous-actual-col")
     arena.add_argument("--cost-bps", type=float, default=0.0)
+    arena.add_argument("--periods-per-year", type=int, default=252, help="Use 365 for daily continuous markets such as crypto.")
     arena.add_argument("--output", default="reports/generated/arena.html")
     arena.add_argument("--title", default="Financial Forecasting Arena")
     return parser
@@ -84,6 +85,7 @@ def main(argv=None) -> int:
             time_col=args.time_col,
             previous_actual_col=args.previous_actual_col,
             transaction_cost_bps=args.cost_bps,
+            periods_per_year=args.periods_per_year,
         )
         output = render_html_report(result, args.output, title=args.title)
         print(result.to_string(index=False, float_format=lambda value: f"{value:.6f}"))

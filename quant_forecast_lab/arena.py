@@ -36,6 +36,7 @@ def arena_frame(
     time_col: str | None = None,
     previous_actual_col: str | None = None,
     transaction_cost_bps: float = 0.0,
+    periods_per_year: int = 252,
 ) -> pd.DataFrame:
     """Evaluate multiple models across optional ticker/horizon groups.
 
@@ -52,6 +53,19 @@ def arena_frame(
     missing = [column for column in required if column not in frame.columns]
     if missing:
         raise KeyError("Missing columns: " + ", ".join(missing))
+
+    # A shifted target close is only available at the forecast origin for a
+    # one-step horizon. At longer horizons it reads information from the future.
+    horizon_columns = [column for column in frame if column.lower() in {"horizon", "forecast_horizon"}]
+    if not previous_actual_col and horizon_columns:
+        horizons = pd.to_numeric(frame[horizon_columns[0]], errors="coerce")
+        if horizons.isna().any() or (horizons < 1).any():
+            raise ValueError("Horizon values must be positive numbers.")
+        if (horizons > 1).any():
+            raise ValueError(
+                "Multi-horizon forecasts require previous_actual_col containing "
+                "the close observed at each forecast origin."
+            )
 
     grouped = [((), frame)] if not group_cols else frame.groupby(group_cols, sort=True, dropna=False)
     rows: list[dict[str, object]] = []
@@ -97,6 +111,7 @@ def arena_frame(
                     valid_returns["actual"],
                     valid_returns["predicted"],
                     transaction_cost_bps=transaction_cost_bps,
+                    periods_per_year=periods_per_year,
                 )
                 strategy_values = strategy.as_dict()
 

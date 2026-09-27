@@ -4,6 +4,8 @@ This report records the deterministic cross-asset benchmark executed by GitHub A
 
 Workflow run: https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/actions/runs/36274776510
 
+**Reproduction limit:** The committed fold-skill CSV supports the comparative skill counts below. Raw market and prediction snapshots were stored as workflow artifacts rather than committed here; their bytes are not available from this report. Exact RMSE, correlation, and strategy statistics therefore require the original artifacts and should not be treated as independently reproduced from this checkout. The original BTC-USD strategy diagnostics used a 252-period annualisation; new benchmark runs use 365 for that continuous market. Neither model is promoted as a superior forecaster because aggregate naive-relative skill is negative.
+
 ## Protocol
 
 - Data source: Yahoo Finance via `yfinance`.
