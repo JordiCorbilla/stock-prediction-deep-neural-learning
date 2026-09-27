@@ -260,6 +260,7 @@ def train_LSTM_network(
         )
         print("saving v9 return multi-task model")
         return_model.save(os.path.join(stock.get_project_folder(), 'model_return_multitask.keras'))
+        plotter.plot_v9_architecture()
     else:
         output_units = forecast_horizon if model_version in ('v5', 'v6') else 1
         model = lstm.create_model(x_fit, version=model_version, output_units=output_units)
