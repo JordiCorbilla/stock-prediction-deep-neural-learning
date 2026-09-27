@@ -14,6 +14,7 @@ on:
       - stock_prediction_numpy.py
       - stock_prediction_plotter.py
       - quant_forecast_lab/config.py
+      - examples/notebooks/stock_prediction_lstm_v9.ipynb
       - .github/workflows/v9-notebook.yml
 
 permissions:
