@@ -145,6 +145,12 @@ def train_LSTM_network(
         input_scaler_path = os.path.join(stock.get_project_folder(), 'input_scaler.pkl')
         with open(input_scaler_path, 'wb') as scaler_file:
             pickle.dump(data.get_input_scaler(), scaler_file)
+    return_anchor_mean = None
+    if model_version == 'v9':
+        training_close = pd.to_numeric(training_data['Close'], errors='coerce').dropna()
+        training_log_returns = np.log(training_close).diff().dropna()
+        return_anchor_mean = float(training_log_returns.mean()) if len(training_log_returns) else 0.0
+
     config = {
         'use_returns': use_returns,
         'use_deltas': use_deltas,
@@ -165,6 +171,9 @@ def train_LSTM_network(
         'market_data_sha256': sha256_file(market_data_path),
         'runtime': runtime_metadata(cwd=os.getcwd()),
     }
+    if model_version == 'v9':
+        config['return_anchor_mode'] = 'training_mean'
+        config['return_anchor_mean'] = return_anchor_mean
     config_path = os.path.join(stock.get_project_folder(), 'model_config.json')
     with open(config_path, 'w', encoding='utf-8') as config_file:
         json.dump(config, config_file, indent=2)
