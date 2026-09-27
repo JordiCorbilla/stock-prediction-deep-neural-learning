@@ -1,0 +1,51 @@
+{
+  "seed": 42,
+  "window": 30,
+  "train_samples": 2466,
+  "validation_samples": 250,
+  "test_samples": 184,
+  "test_start": "2026-01-02",
+  "test_end": "2026-09-25",
+  "best_epoch": 13,
+  "forecast_metrics": [
+    {
+      "model": "Zero return",
+      "return_rmse_pct": 0.8337128758430481,
+      "return_mae_pct": 0.6375728845596313,
+      "direction_accuracy": 0.483695652173913,
+      "delta_ic": NaN,
+      "rmse_skill_vs_zero": 0.0
+    },
+    {
+      "model": "Ridge",
+      "return_rmse_pct": 0.8614325994820237,
+      "return_mae_pct": 0.6619028856967697,
+      "direction_accuracy": 0.4782608695652174,
+      "delta_ic": 0.017467614977226344,
+      "rmse_skill_vs_zero": -0.033248525292290276
+    },
+    {
+      "model": "v9 multi-task LSTM",
+      "return_rmse_pct": 0.8278833627700806,
+      "return_mae_pct": 0.629663348197937,
+      "direction_accuracy": 0.5434782608695652,
+      "delta_ic": 0.09336104161477105,
+      "rmse_skill_vs_zero": 0.0069922310688469436
+    }
+  ],
+  "direction_head_accuracy": 0.5163043478260869,
+  "interval_80_coverage": 0.7010869565217391,
+  "interval_mean_width_pct": 1.6955393552780151,
+  "ridge_strategy": {
+    "sharpe": -0.7172104572884228,
+    "max_drawdown": -0.13587626593947033,
+    "average_turnover": 1.059782608695652,
+    "final_return": -0.07341838244010268
+  },
+  "v9_strategy": {
+    "sharpe": 1.6921142673808225,
+    "max_drawdown": -0.08884973098282722,
+    "average_turnover": 0.09239130434782608,
+    "final_return": 0.16967936664025518
+  }
+}
