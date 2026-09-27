@@ -80,6 +80,20 @@ def _returns_to_prices(returns, start_price):
     return prices
 
 
+def _return_model_weight(step_index, half_life_days):
+    """Weight given to recursively generated model signal at a future horizon."""
+    if half_life_days is None or half_life_days <= 0:
+        return 1.0
+    return float(0.5 ** (float(step_index) / float(half_life_days)))
+
+
+def _anchor_return(raw_return, anchor_return, step_index, half_life_days):
+    """Decay recursive return forecasts toward an unconditional return anchor."""
+    model_weight = _return_model_weight(step_index, half_life_days)
+    anchored = (model_weight * float(raw_return)) + ((1.0 - model_weight) * float(anchor_return))
+    return anchored, model_weight
+
+
 def _ensure_frame(series_or_frame):
     if isinstance(series_or_frame, pd.Series):
         return series_or_frame.to_frame()
@@ -158,6 +172,9 @@ class InferenceRunner:
         stochastic_lookback,
         conformal_coverage,
         exchange_calendar=None,
+        return_anchor_enabled=True,
+        return_anchor_half_life=5.0,
+        return_anchor_mode='training_mean',
     ):
         self.run_folder = run_folder
         self.ticker = ticker
@@ -183,6 +200,9 @@ class InferenceRunner:
         self.stochastic_lookback = stochastic_lookback
         self.conformal_coverage = conformal_coverage
         self.exchange_calendar = exchange_calendar
+        self.return_anchor_enabled = return_anchor_enabled
+        self.return_anchor_half_life = return_anchor_half_life
+        self.return_anchor_mode = return_anchor_mode
 
     def run(self):
         print(tf.version.VERSION)
@@ -231,6 +251,27 @@ class InferenceRunner:
             trend_window = int(config.get('trend_window', trend_window))
             if use_returns != self.use_returns:
                 print('Warning: USE_RETURNS overridden by model_config.json')
+
+        return_anchor_value = 0.0
+        if model_version == 'v9' and use_returns and self.return_anchor_enabled:
+            if self.return_anchor_mode == 'zero':
+                return_anchor_value = 0.0
+            elif self.return_anchor_mode == 'training_mean':
+                if config is not None and config.get('return_anchor_mean') is not None:
+                    return_anchor_value = float(config['return_anchor_mean'])
+                else:
+                    historical_returns = np.log(close_series).diff().dropna()
+                    return_anchor_value = float(historical_returns.mean()) if len(historical_returns) else 0.0
+                    print('Warning: v9 return anchor missing from model_config.json; using available historical mean.')
+            else:
+                raise ValueError(
+                    "return_anchor_mode must be 'training_mean' or 'zero'."
+                )
+            print(
+                'v9 return anchor: '
+                + f'{return_anchor_value * 100:.4f}% daily log return, '
+                + f'half-life={self.return_anchor_half_life:g} sessions'
+            )
 
         if model_version == 'v7':
             model_dir_path = os.path.join(inference_folder, 'model_direction.keras')
@@ -308,6 +349,8 @@ class InferenceRunner:
             self.exchange_calendar,
         )
         predictions = []
+        raw_return_predictions = []
+        return_anchor_weights = []
         current_close = latest_close_price
 
         steps = len(future_dates)
@@ -341,8 +384,23 @@ class InferenceRunner:
             elif model_version == 'v9':
                 return_pred = return_model.predict(window_scaled, verbose=0)
                 dir_prob = float(return_pred['direction'][0][0])
-                return_scaled = float(return_pred['expected_return'][0][0])
-                return_value = scaler.inverse_transform([[return_scaled]])[0][0]
+                return_scaled_raw = float(return_pred['expected_return'][0][0])
+                return_value_raw = float(scaler.inverse_transform([[return_scaled_raw]])[0][0])
+
+                if self.return_anchor_enabled:
+                    return_value, model_weight = _anchor_return(
+                        return_value_raw,
+                        return_anchor_value,
+                        step_index,
+                        self.return_anchor_half_life,
+                    )
+                else:
+                    return_value = return_value_raw
+                    model_weight = 1.0
+
+                return_scaled = float(scaler.transform([[return_value]])[0][0])
+                raw_return_predictions.append(return_value_raw)
+                return_anchor_weights.append(model_weight)
                 pred_values = [return_value]
                 pred_scaled = [return_scaled]
             else:
@@ -372,8 +430,14 @@ class InferenceRunner:
             if step_index > 0 and step_index % max(1, steps // 10) == 0:
                 print(f'Inference progress: {step_index}/{steps}')
 
+        predicted_prices_unanchored = None
         if use_returns:
             predicted_prices_raw = _returns_to_prices(predictions, latest_close_price)
+            if model_version == 'v9' and raw_return_predictions:
+                predicted_prices_unanchored = _returns_to_prices(
+                    raw_return_predictions,
+                    latest_close_price,
+                )
         elif use_deltas or use_trend_residual:
             predicted_prices_raw = latest_close_price + np.cumsum(predictions)
         else:
@@ -408,6 +472,26 @@ class InferenceRunner:
                 'Predicted_Price': predicted_prices,
                 'Predicted_Price_Raw': predicted_prices_raw,
                 'Predicted_Return': predictions if use_returns else np.nan,
+                'Predicted_Return_Raw': (
+                    raw_return_predictions
+                    if model_version == 'v9' and use_returns
+                    else np.nan
+                ),
+                'Return_Anchor': (
+                    [return_anchor_value] * len(future_dates)
+                    if model_version == 'v9' and use_returns
+                    else np.nan
+                ),
+                'Return_Model_Weight': (
+                    return_anchor_weights
+                    if model_version == 'v9' and use_returns
+                    else np.nan
+                ),
+                'Predicted_Price_Unanchored': (
+                    predicted_prices_unanchored
+                    if predicted_prices_unanchored is not None
+                    else np.nan
+                ),
                 'Predicted_Delta': predictions if use_deltas else np.nan,
                 'Predicted_Trend_Residual': predictions if use_trend_residual else np.nan,
                 **stochastic_summary,
@@ -481,7 +565,26 @@ class InferenceRunner:
                 alpha=0.12,
                 label=f'Conformal interval ({int(round(self.conformal_coverage * 100))}%)',
             )
-        plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + self.ticker + '] price')
+        if (
+            model_version == 'v9'
+            and 'Predicted_Price_Unanchored' in forecast_df.columns
+            and forecast_df['Predicted_Price_Unanchored'].notna().any()
+        ):
+            plt.plot(
+                forecast_df.index,
+                forecast_df['Predicted_Price_Unanchored'],
+                color='firebrick',
+                linestyle='--',
+                alpha=0.45,
+                linewidth=1.2,
+                label='Unanchored recursive v9 path',
+            )
+        plt.plot(
+            forecast_df.index,
+            forecast_df['Predicted_Price'],
+            color='red',
+            label='Anchored [' + self.ticker + '] prediction' if model_version == 'v9' else 'Predicted [' + self.ticker + '] price',
+        )
         plt.xlabel('Time')
         plt.ylabel('Price [USD]')
         plt.legend()
@@ -572,6 +675,9 @@ def main(argv):
         stochastic_lookback=STOCHASTIC_LOOKBACK,
         conformal_coverage=CONFORMAL_COVERAGE,
         exchange_calendar=EXCHANGE_CALENDAR,
+        return_anchor_enabled=RETURN_ANCHOR_ENABLED,
+        return_anchor_half_life=RETURN_ANCHOR_HALF_LIFE,
+        return_anchor_mode=RETURN_ANCHOR_MODE,
         )
         runner.run()
 
@@ -603,4 +709,7 @@ if __name__ == '__main__':
     STOCHASTIC_LOOKBACK = 120
     CONFORMAL_COVERAGE = 0.90
     EXCHANGE_CALENDAR = 'XLON'
+    RETURN_ANCHOR_ENABLED = True
+    RETURN_ANCHOR_HALF_LIFE = 5.0
+    RETURN_ANCHOR_MODE = 'training_mean'
     app.run(main)
