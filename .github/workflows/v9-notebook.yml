@@ -69,23 +69,26 @@ jobs:
           ridge = rows["Ridge"]
           v9 = rows["v9 multi-task LSTM"]
 
+          summary = "\n".join([
+              "# v9 — Return-first multi-task forecasting",
+              "",
+              "## tl;dr — executed result",
+              "",
+              f"This notebook executed successfully on **{payload['test_samples']} held-out SPY sessions from {payload['test_start']} through {payload['test_end']}**.",
+              "",
+              "| Model | Return RMSE | RMSE skill vs zero | Direction | Delta IC |",
+              "| --- | ---: | ---: | ---: | ---: |",
+              f"| Zero return | {zero['return_rmse_pct']:.4f}% | 0.00% | {zero['direction_accuracy']:.2%} | — |",
+              f"| Ridge | {ridge['return_rmse_pct']:.4f}% | {ridge['rmse_skill_vs_zero']:+.2%} | {ridge['direction_accuracy']:.2%} | {ridge['delta_ic']:.4f} |",
+              f"| **v9 multi-task LSTM** | **{v9['return_rmse_pct']:.4f}%** | **{v9['rmse_skill_vs_zero']:+.2%}** | **{v9['direction_accuracy']:.2%}** | **{v9['delta_ic']:.4f}** |",
+              "",
+              f"The point estimate is encouraging but deliberately modest: v9 beats the zero-return baseline by **{v9['rmse_skill_vs_zero']:+.2%} RMSE skill** in this single 2026 SPY holdout. Its direction head is {payload['direction_head_accuracy']:.2%} accurate and its nominal 80% interval covers {payload['interval_80_coverage']:.2%} of test returns, so the uncertainty head is currently **under-calibrated**.",
+              "",
+              "This is a worked example, not evidence of a persistent trading edge. The next requirement is to run the same v9 protocol across the multi-asset/multi-regime arena.",
+              "",
+          ])
           nb = nbformat.read(notebook, as_version=4)
-          nb.cells[0].source = f"""# v9 — Return-first multi-task forecasting
-
-## tl;dr — executed result
-
-This notebook executed successfully on **{payload['test_samples']} held-out SPY sessions from {payload['test_start']} through {payload['test_end']}**.
-
-| Model | Return RMSE | RMSE skill vs zero | Direction | Delta IC |
-| --- | ---: | ---: | ---: | ---: |
-| Zero return | {zero['return_rmse_pct']:.4f}% | 0.00% | {zero['direction_accuracy']:.2%} | — |
-| Ridge | {ridge['return_rmse_pct']:.4f}% | {ridge['rmse_skill_vs_zero']:+.2%} | {ridge['direction_accuracy']:.2%} | {ridge['delta_ic']:.4f} |
-| **v9 multi-task LSTM** | **{v9['return_rmse_pct']:.4f}%** | **{v9['rmse_skill_vs_zero']:+.2%}** | **{v9['direction_accuracy']:.2%}** | **{v9['delta_ic']:.4f}** |
-
-The point estimate is encouraging but deliberately modest: v9 beats the zero-return baseline by **{v9['rmse_skill_vs_zero']:+.2%} RMSE skill** in this single 2026 SPY holdout. Its direction head is {payload['direction_head_accuracy']:.2%} accurate and its nominal 80% interval covers {payload['interval_80_coverage']:.2%} of test returns, so the uncertainty head is currently **under-calibrated**.
-
-This is a worked example, not evidence of a persistent trading edge. The next requirement is to run the same v9 protocol across the multi-asset/multi-regime arena.
-"""
+          nb.cells[0].source = summary
           nbformat.write(nb, notebook)
           PY
 
