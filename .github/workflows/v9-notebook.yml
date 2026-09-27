@@ -1,0 +1,111 @@
+name: v9 Executed Notebook
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - architecture-clean-up
+    paths:
+      - examples/notebooks/build_v9_notebook.py
+      - .github/workflows/v9-notebook.yml
+
+permissions:
+  contents: write
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: architecture-clean-up
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime and notebook tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install nbformat nbconvert ipykernel
+          python -m pip install -e . --no-deps
+          python -m pip check
+
+      - name: Generate notebook
+        run: |
+          python examples/notebooks/build_v9_notebook.py
+          python - <<'PY'
+          import nbformat
+          path = "examples/notebooks/v9_return_forecasting.ipynb"
+          nb = nbformat.read(path, as_version=4)
+          nbformat.validate(nb)
+          print(f"Validated {path}: {len(nb.cells)} cells")
+          PY
+
+      - name: Execute notebook top to bottom
+        env:
+          TF_CPP_MIN_LOG_LEVEL: "2"
+          CUDA_VISIBLE_DEVICES: "-1"
+          MPLBACKEND: Agg
+        run: |
+          jupyter nbconvert             --to notebook             --execute examples/notebooks/v9_return_forecasting.ipynb             --output v9_return_forecasting.ipynb             --output-dir examples/notebooks             --ExecutePreprocessor.timeout=1800             --ExecutePreprocessor.kernel_name=python3
+
+      - name: Validate executed outputs
+        run: |
+          python - <<'PY'
+          import json
+          import nbformat
+          from pathlib import Path
+
+          notebook = Path("examples/notebooks/v9_return_forecasting.ipynb")
+          nb = nbformat.read(notebook, as_version=4)
+          nbformat.validate(nb)
+          code_cells = [cell for cell in nb.cells if cell.cell_type == "code"]
+          assert code_cells
+          assert all(cell.execution_count is not None for cell in code_cells)
+          assert not any(
+              output.output_type == "error"
+              for cell in code_cells
+              for output in cell.get("outputs", [])
+          )
+
+          metrics = Path("reports/generated/v9-notebook/v9_spy_metrics.json")
+          assert metrics.exists()
+          payload = json.loads(metrics.read_text())
+          assert payload["test_samples"] > 100
+          assert len(payload["forecast_metrics"]) == 3
+          print(json.dumps(payload, indent=2))
+          PY
+
+      - name: Render HTML
+        run: |
+          mkdir -p notebook-artifact
+          jupyter nbconvert             --to html             examples/notebooks/v9_return_forecasting.ipynb             --output v9_return_forecasting.html             --output-dir notebook-artifact
+          cp examples/notebooks/v9_return_forecasting.ipynb notebook-artifact/
+          cp examples/data/v9_spy_2015_2026.csv notebook-artifact/
+          cp reports/generated/v9-notebook/v9_spy_metrics.json notebook-artifact/
+
+      - name: Commit executed notebook and frozen data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add examples/notebooks/v9_return_forecasting.ipynb
+          git add examples/data/v9_spy_2015_2026.csv
+          git add -f reports/generated/v9-notebook/v9_spy_metrics.json
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+          else
+            git commit -m "Add executed v9 return-forecasting notebook"
+            git push origin HEAD:architecture-clean-up
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v9-executed-notebook
+          path: notebook-artifact
+          if-no-files-found: error
+          retention-days: 30
