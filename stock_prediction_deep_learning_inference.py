@@ -244,6 +244,11 @@ class InferenceRunner:
             multitask_model = tf.keras.models.load_model(multitask_model_path, compile=False)
             multitask_model.summary()
             model_time_steps = multitask_model.input_shape[1]
+        elif model_version == 'v9':
+            return_model_path = os.path.join(inference_folder, 'model_return_multitask.keras')
+            return_model = tf.keras.models.load_model(return_model_path, compile=False)
+            return_model.summary()
+            model_time_steps = return_model.input_shape[1]
         else:
             model_path = os.path.join(inference_folder, 'model.keras')
             if not os.path.exists(model_path):
@@ -333,6 +338,13 @@ class InferenceRunner:
                     mag_value = min(mag_value, mag_clip_value)
                 pred_values = [mag_value if dir_prob >= self.direction_threshold else -mag_value]
                 pred_scaled = [mag_scaled]
+            elif model_version == 'v9':
+                return_pred = return_model.predict(window_scaled, verbose=0)
+                dir_prob = float(return_pred['direction'][0][0])
+                return_scaled = float(return_pred['expected_return'][0][0])
+                return_value = scaler.inverse_transform([[return_scaled]])[0][0]
+                pred_values = [return_value]
+                pred_scaled = [return_scaled]
             else:
                 pred_scaled = model.predict(window_scaled, verbose=0)[0]
                 if model_version in ('v5', 'v6'):
