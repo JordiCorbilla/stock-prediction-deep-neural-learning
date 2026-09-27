@@ -126,4 +126,19 @@ jobs:
           assert output["magnitude"].shape == (1, 1)
           assert 0.0 <= float(output["direction"][0, 0]) <= 1.0
           assert float(output["magnitude"][0, 0]) >= 0.0
+
+          v9 = helper.create_return_multitask_model(x)
+          v9_output = v9.predict(x[:1], verbose=0)
+          assert set(v9_output) == {"direction", "expected_return", "quantiles"}
+          assert v9_output["direction"].shape == (1, 1)
+          assert v9_output["expected_return"].shape == (1, 1)
+          assert v9_output["quantiles"].shape == (1, 3)
+          q10, q50, q90 = v9_output["quantiles"][0]
+          assert float(q10) <= float(q50) <= float(q90)
+
+          v9.save("/tmp/model_return_multitask.keras")
+          import tensorflow as tf
+          loaded = tf.keras.models.load_model("/tmp/model_return_multitask.keras", compile=False)
+          loaded_output = loaded.predict(x[:1], verbose=0)
+          assert loaded_output["expected_return"].shape == (1, 1)
           PY
