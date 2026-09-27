@@ -50,9 +50,44 @@ jobs:
         env:
           TF_CPP_MIN_LOG_LEVEL: "2"
           CUDA_VISIBLE_DEVICES: "-1"
-          MPLBACKEND: Agg
         run: |
           jupyter nbconvert             --to notebook             --execute examples/notebooks/v9_return_forecasting.ipynb             --output v9_return_forecasting.ipynb             --output-dir examples/notebooks             --ExecutePreprocessor.timeout=1800             --ExecutePreprocessor.kernel_name=python3
+
+      - name: Inject executed tl;dr
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          import nbformat
+
+          notebook = Path("examples/notebooks/v9_return_forecasting.ipynb")
+          metrics = Path("reports/generated/v9-notebook/v9_spy_metrics.json")
+          payload = json.loads(metrics.read_text())
+          rows = {row["model"]: row for row in payload["forecast_metrics"]}
+          zero = rows["Zero return"]
+          ridge = rows["Ridge"]
+          v9 = rows["v9 multi-task LSTM"]
+
+          nb = nbformat.read(notebook, as_version=4)
+          nb.cells[0].source = f"""# v9 — Return-first multi-task forecasting
+
+## tl;dr — executed result
+
+This notebook executed successfully on **{payload['test_samples']} held-out SPY sessions from {payload['test_start']} through {payload['test_end']}**.
+
+| Model | Return RMSE | RMSE skill vs zero | Direction | Delta IC |
+| --- | ---: | ---: | ---: | ---: |
+| Zero return | {zero['return_rmse_pct']:.4f}% | 0.00% | {zero['direction_accuracy']:.2%} | — |
+| Ridge | {ridge['return_rmse_pct']:.4f}% | {ridge['rmse_skill_vs_zero']:+.2%} | {ridge['direction_accuracy']:.2%} | {ridge['delta_ic']:.4f} |
+| **v9 multi-task LSTM** | **{v9['return_rmse_pct']:.4f}%** | **{v9['rmse_skill_vs_zero']:+.2%}** | **{v9['direction_accuracy']:.2%}** | **{v9['delta_ic']:.4f}** |
+
+The point estimate is encouraging but deliberately modest: v9 beats the zero-return baseline by **{v9['rmse_skill_vs_zero']:+.2%} RMSE skill** in this single 2026 SPY holdout. Its direction head is {payload['direction_head_accuracy']:.2%} accurate and its nominal 80% interval covers {payload['interval_80_coverage']:.2%} of test returns, so the uncertainty head is currently **under-calibrated**.
+
+This is a worked example, not evidence of a persistent trading edge. The next requirement is to run the same v9 protocol across the multi-asset/multi-regime arena.
+"""
+          nbformat.write(nb, notebook)
+          PY
 
       - name: Validate executed outputs
         run: |
@@ -72,12 +107,21 @@ jobs:
               for cell in code_cells
               for output in cell.get("outputs", [])
           )
+          png_outputs = sum(
+              1
+              for cell in code_cells
+              for output in cell.get("outputs", [])
+              if output.output_type in {"display_data", "execute_result"}
+              and "image/png" in output.get("data", {})
+          )
+          assert png_outputs >= 3, f"Expected at least 3 embedded charts, found {png_outputs}"
 
           metrics = Path("reports/generated/v9-notebook/v9_spy_metrics.json")
           assert metrics.exists()
           payload = json.loads(metrics.read_text())
           assert payload["test_samples"] > 100
           assert len(payload["forecast_metrics"]) == 3
+          print(f"Embedded PNG outputs: {png_outputs}")
           print(json.dumps(payload, indent=2))
           PY
 
