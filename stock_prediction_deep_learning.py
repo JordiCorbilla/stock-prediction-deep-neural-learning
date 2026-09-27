@@ -257,6 +257,7 @@ def train_LSTM_network(
             ),
             callbacks=lstm.get_callbacks('v9'),
             shuffle=False,
+            verbose=2,
         )
         print("saving v9 return multi-task model")
         return_model.save(os.path.join(stock.get_project_folder(), 'model_return_multitask.keras'))
