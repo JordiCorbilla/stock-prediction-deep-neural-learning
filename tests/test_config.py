@@ -11,3 +11,9 @@ def test_default_configuration_is_compatible():
 def test_return_target_rejects_incompatible_models(model):
     with pytest.raises(ValueError):
         validate_model_options(model, True)
+
+
+def test_v9_requires_return_target():
+    with pytest.raises(ValueError):
+        validate_model_options("v9", False)
+    validate_model_options("v9", True)
