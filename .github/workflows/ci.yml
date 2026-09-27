@@ -124,7 +124,7 @@ jobs:
           assert abs(weight_0 - 1.0) < 1e-12
           assert abs(anchored_0 - raw) < 1e-12
           assert abs(weight_5 - 0.5) < 1e-12
-          assert anchor < anchored_5 < 0.0
+          assert raw < anchored_5 < anchor
           assert weight_30 < 0.02
           assert abs(anchored_30 - anchor) < abs(raw - anchor) * 0.02
           PY
