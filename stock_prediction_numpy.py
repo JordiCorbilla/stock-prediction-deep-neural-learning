@@ -239,6 +239,40 @@ class StockData:
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
         return (x_train, y_train), (x_test, y_test), (training_data, test_data)
 
+    def prepare_return_multitask_data(self, time_steps, project_folder):
+        """Prepare v9 scaled log-return windows with return and direction targets."""
+        (x_train, y_return_train), (x_test, y_return_test), (training_data, test_data) = self.download_transform_to_numpy(
+            time_steps,
+            project_folder,
+            use_returns=True,
+            use_deltas=False,
+            use_trend_residual=False,
+            forecast_horizon=1,
+        )
+
+        train_returns = self._min_max.inverse_transform(
+            np.asarray(y_return_train).reshape(-1, 1)
+        ).reshape(-1)
+        test_returns = self._min_max.inverse_transform(
+            np.asarray(y_return_test).reshape(-1, 1)
+        ).reshape(-1)
+
+        y_direction_train = (train_returns > 0.0).astype(np.float32)
+        y_direction_test = (test_returns > 0.0).astype(np.float32)
+
+        return (
+            x_train,
+            y_direction_train,
+            np.asarray(y_return_train, dtype=np.float32),
+        ), (
+            x_test,
+            y_direction_test,
+            np.asarray(y_return_test, dtype=np.float32),
+        ), (
+            training_data,
+            test_data,
+        )
+
     def prepare_delta_direction_data(self, time_steps, validation_date):
         end_date = datetime.today()
         data = self._download_close_frame(end_date).reset_index()
