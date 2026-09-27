@@ -1,4 +1,4 @@
-name: v9 Executed Notebook
+name: v9 Project Notebook
 
 on:
   workflow_dispatch:
@@ -6,7 +6,12 @@ on:
     branches:
       - architecture-clean-up
     paths:
-      - examples/notebooks/build_v9_notebook.py
+      - stock_prediction_deep_learning.py
+      - stock_prediction_deep_learning_inference.py
+      - stock_prediction_lstm.py
+      - stock_prediction_numpy.py
+      - stock_prediction_plotter.py
+      - quant_forecast_lab/config.py
       - .github/workflows/v9-notebook.yml
 
 permissions:
@@ -15,7 +20,7 @@ permissions:
 jobs:
   execute:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v7
@@ -27,7 +32,7 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install runtime and notebook tooling
+      - name: Install project and notebook runtime
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
@@ -35,25 +40,24 @@ jobs:
           python -m pip install -e . --no-deps
           python -m pip check
 
-      - name: Generate notebook
+      - name: Validate notebook structure
         run: |
-          python examples/notebooks/build_v9_notebook.py
           python - <<'PY'
           import nbformat
-          path = "examples/notebooks/v9_return_forecasting.ipynb"
-          nb = nbformat.read(path, as_version=4)
-          nbformat.validate(nb)
-          print(f"Validated {path}: {len(nb.cells)} cells")
+          path = "examples/notebooks/stock_prediction_lstm_v9.ipynb"
+          notebook = nbformat.read(path, as_version=4)
+          nbformat.validate(notebook)
+          print(f"Validated {path}: {len(notebook.cells)} cells")
           PY
 
-      - name: Execute notebook top to bottom
+      - name: Execute project notebook top to bottom
         env:
           TF_CPP_MIN_LOG_LEVEL: "2"
           CUDA_VISIBLE_DEVICES: "-1"
         run: |
-          jupyter nbconvert             --to notebook             --execute examples/notebooks/v9_return_forecasting.ipynb             --output v9_return_forecasting.ipynb             --output-dir examples/notebooks             --ExecutePreprocessor.timeout=1800             --ExecutePreprocessor.kernel_name=python3
+          jupyter nbconvert             --to notebook             --execute             --inplace             examples/notebooks/stock_prediction_lstm_v9.ipynb             --ExecutePreprocessor.timeout=2700             --ExecutePreprocessor.kernel_name=python3
 
-      - name: Inject executed tl;dr
+      - name: Validate notebook and project outputs
         run: |
           python - <<'PY'
           import json
@@ -61,55 +65,24 @@ jobs:
 
           import nbformat
 
-          notebook = Path("examples/notebooks/v9_return_forecasting.ipynb")
-          metrics = Path("reports/generated/v9-notebook/v9_spy_metrics.json")
-          payload = json.loads(metrics.read_text())
-          rows = {row["model"]: row for row in payload["forecast_metrics"]}
-          zero = rows["Zero return"]
-          ridge = rows["Ridge"]
-          v9 = rows["v9 multi-task LSTM"]
+          notebook_path = Path("examples/notebooks/stock_prediction_lstm_v9.ipynb")
+          notebook = nbformat.read(notebook_path, as_version=4)
+          nbformat.validate(notebook)
 
-          summary = "\n".join([
-              "# v9 — Return-first multi-task forecasting",
-              "",
-              "## tl;dr — executed result",
-              "",
-              f"This notebook executed successfully on **{payload['test_samples']} held-out SPY sessions from {payload['test_start']} through {payload['test_end']}**.",
-              "",
-              "| Model | Return RMSE | RMSE skill vs zero | Direction | Delta IC |",
-              "| --- | ---: | ---: | ---: | ---: |",
-              f"| Zero return | {zero['return_rmse_pct']:.4f}% | 0.00% | {zero['direction_accuracy']:.2%} | — |",
-              f"| Ridge | {ridge['return_rmse_pct']:.4f}% | {ridge['rmse_skill_vs_zero']:+.2%} | {ridge['direction_accuracy']:.2%} | {ridge['delta_ic']:.4f} |",
-              f"| **v9 multi-task LSTM** | **{v9['return_rmse_pct']:.4f}%** | **{v9['rmse_skill_vs_zero']:+.2%}** | **{v9['direction_accuracy']:.2%}** | **{v9['delta_ic']:.4f}** |",
-              "",
-              f"The point estimate is encouraging but deliberately modest: v9 beats the zero-return baseline by **{v9['rmse_skill_vs_zero']:+.2%} RMSE skill** in this single 2026 SPY holdout. Its direction head is {payload['direction_head_accuracy']:.2%} accurate and its nominal 80% interval covers {payload['interval_80_coverage']:.2%} of test returns, so the uncertainty head is currently **under-calibrated**.",
-              "",
-              "This is a worked example, not evidence of a persistent trading edge. The next requirement is to run the same v9 protocol across the multi-asset/multi-regime arena.",
-              "",
-          ])
-          nb = nbformat.read(notebook, as_version=4)
-          nb.cells[0].source = summary
-          nbformat.write(nb, notebook)
-          PY
-
-      - name: Validate executed outputs
-        run: |
-          python - <<'PY'
-          import json
-          import nbformat
-          from pathlib import Path
-
-          notebook = Path("examples/notebooks/v9_return_forecasting.ipynb")
-          nb = nbformat.read(notebook, as_version=4)
-          nbformat.validate(nb)
-          code_cells = [cell for cell in nb.cells if cell.cell_type == "code"]
+          code_cells = [
+              cell for cell in notebook.cells
+              if cell.cell_type == "code" and cell.source.strip()
+          ]
           assert code_cells
           assert all(cell.execution_count is not None for cell in code_cells)
-          assert not any(
-              output.output_type == "error"
+          errors = [
+              output
               for cell in code_cells
               for output in cell.get("outputs", [])
-          )
+              if output.output_type == "error"
+          ]
+          assert not errors, errors
+
           png_outputs = sum(
               1
               for cell in code_cells
@@ -117,42 +90,67 @@ jobs:
               if output.output_type in {"display_data", "execute_result"}
               and "image/png" in output.get("data", {})
           )
-          assert png_outputs >= 3, f"Expected at least 3 embedded charts, found {png_outputs}"
+          assert png_outputs >= 3, f"Expected project plots in notebook, found {png_outputs} PNG outputs"
 
-          metrics = Path("reports/generated/v9-notebook/v9_spy_metrics.json")
-          assert metrics.exists()
-          payload = json.loads(metrics.read_text())
-          assert payload["test_samples"] > 100
-          assert len(payload["forecast_metrics"]) == 3
+          run_dirs = sorted(Path(".").glob("^FTSE_v9_*"))
+          assert run_dirs, "v9 notebook did not create a project run folder"
+          run_dir = run_dirs[-1]
+
+          required = [
+              "model_return_multitask.keras",
+              "model_config.json",
+              "return_forecast_metrics.json",
+              "forecast_metrics.json",
+              "future_predictions.csv",
+              "v9_architecture.png",
+          ]
+          missing = [name for name in required if not (run_dir / name).exists()]
+          assert not missing, f"Missing v9 project outputs: {missing}"
+
+          config = json.loads((run_dir / "model_config.json").read_text())
+          assert config["model_version"] == "v9"
+          assert config["use_returns"] is True
+
+          metrics = json.loads((run_dir / "return_forecast_metrics.json").read_text())
+          assert "rmse_skill_vs_zero" in metrics
+          assert "direction_accuracy" in metrics
+          assert "q10_q90_coverage" in metrics
+
+          print(f"Executed project folder: {run_dir}")
           print(f"Embedded PNG outputs: {png_outputs}")
-          print(json.dumps(payload, indent=2))
+          print(json.dumps(metrics, indent=2))
           PY
 
-      - name: Render HTML
+      - name: Render executed notebook
         run: |
           mkdir -p notebook-artifact
-          jupyter nbconvert             --to html             examples/notebooks/v9_return_forecasting.ipynb             --output v9_return_forecasting.html             --output-dir notebook-artifact
-          cp examples/notebooks/v9_return_forecasting.ipynb notebook-artifact/
-          cp examples/data/v9_spy_2015_2026.csv notebook-artifact/
-          cp reports/generated/v9-notebook/v9_spy_metrics.json notebook-artifact/
+          jupyter nbconvert             --to html             examples/notebooks/stock_prediction_lstm_v9.ipynb             --output stock_prediction_lstm_v9.html             --output-dir notebook-artifact
+          cp examples/notebooks/stock_prediction_lstm_v9.ipynb notebook-artifact/
 
-      - name: Commit executed notebook and frozen data
+          RUN_DIR=$(find . -maxdepth 1 -type d -name '^FTSE_v9_*' -print | sort | tail -1)
+          cp "$RUN_DIR/model_config.json" notebook-artifact/
+          cp "$RUN_DIR/return_forecast_metrics.json" notebook-artifact/
+          cp "$RUN_DIR/forecast_metrics.json" notebook-artifact/
+          cp "$RUN_DIR/future_predictions.csv" notebook-artifact/
+          cp "$RUN_DIR/v9_architecture.png" notebook-artifact/
+          cp "$RUN_DIR/"*"_prediction.png" notebook-artifact/ 2>/dev/null || true
+          cp "$RUN_DIR/"*"_future_forecast.png" notebook-artifact/ 2>/dev/null || true
+
+      - name: Commit executed notebook
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add examples/notebooks/v9_return_forecasting.ipynb
-          git add examples/data/v9_spy_2015_2026.csv
-          git add -f reports/generated/v9-notebook/v9_spy_metrics.json
+          git add -f examples/notebooks/stock_prediction_lstm_v9.ipynb
           if git diff --cached --quiet; then
-            echo "No generated changes to commit."
+            echo "No executed notebook changes to commit."
           else
-            git commit -m "Add executed v9 return-forecasting notebook"
+            git commit -m "Execute integrated v9 project notebook"
             git push origin HEAD:architecture-clean-up
           fi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: v9-executed-notebook
+          name: v9-project-notebook
           path: notebook-artifact
           if-no-files-found: error
           retention-days: 30
