@@ -105,6 +105,30 @@ jobs:
           assert pd.Timestamp("2025-12-29") in dates
           PY
 
+      - name: Verify v9 recursive return anchor
+        run: |
+          python - <<'PY'
+          from stock_prediction_deep_learning_inference import (
+              _anchor_return,
+              _return_model_weight,
+          )
+
+          raw = -0.004
+          anchor = 0.0002
+          half_life = 5.0
+
+          anchored_0, weight_0 = _anchor_return(raw, anchor, 0, half_life)
+          anchored_5, weight_5 = _anchor_return(raw, anchor, 5, half_life)
+          anchored_30, weight_30 = _anchor_return(raw, anchor, 30, half_life)
+
+          assert abs(weight_0 - 1.0) < 1e-12
+          assert abs(anchored_0 - raw) < 1e-12
+          assert abs(weight_5 - 0.5) < 1e-12
+          assert anchor < anchored_5 < 0.0
+          assert weight_30 < 0.02
+          assert abs(anchored_30 - anchor) < abs(raw - anchor) * 0.02
+          PY
+
       - name: Build and execute v8 model contract
         env:
           MPLBACKEND: Agg
