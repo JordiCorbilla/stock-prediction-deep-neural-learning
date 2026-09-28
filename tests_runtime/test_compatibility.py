@@ -1,5 +1,6 @@
 """Runtime checks that use the full research dependency stack."""
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -8,6 +9,7 @@ import pandas as pd
 import pytest
 import tensorflow as tf
 
+import stock_prediction_forecasting as forecasting
 from quant_forecast_lab.legacy_keras import load_legacy_h5
 from stock_prediction_class import StockPrediction
 from stock_prediction_deep_learning import _chronological_validation_split
@@ -101,3 +103,64 @@ def test_multi_horizon_validation_purges_overlapping_targets():
     (fit, validation), = _chronological_validation_split(np.arange(20), fraction=0.2, purge=2)
     assert fit[-1] == 13
     assert validation[0] == 16
+
+
+def test_compatibility_default_outputs_are_separate_and_unique(monkeypatch):
+    destinations = []
+
+    class Runner:
+        def __init__(self, **kwargs):
+            source = Path(kwargs["run_folder"]).resolve()
+            output = Path(kwargs["output_folder"])
+            assert output.parent == Path("runs/forecasts").resolve()
+            assert not output.is_relative_to(source)
+            destinations.append(output)
+
+        def run(self):
+            pass
+
+    monkeypatch.setattr(forecasting, "InferenceRunner", Runner)
+    forecasting.main([])
+    forecasting.main([])
+    assert destinations[0] != destinations[1]
+
+
+@pytest.mark.parametrize("child", ["", "generated"])
+def test_compatibility_rejects_output_inside_source(tmp_path, child):
+    with pytest.raises(SystemExit) as error:
+        forecasting.main([
+            "--run-folder", str(tmp_path),
+            "--output-folder", str(tmp_path / child),
+        ])
+    assert error.value.code == 2
+
+
+def test_compatibility_forecast_preserves_reference_fixture(tmp_path, monkeypatch):
+    import matplotlib.pyplot as plt
+
+    source = Path("examples/runs/reference-v7-ftse").resolve()
+    output = tmp_path / "forecast"
+
+    def snapshot():
+        return {
+            str(path.relative_to(source)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in source.rglob("*") if path.is_file()
+        }
+
+    before = snapshot()
+    dates = pd.bdate_range("2025-01-01", periods=200)
+    frame = pd.DataFrame({"Close": 8000.0 + np.arange(200)}, index=dates)
+    frame.index.name = "Date"
+    monkeypatch.setattr(StockData, "download_raw_data", lambda self: frame)
+    monkeypatch.setattr(StockData, "_get_security_info", lambda self: {"currency": "GBP"})
+    monkeypatch.setattr(plt, "show", lambda: None)
+    result = forecasting.main([
+        "--run-folder", str(source), "--output-folder", str(output),
+        "--forecast-days", "2",
+    ])
+    assert len(result) == 2
+    assert len(pd.read_csv(output / "future_predictions.csv")) == 2
+    assert (output / "inference_config.json").is_file()
+    assert (output / "^FTSE_future_forecast.png").is_file()
+    assert snapshot() == before
+    plt.close("all")

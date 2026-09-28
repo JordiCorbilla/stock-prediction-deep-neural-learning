@@ -315,6 +315,8 @@ python stock_prediction_forecasting.py \
 
 The calendar parameter is passed to `exchange_calendars`, so the reference forecast uses actual London Stock Exchange sessions rather than treating every weekday as tradable. For US equities use `XNYS`; for continuous markets an appropriate always-open calendar can be supplied.
 
+The command reads the saved run without modifying it. Forecast CSV, metadata and plot outputs go to a fresh ignored directory under `runs/forecasts/`. Use `--output-folder runs/my-forecast` to choose a destination; it must be outside the model run folder.
+
 ## Data
 
 The compatibility scripts use [yfinance](https://pypi.org/project/yfinance/) as a convenient public-data source. Data quality, corporate actions, symbol history and survivorship assumptions remain the responsibility of each experiment.

@@ -15,6 +15,9 @@ while preserving a useful no-argument demo.
 
 import argparse
 import os
+import secrets
+from datetime import UTC, datetime
+from pathlib import Path
 
 import pandas as pd
 
@@ -29,6 +32,10 @@ def build_parser():
         help="Folder containing the saved model, scalers and model_config.json.",
     )
     parser.add_argument("--ticker", default="^FTSE")
+    parser.add_argument(
+        "--output-folder",
+        help="Separate writable output directory; defaults to a fresh directory under runs/forecasts/.",
+    )
     parser.add_argument("--start-date", default="2017-01-01")
     parser.add_argument("--validation-date", default="2024-03-12")
     parser.add_argument("--forecast-days", type=int, default=30)
@@ -39,7 +46,14 @@ def build_parser():
 
 
 def main(argv=None):
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    source = Path(args.run_folder).resolve()
+    output = Path(args.output_folder).resolve() if args.output_folder else (
+        Path('runs') / 'forecasts' / (datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ') + '_' + secrets.token_hex(4))
+    ).resolve()
+    if output == source or output.is_relative_to(source):
+        parser.error('--output-folder must be separate from --run-folder and outside it.')
 
     runner = InferenceRunner(
         run_folder=args.run_folder,
@@ -66,8 +80,9 @@ def main(argv=None):
         stochastic_lookback=120,
         conformal_coverage=0.90,
         exchange_calendar=args.calendar or None,
+        output_folder=str(output),
     )
-    runner.run()
+    return runner.run()
 
 
 if __name__ == "__main__":

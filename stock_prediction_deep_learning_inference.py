@@ -187,6 +187,7 @@ class InferenceRunner:
         return_anchor_enabled=True,
         return_anchor_half_life=5.0,
         return_anchor_mode='training_mean',
+        output_folder=None,
     ):
         self.run_folder = run_folder
         self.ticker = ticker
@@ -215,10 +216,13 @@ class InferenceRunner:
         self.return_anchor_enabled = return_anchor_enabled
         self.return_anchor_half_life = return_anchor_half_life
         self.return_anchor_mode = return_anchor_mode
+        self.output_folder = output_folder
 
     def run(self):
         print(tf.version.VERSION)
         inference_folder = os.path.join(os.getcwd(), self.run_folder)
+        output_folder = os.path.abspath(self.output_folder) if self.output_folder is not None else inference_folder
+        os.makedirs(output_folder, exist_ok=True)
         stock = StockPrediction(
             self.ticker,
             self.start_date,
@@ -533,7 +537,7 @@ class InferenceRunner:
                 forecast_df[f'Predicted_Price_OneStepResidual{coverage_pct}_Lower'] = lower
                 forecast_df[f'Predicted_Price_OneStepResidual{coverage_pct}_Upper'] = upper
 
-        forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
+        forecast_df.to_csv(os.path.join(output_folder, 'future_predictions.csv'))
         inference_config = {
             'model_version': model_version,
             'model_sha256': (
@@ -555,7 +559,7 @@ class InferenceRunner:
             'one_step_residual_band_nominal_coverage': self.conformal_coverage,
             'recursive_horizon_coverage_validated': False,
         }
-        with open(os.path.join(inference_folder, 'inference_config.json'), 'w', encoding='utf-8') as handle:
+        with open(os.path.join(output_folder, 'inference_config.json'), 'w', encoding='utf-8') as handle:
             json.dump(inference_config, handle, indent=2, allow_nan=False)
 
         if len(forecast_df) > 0:
@@ -629,8 +633,10 @@ class InferenceRunner:
         plt.ylabel(f'Price [{currency}]' if currency else 'Price')
         plt.legend()
         plt.title('Actual vs Predicted Prices')
-        plt.savefig(os.path.join(inference_folder, self.ticker + '_future_forecast.png'))
+        plt.savefig(os.path.join(output_folder, self.ticker + '_future_forecast.png'))
         plt.show()
+        print('Forecast outputs: ' + os.path.abspath(output_folder))
+        return forecast_df
 
     def _blend_predictions(self, predictions, anchor_price):
         if self.blend_alpha >= 1.0:
