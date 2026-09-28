@@ -110,6 +110,8 @@ def train_LSTM_network(
             validation_fraction=validation_fraction,
         )
     elif model_version == 'v9':
+        if forecast_horizon != 1:
+            raise ValueError('v9 supports only a one-step forecast_horizon.')
         (x_train, y_dir_train, y_return_train), (x_test, y_dir_test, y_return_test), (training_data, test_data) = data.prepare_return_multitask_data(
             stock.get_time_steps(),
             stock.get_project_folder(),
