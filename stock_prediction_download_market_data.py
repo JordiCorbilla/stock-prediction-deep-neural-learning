@@ -5,32 +5,34 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 # ==============================================================================
+"""Small yfinance market-data inspection utility."""
+
+import argparse
+import datetime
 
 import pandas as pd
 import yfinance as yf
-import datetime
 
-# show data for different tickers
-start = pd.to_datetime('2004-08-01')
-stock = ['ETH-USD']
-data = yf.download(stock, start=start, end=datetime.date.today())
-print(data)
 
-stock = ['GOOG']
-data = yf.download(stock, start=start, end=datetime.date.today())
-print(data)
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Download market data for one or more tickers.")
+    parser.add_argument("tickers", nargs="*", default=["ETH-USD", "GOOG", "META", "TSLA"])
+    parser.add_argument("--start-date", default="2004-08-01")
+    args = parser.parse_args(argv)
 
-stock = ['FB']
-data = yf.download(stock, start=start, end=datetime.date.today())
-print(data)
+    start = pd.to_datetime(args.start_date)
+    for ticker in args.tickers:
+        print(f"\n=== {ticker} ===")
+        data = yf.download(
+            ticker,
+            start=start,
+            end=datetime.date.today(),
+            auto_adjust=False,
+            progress=False,
+        )
+        print(data)
 
-stock = ['TSLA']
-data = yf.download(stock, start=start, end=datetime.date.today())
-print(data)
+
+if __name__ == "__main__":
+    main()

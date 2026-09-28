@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quant-forecast-lab"
+version = "1.0.0a1"
+description = "Reproducible utilities for financial time-series forecasting experiments."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = {text = "Apache-2.0"}
+authors = [{name = "Jordi Corbilla"}]
+dependencies = [
+  "absl-py",
+  "exchange-calendars==4.13.2",
+  "h5py",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "tensorflow==2.18.1",
+  "yfinance==1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.8",
+]
+
+[project.scripts]
+quant-forecast = "quant_forecast_lab.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["quant_forecast_lab*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]

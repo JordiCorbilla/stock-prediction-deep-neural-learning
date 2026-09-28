@@ -5,84 +5,54 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 # ==============================================================================
+"""Inspect the metadata and fundamental datasets exposed by yfinance."""
 
+import argparse
 import json
+
 import yfinance as yf
 
-sec = yf.Ticker("^FTSE")
 
-data = sec.history()
-#data.head()
+def _print_value(label, getter):
+    print(label)
+    try:
+        value = getter()
+        if isinstance(value, dict):
+            print(json.dumps(value, indent=2, sort_keys=True, default=str))
+        else:
+            print(value)
+    except Exception as exc:
+        print(f"Unavailable: {exc}")
+    print()
 
-my_max = data['Close'].idxmax()
-my_min = data['Close'].idxmin()
 
-print('Info')
-print(json.dumps(sec.info, indent=4, sort_keys=True))
-print()
-print('ISIN')
-print(sec.isin)
-print()
-print('Major Holders')
-print(sec.major_holders)
-print()
-print('Institutional Holders')
-print(sec.institutional_holders)
-print()
-print('Dividents')
-print(sec.dividends)
-print()
-print('Splits')
-print(sec.splits)
-print()
-print('Actions')
-print(sec.actions)
-print()
-print('Calendar')
-print(sec.calendar)
-print()
-print('Recommendations')
-print(sec.recommendations)
-print()
-print('Earnings')
-print(sec.earnings)
-print()
-print('Quarterly Earnings')
-print(sec.quarterly_earnings)
-print()
-print('Financials')
-print(sec.financials)
-print()
-print('Quarterly Financials')
-print(sec.quarterly_financials)
-print()
-print('Balance Sheet')
-print(sec.balance_sheet)
-print()
-print('Quarterly Balance Sheet')
-print(sec.quarterly_balance_sheet)
-print()
-print('BalanceSheet')
-print(sec.balancesheet)
-print()
-print('Quarterly BalanceSheet')
-print(sec.quarterly_balancesheet)
-print()
-print('Cash Flow')
-print(sec.cashflow)
-print()
-print('Quarterly Cash Flow')
-print(sec.quarterly_cashflow)
-print()
-print('Sustainability')
-print(sec.sustainability)
-print()
-print('Options')
-print(sec.options)
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Inspect yfinance information for a ticker.")
+    parser.add_argument("ticker", nargs="?", default="^FTSE")
+    args = parser.parse_args(argv)
+
+    sec = yf.Ticker(args.ticker)
+
+    _print_value("Info", lambda: sec.info)
+    _print_value("Fast Info", lambda: dict(sec.fast_info))
+    _print_value("History", lambda: sec.history(period="1mo"))
+    _print_value("Major Holders", lambda: sec.major_holders)
+    _print_value("Institutional Holders", lambda: sec.institutional_holders)
+    _print_value("Dividends", lambda: sec.dividends)
+    _print_value("Splits", lambda: sec.splits)
+    _print_value("Actions", lambda: sec.actions)
+    _print_value("Calendar", lambda: sec.calendar)
+    _print_value("Recommendations", lambda: sec.recommendations)
+    _print_value("Income Statement", lambda: sec.income_stmt)
+    _print_value("Quarterly Income Statement", lambda: sec.quarterly_income_stmt)
+    _print_value("Balance Sheet", lambda: sec.balance_sheet)
+    _print_value("Quarterly Balance Sheet", lambda: sec.quarterly_balance_sheet)
+    _print_value("Cash Flow", lambda: sec.cashflow)
+    _print_value("Quarterly Cash Flow", lambda: sec.quarterly_cashflow)
+    _print_value("Sustainability", lambda: sec.sustainability)
+    _print_value("Options", lambda: sec.options)
+
+
+if __name__ == "__main__":
+    main()

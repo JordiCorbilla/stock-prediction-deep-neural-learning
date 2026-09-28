@@ -12,25 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 import os
+import pickle
 import warnings
-from absl import app
-import pandas as pd
+
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
-import json
+import pandas as pd
+from absl import app
 
 warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
 
-import tensorflow as tf
+from datetime import datetime, timedelta
 
-from stock_prediction_class import StockPrediction
-from stock_prediction_numpy import StockData
-from datetime import timedelta, datetime
+import exchange_calendars as xcals
+import tensorflow as tf
 from pandas.tseries.offsets import BDay
 
-os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+from quant_forecast_lab.experiment import sha256_file
+from quant_forecast_lab.legacy_keras import load_legacy_h5
+from quant_forecast_lab.uncertainty import symmetric_conformal_interval
+from stock_prediction_class import StockPrediction
+from stock_prediction_numpy import StockData
 
 
 def _load_scaler(inference_folder):
@@ -53,11 +57,20 @@ def _load_config(inference_folder):
     config_path = os.path.join(inference_folder, 'model_config.json')
     if not os.path.exists(config_path):
         return None
-    with open(config_path, 'r', encoding='utf-8') as config_file:
+    with open(config_path, encoding='utf-8') as config_file:
         return json.load(config_file)
 
 
-def _future_dates(last_date, forecast_days, use_business_days):
+def _future_dates(last_date, forecast_days, use_business_days, exchange_calendar=None):
+    if not isinstance(forecast_days, int) or forecast_days < 1:
+        raise ValueError('forecast_days must be a positive integer.')
+    if exchange_calendar:
+        calendar = xcals.get_calendar(exchange_calendar)
+        first_session = calendar.date_to_session(
+            pd.Timestamp(last_date).normalize() + pd.Timedelta(days=1),
+            direction='next',
+        )
+        return calendar.sessions_window(first_session, forecast_days)
     if use_business_days:
         return pd.bdate_range(last_date + BDay(1), periods=forecast_days)
     return pd.date_range(last_date + timedelta(1), periods=forecast_days)
@@ -70,6 +83,20 @@ def _returns_to_prices(returns, start_price):
         current_price = current_price * np.exp(value)
         prices.append(current_price)
     return prices
+
+
+def _return_model_weight(step_index, half_life_days):
+    """Weight given to recursively generated model signal at a future horizon."""
+    if half_life_days is None or half_life_days <= 0:
+        return 1.0
+    return float(0.5 ** (float(step_index) / float(half_life_days)))
+
+
+def _anchor_return(raw_return, anchor_return, step_index, half_life_days):
+    """Decay recursive return forecasts toward an unconditional return anchor."""
+    model_weight = _return_model_weight(step_index, half_life_days)
+    anchored = (model_weight * float(raw_return)) + ((1.0 - model_weight) * float(anchor_return))
+    return anchored, model_weight
 
 
 def _ensure_frame(series_or_frame):
@@ -85,6 +112,13 @@ def _scale_input(scaler, data):
     if array_data.ndim == 1:
         array_data = array_data.reshape(-1, 1)
     return scaler.transform(array_data)
+
+
+def _scale_scalar(scaler, value, *, inverse=False):
+    column = str(scaler.feature_names_in_[0]) if hasattr(scaler, 'feature_names_in_') else 'Close'
+    sample = pd.DataFrame({column: [value]}) if hasattr(scaler, 'feature_names_in_') else [[value]]
+    result = scaler.inverse_transform(sample) if inverse else scaler.transform(sample)
+    return float(result[0][0])
 
 
 def _get_close_series(raw_data):
@@ -148,6 +182,12 @@ class InferenceRunner:
         stochastic_seed,
         stochastic_sigma_mult,
         stochastic_lookback,
+        conformal_coverage=0.90,
+        exchange_calendar=None,
+        return_anchor_enabled=True,
+        return_anchor_half_life=5.0,
+        return_anchor_mode='training_mean',
+        output_folder=None,
     ):
         self.run_folder = run_folder
         self.ticker = ticker
@@ -171,10 +211,18 @@ class InferenceRunner:
         self.stochastic_seed = stochastic_seed
         self.stochastic_sigma_mult = stochastic_sigma_mult
         self.stochastic_lookback = stochastic_lookback
+        self.conformal_coverage = conformal_coverage
+        self.exchange_calendar = exchange_calendar
+        self.return_anchor_enabled = return_anchor_enabled
+        self.return_anchor_half_life = return_anchor_half_life
+        self.return_anchor_mode = return_anchor_mode
+        self.output_folder = output_folder
 
     def run(self):
         print(tf.version.VERSION)
         inference_folder = os.path.join(os.getcwd(), self.run_folder)
+        output_folder = os.path.abspath(self.output_folder) if self.output_folder is not None else inference_folder
+        os.makedirs(output_folder, exist_ok=True)
         stock = StockPrediction(
             self.ticker,
             self.start_date,
@@ -220,6 +268,27 @@ class InferenceRunner:
             if use_returns != self.use_returns:
                 print('Warning: USE_RETURNS overridden by model_config.json')
 
+        return_anchor_value = 0.0
+        if model_version == 'v9' and use_returns and self.return_anchor_enabled:
+            if self.return_anchor_mode == 'zero':
+                return_anchor_value = 0.0
+            elif self.return_anchor_mode == 'training_mean':
+                if config is not None and config.get('return_anchor_mean') is not None:
+                    return_anchor_value = float(config['return_anchor_mean'])
+                else:
+                    historical_returns = np.log(close_series).diff().dropna()
+                    return_anchor_value = float(historical_returns.mean()) if len(historical_returns) else 0.0
+                    print('Warning: v9 return anchor missing from model_config.json; using available historical mean.')
+            else:
+                raise ValueError(
+                    "return_anchor_mode must be 'training_mean' or 'zero'."
+                )
+            print(
+                'v9 return anchor: '
+                + f'{return_anchor_value * 100:.4f}% daily log return, '
+                + f'half-life={self.return_anchor_half_life:g} sessions'
+            )
+
         if model_version == 'v7':
             model_dir_path = os.path.join(inference_folder, 'model_direction.keras')
             model_mag_path = os.path.join(inference_folder, 'model_magnitude.keras')
@@ -227,11 +296,22 @@ class InferenceRunner:
             mag_model = tf.keras.models.load_model(model_mag_path, compile=False)
             dir_model.summary()
             model_time_steps = dir_model.input_shape[1]
+        elif model_version == 'v8':
+            multitask_model_path = os.path.join(inference_folder, 'model_multitask.keras')
+            multitask_model = tf.keras.models.load_model(multitask_model_path, compile=False)
+            multitask_model.summary()
+            model_time_steps = multitask_model.input_shape[1]
+        elif model_version == 'v9':
+            return_model_path = os.path.join(inference_folder, 'model_return_multitask.keras')
+            return_model = tf.keras.models.load_model(return_model_path, compile=False)
+            return_model.summary()
+            model_time_steps = return_model.input_shape[1]
         else:
             model_path = os.path.join(inference_folder, 'model.keras')
             if not os.path.exists(model_path):
                 model_path = os.path.join(inference_folder, 'model_weights.h5')
-            model = tf.keras.models.load_model(model_path, compile=False)
+            model = (load_legacy_h5(model_path) if model_path.endswith('.h5')
+                     else tf.keras.models.load_model(model_path, compile=False))
             model.summary()
             model_time_steps = model.input_shape[1]
 
@@ -255,32 +335,28 @@ class InferenceRunner:
         if use_deltas or use_trend_residual:
             input_scaler = _load_input_scaler(inference_folder)
             if input_scaler is None:
-                print('Warning: input_scaler.pkl not found. Fitting input scaler on full dataset for inference.')
-                input_scaler = data.get_input_scaler()
-                input_scaler.fit(close_series.to_frame())
+                raise FileNotFoundError('input_scaler.pkl is required for reproducible inference. Re-export the training scaler with the model.')
 
         if scaler is None:
-            print('Warning: min_max_scaler.pkl not found. Fitting scaler on full dataset for inference.')
-            scaler = data.get_min_max()
-            if use_returns:
-                scaler.fit(series.to_frame())
-            elif use_deltas:
-                deltas = close_series.diff().dropna().rename('Close')
-                scaler.fit(deltas.to_frame())
-            elif use_trend_residual:
-                residuals = data._compute_trend_residuals(close_series, trend_window).rename('Close')
-                scaler.fit(residuals.to_frame())
-            else:
-                scaler.fit(close_series.to_frame())
+            raise FileNotFoundError('min_max_scaler.pkl is required for reproducible inference. Re-export the training scaler with the model.')
 
         if use_deltas or use_trend_residual:
             window_scaled = _scale_input(input_scaler, recent_window)
         else:
             window_scaled = _scale_input(scaler, recent_window)
         window_scaled = window_scaled.reshape(1, time_steps, 1)
+        unanchored_window_scaled = window_scaled.copy() if model_version == 'v9' else None
 
-        future_dates = _future_dates(latest_date, self.forecast_days, self.use_business_days)
+        future_dates = _future_dates(
+            latest_date,
+            self.forecast_days,
+            self.use_business_days,
+            self.exchange_calendar,
+        )
         predictions = []
+        raw_return_predictions = []
+        conditional_return_predictions = []
+        return_anchor_weights = []
         current_close = latest_close_price
 
         steps = len(future_dates)
@@ -297,11 +373,47 @@ class InferenceRunner:
             if model_version == 'v7':
                 dir_prob = dir_model.predict(window_scaled, verbose=0)[0][0]
                 mag_scaled = mag_model.predict(window_scaled, verbose=0)[0][0]
-                mag_value = scaler.inverse_transform([[mag_scaled]])[0][0]
+                mag_value = _scale_scalar(scaler, mag_scaled, inverse=True)
                 if mag_clip_value is not None:
                     mag_value = min(mag_value, mag_clip_value)
                 pred_values = [mag_value if dir_prob >= self.direction_threshold else -mag_value]
                 pred_scaled = [mag_scaled]
+            elif model_version == 'v8':
+                multitask_pred = multitask_model.predict(window_scaled, verbose=0)
+                dir_prob = float(multitask_pred['direction'][0][0])
+                mag_scaled = float(multitask_pred['magnitude'][0][0])
+                mag_value = _scale_scalar(scaler, mag_scaled, inverse=True)
+                if mag_clip_value is not None:
+                    mag_value = min(mag_value, mag_clip_value)
+                pred_values = [mag_value if dir_prob >= self.direction_threshold else -mag_value]
+                pred_scaled = [mag_scaled]
+            elif model_version == 'v9':
+                return_pred = return_model.predict(
+                    np.concatenate((window_scaled, unanchored_window_scaled), axis=0), verbose=0
+                )
+                dir_prob = float(return_pred['direction'][0][0])
+                return_scaled_raw = float(return_pred['expected_return'][0][0])
+                conditional_return = _scale_scalar(scaler, return_scaled_raw, inverse=True)
+                unanchored_scaled = float(return_pred['expected_return'][1][0])
+                return_value_raw = _scale_scalar(scaler, unanchored_scaled, inverse=True)
+
+                if self.return_anchor_enabled:
+                    return_value, model_weight = _anchor_return(
+                        conditional_return,
+                        return_anchor_value,
+                        step_index,
+                        self.return_anchor_half_life,
+                    )
+                else:
+                    return_value = conditional_return
+                    model_weight = 1.0
+
+                return_scaled = _scale_scalar(scaler, return_value)
+                raw_return_predictions.append(return_value_raw)
+                conditional_return_predictions.append(conditional_return)
+                return_anchor_weights.append(model_weight)
+                pred_values = [return_value]
+                pred_scaled = [return_scaled]
             else:
                 pred_scaled = model.predict(window_scaled, verbose=0)[0]
                 if model_version in ('v5', 'v6'):
@@ -325,12 +437,22 @@ class InferenceRunner:
                 else:
                     pred_scaled_value = float(pred_scaled[idx])
                     window_scaled = np.concatenate([window_scaled[:, 1:, :], [[[pred_scaled_value]]]], axis=1)
+                    if model_version == 'v9':
+                        unanchored_window_scaled = np.concatenate(
+                            [unanchored_window_scaled[:, 1:, :], [[[unanchored_scaled]]]], axis=1
+                        )
                 step_index += 1
             if step_index > 0 and step_index % max(1, steps // 10) == 0:
                 print(f'Inference progress: {step_index}/{steps}')
 
+        predicted_prices_unanchored = None
         if use_returns:
             predicted_prices_raw = _returns_to_prices(predictions, latest_close_price)
+            if model_version == 'v9' and raw_return_predictions:
+                predicted_prices_unanchored = _returns_to_prices(
+                    raw_return_predictions,
+                    latest_close_price,
+                )
         elif use_deltas or use_trend_residual:
             predicted_prices_raw = latest_close_price + np.cumsum(predictions)
         else:
@@ -365,12 +487,80 @@ class InferenceRunner:
                 'Predicted_Price': predicted_prices,
                 'Predicted_Price_Raw': predicted_prices_raw,
                 'Predicted_Return': predictions if use_returns else np.nan,
+                'Predicted_Return_Raw': (
+                    raw_return_predictions
+                    if model_version == 'v9' and use_returns
+                    else np.nan
+                ),
+                'Predicted_Return_Conditional': (
+                    conditional_return_predictions
+                    if model_version == 'v9' and use_returns
+                    else np.nan
+                ),
+                'Return_Anchor': (
+                    [return_anchor_value] * len(future_dates)
+                    if model_version == 'v9' and use_returns
+                    else np.nan
+                ),
+                'Return_Model_Weight': (
+                    return_anchor_weights
+                    if model_version == 'v9' and use_returns
+                    else np.nan
+                ),
+                'Predicted_Price_Unanchored': (
+                    predicted_prices_unanchored
+                    if predicted_prices_unanchored is not None
+                    else np.nan
+                ),
                 'Predicted_Delta': predictions if use_deltas else np.nan,
                 'Predicted_Trend_Residual': predictions if use_trend_residual else np.nan,
                 **stochastic_summary,
             }
         ).set_index('Date')
-        forecast_df.to_csv(os.path.join(inference_folder, 'future_predictions.csv'))
+
+        in_sample_full = _load_in_sample_predictions(inference_folder, self.ticker)
+        if in_sample_full is not None and len(in_sample_full) >= 10:
+            calibration = pd.DataFrame(
+                {
+                    'actual': close_series.reindex(in_sample_full.index),
+                    'predicted': in_sample_full.iloc[:, 0],
+                }
+            ).dropna()
+            if len(calibration) >= 10:
+                lower, upper = symmetric_conformal_interval(
+                    forecast_df['Predicted_Price'].to_numpy(),
+                    calibration['actual'].to_numpy(),
+                    calibration['predicted'].to_numpy(),
+                    coverage=self.conformal_coverage,
+                )
+                coverage_pct = int(round(self.conformal_coverage * 100))
+                forecast_df[f'Predicted_Price_OneStepResidual{coverage_pct}_Lower'] = lower
+                forecast_df[f'Predicted_Price_OneStepResidual{coverage_pct}_Upper'] = upper
+
+        forecast_df.to_csv(os.path.join(output_folder, 'future_predictions.csv'))
+        inference_config = {
+            'model_version': model_version,
+            'model_sha256': (
+                {'direction': sha256_file(model_dir_path), 'magnitude': sha256_file(model_mag_path)}
+                if model_version == 'v7' else
+                sha256_file(multitask_model_path) if model_version == 'v8' else
+                sha256_file(return_model_path) if model_version == 'v9' else
+                sha256_file(model_path)
+            ),
+            'last_observed_date': pd.Timestamp(latest_date).strftime('%Y-%m-%d'),
+            'last_observed_close': latest_close_price,
+            'forecast_days': self.forecast_days,
+            'exchange_calendar': self.exchange_calendar,
+            'blend_alpha': self.blend_alpha,
+            'return_anchor_enabled': self.return_anchor_enabled if model_version == 'v9' else None,
+            'return_anchor_mode': self.return_anchor_mode if model_version == 'v9' else None,
+            'return_anchor_value': return_anchor_value if model_version == 'v9' else None,
+            'return_anchor_half_life': self.return_anchor_half_life if model_version == 'v9' else None,
+            'one_step_residual_band_nominal_coverage': self.conformal_coverage,
+            'recursive_horizon_coverage_validated': False,
+        }
+        with open(os.path.join(output_folder, 'inference_config.json'), 'w', encoding='utf-8') as handle:
+            json.dump(inference_config, handle, indent=2, allow_nan=False)
 
         if len(forecast_df) > 0:
             first_pred = float(forecast_df['Predicted_Price'].iloc[0])
@@ -379,11 +569,14 @@ class InferenceRunner:
             print('Sanity check - next day delta: ' + f'{delta_pct:.2f}%')
 
         history = close_series.tail(self.plot_history_days)
-        in_sample = _load_in_sample_predictions(inference_folder, self.ticker).tail(self.plot_history_days)
+        if in_sample_full is not None:
+            in_sample = in_sample_full.tail(self.plot_history_days)
+        else:
+            in_sample = None
         plt.figure(figsize=(14, 5))
         plt.plot(history.index, history, color='green', label='Actual [' + self.ticker + '] price')
         if in_sample is not None and not in_sample.empty:
-            plt.plot(in_sample.index, in_sample.iloc[:, 0], color='orange', label='In-sample [' + self.ticker + '] predicted')
+            plt.plot(in_sample.index, in_sample.iloc[:, 0], color='orange', label='Historical held-out [' + self.ticker + '] predicted')
         if stochastic_paths is not None and len(stochastic_paths) > 0:
             max_paths = min(len(stochastic_paths), 20)
             for idx in range(max_paths):
@@ -393,7 +586,7 @@ class InferenceRunner:
                     color='gray',
                     alpha=0.2,
                     linewidth=1,
-                    label='Stochastic paths' if idx == 0 else None,
+                    label='Scenario paths' if idx == 0 else None,
                 )
             if {'Predicted_Price_P10', 'Predicted_Price_P90'}.issubset(forecast_df.columns):
                 plt.fill_between(
@@ -402,15 +595,48 @@ class InferenceRunner:
                     forecast_df['Predicted_Price_P90'],
                     color='gray',
                     alpha=0.15,
-                    label='P10-P90 band',
+                    label='Scenario P10-P90 band',
                 )
-        plt.plot(forecast_df.index, forecast_df['Predicted_Price'], color='red', label='Predicted [' + self.ticker + '] price')
+        conformal_lower = [column for column in forecast_df.columns if column.startswith('Predicted_Price_OneStepResidual') and column.endswith('_Lower')]
+        if conformal_lower:
+            lower_col = conformal_lower[0]
+            upper_col = lower_col.replace('_Lower', '_Upper')
+            plt.fill_between(
+                forecast_df.index,
+                forecast_df[lower_col],
+                forecast_df[upper_col],
+                alpha=0.12,
+                label=f'One-step residual band (nominal {int(round(self.conformal_coverage * 100))}%)',
+            )
+        if (
+            model_version == 'v9'
+            and 'Predicted_Price_Unanchored' in forecast_df.columns
+            and forecast_df['Predicted_Price_Unanchored'].notna().any()
+        ):
+            plt.plot(
+                forecast_df.index,
+                forecast_df['Predicted_Price_Unanchored'],
+                color='firebrick',
+                linestyle='--',
+                alpha=0.45,
+                linewidth=1.2,
+                label='Unanchored recursive v9 path',
+            )
+        plt.plot(
+            forecast_df.index,
+            forecast_df['Predicted_Price'],
+            color='red',
+            label='Anchored [' + self.ticker + '] prediction' if model_version == 'v9' else 'Predicted [' + self.ticker + '] price',
+        )
         plt.xlabel('Time')
-        plt.ylabel('Price [USD]')
+        currency = data.get_stock_currency()
+        plt.ylabel(f'Price [{currency}]' if currency else 'Price')
         plt.legend()
         plt.title('Actual vs Predicted Prices')
-        plt.savefig(os.path.join(inference_folder, self.ticker + '_future_forecast.png'))
+        plt.savefig(os.path.join(output_folder, self.ticker + '_future_forecast.png'))
         plt.show()
+        print('Forecast outputs: ' + os.path.abspath(output_folder))
+        return forecast_df
 
     def _blend_predictions(self, predictions, anchor_price):
         if self.blend_alpha >= 1.0:
@@ -493,13 +719,18 @@ def main(argv):
         stochastic_seed=STOCHASTIC_SEED,
         stochastic_sigma_mult=STOCHASTIC_SIGMA_MULT,
         stochastic_lookback=STOCHASTIC_LOOKBACK,
+        conformal_coverage=CONFORMAL_COVERAGE,
+        exchange_calendar=EXCHANGE_CALENDAR,
+        return_anchor_enabled=RETURN_ANCHOR_ENABLED,
+        return_anchor_half_life=RETURN_ANCHOR_HALF_LIFE,
+        return_anchor_mode=RETURN_ANCHOR_MODE,
         )
         runner.run()
 
 if __name__ == '__main__':
     TIME_STEPS = 3
-    RUN_FOLDER = '^FTSE_20240103_edae6b8f5fc742031805151aeba98571'
-    TOKEN = 'edae6b8f5fc742031805151aeba98571'
+    RUN_FOLDER = os.path.join('examples', 'runs', 'reference-v7-ftse')
+    TOKEN = 'reference-v7-ftse'
     STOCK_TICKER = '^FTSE'
     BATCH_SIZE = 10
     STOCK_START_DATE = pd.to_datetime('2017-11-01')
@@ -522,4 +753,9 @@ if __name__ == '__main__':
     STOCHASTIC_SEED = 42
     STOCHASTIC_SIGMA_MULT = 0.6
     STOCHASTIC_LOOKBACK = 120
+    CONFORMAL_COVERAGE = 0.90
+    EXCHANGE_CALENDAR = 'XLON'
+    RETURN_ANCHOR_ENABLED = True
+    RETURN_ANCHOR_HALF_LIFE = 5.0
+    RETURN_ANCHOR_MODE = 'training_mean'
     app.run(main)

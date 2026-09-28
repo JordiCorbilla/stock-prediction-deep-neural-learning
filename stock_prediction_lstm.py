@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
 import warnings
 
 warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
 
 import tensorflow as tf
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dropout, Dense, LSTM, Input
+from tensorflow.keras.layers import Add, Concatenate, Dense, Dropout, Input, LSTM, Subtract
 from tensorflow.keras.losses import Huber
 from tensorflow.keras.optimizers import Adam
 
@@ -40,7 +39,7 @@ class LongShortTermMemory:
 
     def get_callbacks(self, version='v1'):
         callbacks = [self.get_callback()]
-        if version == 'v4':
+        if version in ('v4', 'v8', 'v9'):
             callbacks.append(
                 tf.keras.callbacks.ReduceLROnPlateau(
                     monitor='val_loss',
@@ -57,7 +56,7 @@ class LongShortTermMemory:
             return self._create_model_v2(x_train)
         if version == 'v4':
             return self._create_model_v4(x_train)
-        if version == 'v5':
+        if version in ('v5', 'v6'):
             return self._create_model_v5(x_train, output_units)
         if version == 'v7':
             return self._create_model_v7(x_train, output_units)
@@ -122,12 +121,60 @@ class LongShortTermMemory:
         model.summary()
         return model
 
+    def create_multitask_model(self, x_train):
+        inputs = Input(shape=(x_train.shape[1], x_train.shape[2]), name='market_window')
+        shared = LSTM(units=128, return_sequences=True, name='shared_lstm_1')(inputs)
+        shared = Dropout(0.1, name='shared_dropout_1')(shared)
+        shared = LSTM(units=64, name='shared_lstm_2')(shared)
+        shared = Dropout(0.2, name='shared_dropout_2')(shared)
+
+        direction = Dense(units=1, activation='sigmoid', name='direction')(shared)
+        magnitude = Dense(units=1, activation='softplus', name='magnitude')(shared)
+
+        model = tf.keras.Model(
+            inputs=inputs,
+            outputs={'direction': direction, 'magnitude': magnitude},
+            name='multitask_lstm_v8',
+        )
+        model.summary()
+        return model
+
+    def create_return_multitask_model(self, x_train):
+        """Create v9: shared LSTM encoder with return, direction and ordered quantile heads."""
+        inputs = Input(shape=(x_train.shape[1], x_train.shape[2]), name='market_window')
+        shared = LSTM(units=128, return_sequences=True, name='shared_lstm_1')(inputs)
+        shared = Dropout(0.1, name='shared_dropout_1')(shared)
+        shared = LSTM(units=64, name='shared_lstm_2')(shared)
+        shared = Dropout(0.2, name='shared_dropout_2')(shared)
+
+        direction = Dense(units=1, activation='sigmoid', name='direction')(shared)
+        expected_return = Dense(units=1, activation='linear', name='expected_return')(shared)
+
+        median = Dense(units=1, activation='linear', name='median_return')(shared)
+        lower_distance = Dense(units=1, activation='softplus', name='lower_distance')(shared)
+        upper_distance = Dense(units=1, activation='softplus', name='upper_distance')(shared)
+        q10 = Subtract(name='q10')([median, lower_distance])
+        q90 = Add(name='q90')([median, upper_distance])
+        quantiles = Concatenate(name='quantiles')([q10, median, q90])
+
+        model = tf.keras.Model(
+            inputs=inputs,
+            outputs={
+                'direction': direction,
+                'expected_return': expected_return,
+                'quantiles': quantiles,
+            },
+            name='return_multitask_lstm_v9',
+        )
+        model.summary()
+        return model
+
     def get_loss(self, version='v1'):
         if version in ('v2', 'v3', 'v4', 'v5'):
             return Huber()
         return 'mean_squared_error'
 
     def get_optimizer(self, version='v1'):
-        if version in ('v4', 'v5'):
+        if version in ('v4', 'v5', 'v9'):
             return Adam(learning_rate=0.001)
         return 'adam'

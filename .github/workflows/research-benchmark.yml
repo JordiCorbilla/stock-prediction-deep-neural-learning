@@ -1,0 +1,161 @@
+name: Research Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - architecture-clean-up
+    paths:
+      - benchmarks/run_v7_v8_walkforward.py
+      - .github/workflows/research-benchmark.yml
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: benchmark-${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ticker: SPY
+            label: SPY
+          - ticker: QQQ
+            label: QQQ
+          - ticker: AAPL
+            label: AAPL
+          - ticker: ^FTSE
+            label: FTSE
+          - ticker: BTC-USD
+            label: BTCUSD
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install benchmark runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -e . --no-deps
+          python -m pip check
+
+      - name: Run rigorous v7-v8 walk-forward benchmark
+        env:
+          TF_CPP_MIN_LOG_LEVEL: "2"
+          CUDA_VISIBLE_DEVICES: "-1"
+        run: |
+          python benchmarks/run_v7_v8_walkforward.py \
+            --ticker "${{ matrix.ticker }}" \
+            --label "${{ matrix.label }}" \
+            --output-dir "benchmark-output/${{ matrix.label }}" \
+            --epochs 20 \
+            --batch-size 64 \
+            --window 30 \
+            --cost-bps 5 \
+            --seed 42
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ matrix.label }}
+          path: benchmark-output/${{ matrix.label }}
+          if-no-files-found: error
+          retention-days: 30
+
+  aggregate:
+    name: aggregate-results
+    needs: benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4.1.3
+        with:
+          pattern: benchmark-*
+          path: benchmark-results
+          merge-multiple: true
+
+      - name: Aggregate benchmark summaries
+        run: |
+          python - <<'PY'
+          import csv
+          import glob
+          import json
+          from pathlib import Path
+
+          summaries = []
+          for path in sorted(glob.glob("benchmark-results/summary_*.json")):
+              with open(path, encoding="utf-8") as handle:
+                  payload = json.load(handle)
+              summaries.extend(payload["models"])
+
+          fields = [
+              "label", "model", "observations", "folds", "rmse", "mae",
+              "directional_accuracy", "rmse_skill_vs_naive", "delta_ic",
+              "annualized_return", "annualized_volatility", "sharpe",
+              "max_drawdown", "average_turnover", "median_fold_skill",
+              "positive_skill_folds",
+          ]
+          Path("benchmark-results").mkdir(exist_ok=True)
+          with open("benchmark-results/aggregate.csv", "w", newline="", encoding="utf-8") as handle:
+              writer = csv.DictWriter(handle, fieldnames=fields)
+              writer.writeheader()
+              for row in summaries:
+                  writer.writerow({field: row.get(field) for field in fields})
+
+          model_rows = [row for row in summaries if row["model"] in {"v7", "v8"}]
+          wins = {"v7": 0, "v8": 0}
+          by_label = {}
+          for row in model_rows:
+              by_label.setdefault(row["label"], {})[row["model"]] = row
+          for label, pair in by_label.items():
+              if set(pair) == {"v7", "v8"}:
+                  better = max(pair, key=lambda m: pair[m]["rmse_skill_vs_naive"])
+                  wins[better] += 1
+
+          lines = [
+              "# v7 vs v8 rigorous walk-forward benchmark",
+              "",
+              "Five assets; test regimes 2020, 2022, 2024 and 2026 YTD; rolling one-step forecasts; 5 bps directional-strategy cost.",
+              "",
+              "| Asset | Model | Obs | Folds | RMSE skill | Direction | Delta IC | Sharpe | Max DD | +Skill folds |",
+              "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+          ]
+          for row in sorted(summaries, key=lambda r: (r["label"], r["model"])):
+              def fmt(value):
+                  if value is None:
+                      return ""
+                  try:
+                      return f"{float(value):.4f}"
+                  except (TypeError, ValueError):
+                      return str(value)
+              lines.append(
+                  f"| {row['label']} | {row['model']} | {row['observations']} | {row['folds']} | "
+                  f"{fmt(row['rmse_skill_vs_naive'])} | {fmt(row['directional_accuracy'])} | "
+                  f"{fmt(row['delta_ic'])} | {fmt(row['sharpe'])} | {fmt(row['max_drawdown'])} | "
+                  f"{row['positive_skill_folds']} |"
+              )
+          lines.extend([
+              "",
+              f"Asset-level RMSE-skill wins: v7={wins['v7']}, v8={wins['v8']}.",
+              "",
+              "A positive RMSE skill means lower price RMSE than the previous-close naive forecast.",
+          ])
+          report = "\n".join(lines) + "\n"
+          Path("benchmark-results/BENCHMARK_SUMMARY.md").write_text(report, encoding="utf-8")
+          print(report)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-aggregate
+          path: |
+            benchmark-results/aggregate.csv
+            benchmark-results/BENCHMARK_SUMMARY.md
+          if-no-files-found: error
+          retention-days: 30

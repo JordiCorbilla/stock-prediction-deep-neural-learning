@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this project in research, please cite the repository."
+title: "Quant Forecast Lab: Deep Learning for Financial Time-Series Forecasting"
+type: software
+authors:
+  - family-names: "Corbilla"
+    given-names: "Jordi"
+repository-code: "https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning"
+url: "https://jordicorbilla.github.io/stock-prediction-deep-neural-learning/"
+license: "Apache-2.0"
+version: "1.0.0-alpha.1"
+date-released: "2026-09-26"
+keywords:
+  - quantitative-finance
+  - time-series
+  - forecasting
+  - deep-learning
+  - lstm

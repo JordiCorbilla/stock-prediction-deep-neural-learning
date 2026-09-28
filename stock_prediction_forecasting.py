@@ -5,55 +5,85 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 # ==============================================================================
+"""Compatibility forecasting entry point.
+
+Historically this script attempted to construct StockData without its required
+StockPrediction object. It now delegates to the maintained inference runner
+while preserving a useful no-argument demo.
+"""
+
+import argparse
 import os
-import warnings
-from absl import app
+import secrets
+from datetime import UTC, datetime
+from pathlib import Path
+
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
 
-warnings.filterwarnings("ignore", message=".*np.object.*", category=FutureWarning)
-
-import tensorflow as tf
-
-from stock_prediction_numpy import StockData
-from datetime import date
-os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+from stock_prediction_deep_learning_inference import InferenceRunner
 
 
-def main(argv):
-    print(tf.version.VERSION)
-    inference_folder = os.path.join(os.getcwd(), 'GOOG_20200704_b5f47746c83698528343678663ac3c96')
-
-    # load future data
-    data = StockData()
-    min_max = MinMaxScaler(feature_range=(0, 1))
-    x_test, y_test = data.generate_future_data(TIME_STEPS, min_max, date(2020, 7, 5), date(2021, 7, 5))
-
-    # load the weights from our best model
-    model = tf.keras.models.load_model(os.path.join(inference_folder, 'model_weights.h5'))
-    model.summary()
-
-    # display the content of the model
-    baseline_results = model.evaluate(x_test, y_test, verbose=2)
-    for name, value in zip(model.metrics_names, baseline_results):
-        print(name, ': ', value)
-    print()
-
-    # perform a prediction
-    test_predictions_baseline = model.predict(x_test)
-    test_predictions_baseline = min_max.inverse_transform(test_predictions_baseline)
-    test_predictions_baseline = pd.DataFrame(test_predictions_baseline)
-    test_predictions_baseline.to_csv(os.path.join(inference_folder, 'inference.csv'))
-    print(test_predictions_baseline)
+def build_parser():
+    parser = argparse.ArgumentParser(description="Run a saved stock forecast model.")
+    parser.add_argument(
+        "--run-folder",
+        default=os.path.join("examples", "runs", "reference-v7-ftse"),
+        help="Folder containing the saved model, scalers and model_config.json.",
+    )
+    parser.add_argument("--ticker", default="^FTSE")
+    parser.add_argument(
+        "--output-folder",
+        help="Separate writable output directory; defaults to a fresh directory under runs/forecasts/.",
+    )
+    parser.add_argument("--start-date", default="2017-01-01")
+    parser.add_argument("--validation-date", default="2024-03-12")
+    parser.add_argument("--forecast-days", type=int, default=30)
+    parser.add_argument("--time-steps", type=int, default=60)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--calendar", default="XLON", help="exchange_calendars name, e.g. XLON or XNYS")
+    return parser
 
 
-if __name__ == '__main__':
-    TIME_STEPS = 60
-    app.run(main)
+def main(argv=None):
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    source = Path(args.run_folder).resolve()
+    output = Path(args.output_folder).resolve() if args.output_folder else (
+        Path('runs') / 'forecasts' / (datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ') + '_' + secrets.token_hex(4))
+    ).resolve()
+    if output == source or output.is_relative_to(source):
+        parser.error('--output-folder must be separate from --run-folder and outside it.')
+
+    runner = InferenceRunner(
+        run_folder=args.run_folder,
+        ticker=args.ticker,
+        start_date=pd.to_datetime(args.start_date),
+        validation_date=pd.to_datetime(args.validation_date),
+        github_url="",
+        epochs=0,
+        time_steps=args.time_steps,
+        token="forecasting",
+        batch_size=1,
+        forecast_days=args.forecast_days,
+        use_business_days=True,
+        plot_history_days=200,
+        use_returns=False,
+        use_deltas=True,
+        clip_negative=True,
+        blend_alpha=0.6,
+        direction_threshold=0.55,
+        mag_clip_pct=90,
+        stochastic_paths=50,
+        stochastic_seed=args.seed,
+        stochastic_sigma_mult=0.6,
+        stochastic_lookback=120,
+        conformal_coverage=0.90,
+        exchange_calendar=args.calendar or None,
+        output_folder=str(output),
+    )
+    return runner.run()
+
+
+if __name__ == "__main__":
+    main()
