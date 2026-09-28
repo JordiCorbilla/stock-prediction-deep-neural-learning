@@ -144,6 +144,7 @@ quant-forecast benchmark \
 ~~~
 
 The output includes RMSE, MAE, directional accuracy and RMSE skill versus the previous-price naive baseline.
+<img width="1400" height="500" alt="image" src="https://github.com/user-attachments/assets/cc156634-048b-4c9c-a959-17e6ef22cc55" />
 
 ## Financial Forecasting Arena
 
