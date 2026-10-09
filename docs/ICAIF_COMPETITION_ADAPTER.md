@@ -126,10 +126,7 @@ These windows overlap and are previously inspected; their profits cannot
 be added together as a continuous account's earnings.
 
 Fees are already included in every reported profit. The continuous band
-account paid $52,474.72 in fees, versus $68,905.79 for daily LSTM. The
-separate 2025 annual band account earned $211,245 net after $16,344.58 in
-fees. Small live Validation gains have a different horizon and do not
-contradict these annual historical numbers or validate them.
+account paid $52,474.72 in fees, versus $68,905.79 for daily LSTM.
 
 A sanitized, reproducible result and lineage snapshot is published in
 `docs/evidence/icaif-2026-10-09.json`. Model weights, source market data and
