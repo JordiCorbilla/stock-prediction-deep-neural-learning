@@ -1,0 +1,1234 @@
+{
+  "as_of": "2026-10-09",
+  "scope": "Historical proxy, not official competition earnings or untouched holdout evidence",
+  "fees": "0.1% of every buy and sell notional, deducted from cash and compounded",
+  "continuous": {
+    "start": "2023-01-03",
+    "end": "2025-12-31",
+    "sessions": 744,
+    "initial_nav": 1000000.0,
+    "results": {
+      "hold": {
+        "cumulative_return": 1.2298381617498184,
+        "sharpe_ratio": 1.532844461993271,
+        "maximum_drawdown": 0.25515517200554494,
+        "turnover": 0.0001900921658986175,
+        "fees_usd": 990.0,
+        "final_nav": 2229838.1617498184,
+        "periods": 5208,
+        "rebalances": 0,
+        "skipped": 0,
+        "pnl_usd": 1229838.1617498184,
+        "annualized_growth": 0.3064449503436293
+      },
+      "lstm_daily": {
+        "cumulative_return": 0.8440967328940854,
+        "sharpe_ratio": 1.4109223957801962,
+        "maximum_drawdown": 0.20696261450668052,
+        "turnover": 0.009828344932774964,
+        "fees_usd": 68905.78609156734,
+        "final_nav": 1844096.7328940853,
+        "periods": 5208,
+        "rebalances": 743,
+        "skipped": 0,
+        "pnl_usd": 844096.7328940853,
+        "annualized_growth": 0.22629389491600627
+      },
+      "lstm_band12": {
+        "cumulative_return": 0.8873584129149934,
+        "sharpe_ratio": 1.461260299429294,
+        "maximum_drawdown": 0.20750043515646632,
+        "turnover": 0.0073621128217225724,
+        "fees_usd": 52474.71675549455,
+        "final_nav": 1887358.4129149935,
+        "periods": 5208,
+        "rebalances": 240,
+        "skipped": 503,
+        "pnl_usd": 887358.4129149935,
+        "annualized_growth": 0.2358093037009581
+      }
+    },
+    "source": {
+      "source_url": "https://hackathon2.deepintomlf.ai/datasets/1833/",
+      "sha256": "396a36e86d5db7447a645276a299177413a86157ddf38e9c2b71134788051652",
+      "rows": 263001,
+      "symbols": 30,
+      "original_sessions": 1255,
+      "retained_sessions": 1240,
+      "excluded_sessions": [
+        "2021-04-19",
+        "2021-10-25",
+        "2021-11-26",
+        "2022-01-24",
+        "2022-01-26",
+        "2022-03-08",
+        "2022-11-25",
+        "2023-07-03",
+        "2023-11-24",
+        "2024-07-03",
+        "2024-11-29",
+        "2024-12-24",
+        "2025-07-03",
+        "2025-11-28",
+        "2025-12-24"
+      ],
+      "extra_timestamp_rows": 56,
+      "adjusted_close_equals_close": true,
+      "data_start": "2021-01-04 09:30:00",
+      "data_end": "2025-12-31 15:00:00",
+      "naive_timezone_interpretation": "America/New_York as declared by timestamp_et",
+      "duplicate_observations": 0,
+      "suspicious_ohlc_rows": 0,
+      "missing_price_values": 0,
+      "missing_canonical_bars": 605,
+      "expected_canonical_bars": 263550
+    },
+    "forecast_hashes": {
+      "2023": {
+        "output\\lstm-regime-causal\\lstm-2023\\samples.npz": "2df7aecd0bf1aca073ade91f6ace0a34bf207cc86d18f3892dd9c8f68da6f956",
+        "output\\lstm-regime-causal\\lstm-2023\\predictions-ensemble.npy": "6209db596e364956eaf528f7ce4e7574bd810f26f4e2577a93a6b77c2ca51db8",
+        "output\\lstm-regime-causal\\lstm-2023\\old-predictions.npy": "aaa71d2cbc06ffffa1c1912398de4c686017a1fd98ebadd9312e710726b85339",
+        "output\\lstm-regime-causal\\lstm-2023\\predictions-7.npy": "883d83f2f36c174bfb13579c24d6e07faa67275eb76330c820b055c12417b8da",
+        "output\\lstm-regime-causal\\lstm-2023\\predictions-42.npy": "232e825d93bcf18d6eb4ad49cd3054f4c397557de2b75f1dcaad55b57bafb923",
+        "output\\lstm-regime-causal\\lstm-2023\\predictions-123.npy": "6f308fc8185b3261cbf2c1c697dbcc2e65c3dd13ab747de65d1aef45318a45aa",
+        "output\\lstm-regime-causal\\lstm-2023\\training.json": "ffafc8614193289ffa57bf281394eb4ca7936866fccb3fd64850145b1ec3761b"
+      },
+      "2024": {
+        "output\\lstm-regime-causal\\lstm-2024\\samples.npz": "4a6eec0ffeb44f1c220f207370e71f8efe4126f844ec40044a72c4eec2e6607a",
+        "output\\lstm-regime-causal\\lstm-2024\\predictions-ensemble.npy": "11ec1943837acce145e3dbd0e943f6f6e77b936e57d9d97dda2c0ffe4905867f",
+        "output\\lstm-regime-causal\\lstm-2024\\old-predictions.npy": "80551c6ffafb8336986dbfa7a0bc98953a29c871876d4de9023bcd684b659659",
+        "output\\lstm-regime-causal\\lstm-2024\\predictions-7.npy": "fc1ffc3cb4325fe22c938795eb1abeaa8d045f9497c0c9ec9a35c91a8975ac06",
+        "output\\lstm-regime-causal\\lstm-2024\\predictions-42.npy": "5eb733ce65ca341079d28007da1646726e76eb50dcfdf5d7a684121975ddc567",
+        "output\\lstm-regime-causal\\lstm-2024\\predictions-123.npy": "49c4b6bafbe860ce1d127f6f9782e3cae00e651df33122fc366cc507d508a401",
+        "output\\lstm-regime-causal\\lstm-2024\\training.json": "c6e3643a0404f638a69be005d63633bde45500d09a5d654733deb42082fdf037"
+      },
+      "2025": {
+        "output\\lstm-regime-causal\\lstm-2025\\samples.npz": "e54d0395f745e3c937613496636d271ccc8dfad257bd22a113b95bad6465a4f9",
+        "output\\lstm-regime-causal\\lstm-2025\\predictions-ensemble.npy": "8db102d8b4bf84364942d2a0eece7251e2546911f28f0cc7783f25396648e285",
+        "output\\lstm-regime-causal\\lstm-2025\\old-predictions.npy": "2044493c02d5b097dbec03d4b2c28be4092df347b3c2af583b6f5679b9ca3dae",
+        "output\\lstm-regime-causal\\lstm-2025\\predictions-7.npy": "603614306acc2f816ea8d118b059ca29e609ea134a7c67b114c3ea2ec91e731b",
+        "output\\lstm-regime-causal\\lstm-2025\\predictions-42.npy": "6e8ac6e8361dda411fd1c008bf666cd7ea85201789c821615b1b0e30e198d9be",
+        "output\\lstm-regime-causal\\lstm-2025\\predictions-123.npy": "e6a8c0e9374006a7f64f02eb8ac50a24f57e88e8f811d5c43583762504ce3db3",
+        "output\\lstm-regime-causal\\lstm-2025\\training.json": "fa8b8ff597963732a9671804260988ac9b5a0a6b9b20a8235ba6638210caa32b"
+      }
+    },
+    "code_sha256": "28d378d667dabe56c4556d6e18162d415235990d465edc5ecb3f27422e0416b7",
+    "accounting": "One account, no year-end liquidation or capital reset; annual model refresh; fees included"
+  },
+  "lookback_vix": {
+    "selected": "w20_vix",
+    "qualified": false,
+    "checks": {
+      "2023": {
+        "profit": false,
+        "p05": true,
+        "drawdown": true,
+        "worst": true,
+        "excess_pnl": -69.37249416188752
+      },
+      "2024": {
+        "profit": true,
+        "p05": true,
+        "drawdown": true,
+        "worst": true,
+        "excess_pnl": 401.1283925184671
+      },
+      "2025": {
+        "profit": true,
+        "p05": false,
+        "drawdown": true,
+        "worst": true,
+        "excess_pnl": 189.4856045398792
+      }
+    },
+    "source": {
+      "source_url": "https://hackathon2.deepintomlf.ai/datasets/1833/",
+      "sha256": "396a36e86d5db7447a645276a299177413a86157ddf38e9c2b71134788051652",
+      "rows": 263001,
+      "symbols": 30,
+      "original_sessions": 1255,
+      "retained_sessions": 1240,
+      "excluded_sessions": [
+        "2021-04-19",
+        "2021-10-25",
+        "2021-11-26",
+        "2022-01-24",
+        "2022-01-26",
+        "2022-03-08",
+        "2022-11-25",
+        "2023-07-03",
+        "2023-11-24",
+        "2024-07-03",
+        "2024-11-29",
+        "2024-12-24",
+        "2025-07-03",
+        "2025-11-28",
+        "2025-12-24"
+      ],
+      "extra_timestamp_rows": 56,
+      "adjusted_close_equals_close": true,
+      "data_start": "2021-01-04 09:30:00",
+      "data_end": "2025-12-31 15:00:00",
+      "naive_timezone_interpretation": "America/New_York as declared by timestamp_et",
+      "duplicate_observations": 0,
+      "suspicious_ohlc_rows": 0,
+      "missing_price_values": 0,
+      "missing_canonical_bars": 605,
+      "expected_canonical_bars": 263550
+    },
+    "market_sources": {
+      "spy": {
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/SPY",
+        "sha256": "7378144993a8e023ab52f2defc545d279c441e53b1cfa0a286376faab423612c"
+      },
+      "vix": {
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/^VIX",
+        "sha256": "7086b7a57e3661a851d880377d247c1ea2df29cde3fd2712473e0860db082a8a"
+      },
+      "jointly_empty_dates": [
+        "2020-01-20",
+        "2020-02-17",
+        "2020-04-10",
+        "2020-05-25",
+        "2020-07-03",
+        "2020-09-07",
+        "2020-11-26",
+        "2020-12-25",
+        "2021-01-01",
+        "2021-01-18",
+        "2021-02-15",
+        "2021-04-02",
+        "2021-05-31",
+        "2021-07-05",
+        "2021-09-06",
+        "2021-11-25",
+        "2021-12-24",
+        "2022-01-17",
+        "2022-02-21",
+        "2022-04-15",
+        "2022-05-30",
+        "2022-06-20",
+        "2022-07-04",
+        "2022-09-05",
+        "2022-11-24",
+        "2022-12-26",
+        "2023-01-02",
+        "2023-01-16",
+        "2023-02-20",
+        "2023-04-07",
+        "2023-05-29",
+        "2023-06-19",
+        "2023-07-04",
+        "2023-09-04",
+        "2023-11-23",
+        "2023-12-25",
+        "2024-01-01",
+        "2024-01-15",
+        "2024-02-19",
+        "2024-03-29",
+        "2024-05-27",
+        "2024-06-19",
+        "2024-07-04",
+        "2024-09-02",
+        "2024-11-28",
+        "2024-12-25",
+        "2025-01-01",
+        "2025-01-09",
+        "2025-01-20",
+        "2025-02-17",
+        "2025-04-18",
+        "2025-05-26",
+        "2025-06-19",
+        "2025-07-04",
+        "2025-09-01",
+        "2025-11-27",
+        "2025-12-25"
+      ]
+    },
+    "code_hash": "8515fece86c2e1375b44f3b700aa49f106c3e8724d2eb1c416a83412ee70091b"
+  },
+  "lookback_vix_yearly": [
+    {
+      "year": 2023,
+      "policy": "w10_price",
+      "windows": 206,
+      "mean_pnl": 8217.305066696294,
+      "median_pnl": 3615.0275362422103,
+      "worst_pnl": -67070.59992451756,
+      "mean_fees": 2991.29505130856,
+      "p05_return": -0.0449118031716996,
+      "p95_drawdown": 0.0657940816601078,
+      "mean_rebalances": 10.805825242718448,
+      "mean_skipped": 3.1941747572815533
+    },
+    {
+      "year": 2023,
+      "policy": "w10_vix",
+      "windows": 206,
+      "mean_pnl": 8247.815979160434,
+      "median_pnl": 3816.8996722113225,
+      "worst_pnl": -65663.07739468047,
+      "mean_fees": 2948.9957148585995,
+      "p05_return": -0.0456021163853915,
+      "p95_drawdown": 0.0662325112206735,
+      "mean_rebalances": 10.402912621359222,
+      "mean_skipped": 3.5970873786407767
+    },
+    {
+      "year": 2023,
+      "policy": "w15_price",
+      "windows": 206,
+      "mean_pnl": 9381.134245492183,
+      "median_pnl": 4987.102910172369,
+      "worst_pnl": -56577.60494313412,
+      "mean_fees": 2042.8135430797597,
+      "p05_return": -0.0410202641370141,
+      "p95_drawdown": 0.0586444389652557,
+      "mean_rebalances": 6.689320388349515,
+      "mean_skipped": 7.310679611650485
+    },
+    {
+      "year": 2023,
+      "policy": "w15_vix",
+      "windows": 206,
+      "mean_pnl": 8831.824380443662,
+      "median_pnl": 4252.3036979411845,
+      "worst_pnl": -57560.26202397165,
+      "mean_fees": 2107.922933440698,
+      "p05_return": -0.039526532748888,
+      "p95_drawdown": 0.059324392408244,
+      "mean_rebalances": 7.266990291262136,
+      "mean_skipped": 6.733009708737864
+    },
+    {
+      "year": 2023,
+      "policy": "w20_price",
+      "windows": 206,
+      "mean_pnl": 9512.005245123695,
+      "median_pnl": 3955.882306882879,
+      "worst_pnl": -59268.031455533,
+      "mean_fees": 1763.3902667299626,
+      "p05_return": -0.040115960524841,
+      "p95_drawdown": 0.0604933082103389,
+      "mean_rebalances": 5.004854368932039,
+      "mean_skipped": 8.995145631067961
+    },
+    {
+      "year": 2023,
+      "policy": "w20_vix",
+      "windows": 206,
+      "mean_pnl": 9442.63275096181,
+      "median_pnl": 4478.547388557752,
+      "worst_pnl": -58165.98964980815,
+      "mean_fees": 1758.8607595369328,
+      "p05_return": -0.0410260246726967,
+      "p95_drawdown": 0.0604933074691025,
+      "mean_rebalances": 5.072815533980583,
+      "mean_skipped": 8.927184466019417
+    },
+    {
+      "year": 2024,
+      "policy": "w20_price",
+      "windows": 203,
+      "mean_pnl": 13652.82688987208,
+      "median_pnl": 14733.80090922746,
+      "worst_pnl": -70850.53742991108,
+      "mean_fees": 1474.5590078240932,
+      "p05_return": -0.0363706905506845,
+      "p95_drawdown": 0.0837270992728961,
+      "mean_rebalances": 3.438423645320197,
+      "mean_skipped": 10.561576354679802
+    },
+    {
+      "year": 2024,
+      "policy": "w20_vix",
+      "windows": 203,
+      "mean_pnl": 14053.955282390549,
+      "median_pnl": 15788.816742348252,
+      "worst_pnl": -69315.72776934365,
+      "mean_fees": 1448.916900981404,
+      "p05_return": -0.0356758198629611,
+      "p95_drawdown": 0.0837270992728961,
+      "mean_rebalances": 3.1773399014778323,
+      "mean_skipped": 10.822660098522167
+    },
+    {
+      "year": 2025,
+      "policy": "w20_price",
+      "windows": 201,
+      "mean_pnl": 8511.113424464846,
+      "median_pnl": 14390.468236865245,
+      "worst_pnl": -119302.94659572151,
+      "mean_fees": 1896.9427493834696,
+      "p05_return": -0.0875249353091637,
+      "p95_drawdown": 0.1432616101384062,
+      "mean_rebalances": 5.776119402985074,
+      "mean_skipped": 8.223880597014926
+    },
+    {
+      "year": 2025,
+      "policy": "w20_vix",
+      "windows": 201,
+      "mean_pnl": 8700.599029004725,
+      "median_pnl": 14610.358747258317,
+      "worst_pnl": -121172.55904564216,
+      "mean_fees": 1856.2707513551115,
+      "p05_return": -0.0898378380572197,
+      "p95_drawdown": 0.1432616101384062,
+      "mean_rebalances": 5.592039800995025,
+      "mean_skipped": 8.407960199004975
+    }
+  ],
+  "lineage": {
+    "user_repo": "https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning",
+    "architecture_file": "stock_prediction_lstm.py",
+    "architecture_sha256": "2579877f487ed6e7b311804c56c47a66adf61955c6223e055d43bbada50aabd7",
+    "preserved_frozen_source": true,
+    "models": [
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2023\\model-7.keras",
+        "sha256": "4e6eef4d02ba32e68e80d9f131431348e06224c3df690c0e3b2c0926fb1b3e1d",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2023\\model-42.keras",
+        "sha256": "4bfb4b486d73eac161fd3abac59df7d0981546657c3493e75d30f29574b95d11",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2023\\model-123.keras",
+        "sha256": "1181c8ebce1f209f82317a21bc921dc4b054fb47fd51104b278fb801927f7bb7",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2024\\model-7.keras",
+        "sha256": "57b6aad510a0fee3cc0d40a811e44c21234af9db422e5f3717a557a192966d40",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2024\\model-42.keras",
+        "sha256": "103f0c0ecfdc3df8bd2ec668cb7474cec3edeea85bbf52b052e199e3179dd496",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2024\\model-123.keras",
+        "sha256": "e71a47f487138a3ba731af97ed62dac175dcc88dac96d1579b07868a8c642472",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2025\\model-7.keras",
+        "sha256": "7ab42c461aecee66467a76673856b09b2828b42f2772a13235b7a5c35df3b064",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2025\\model-42.keras",
+        "sha256": "e6d998caa9e80f7b251899bb36773718ffcce3b479d8bbd364738b4a85fc69c3",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-regime-causal\\lstm-2025\\model-123.keras",
+        "sha256": "b84050f9c5a3139b541bc72b9b615add742294f9879664fe6eea7ca2cb47ed70",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\confidence-lstm\\live-2026\\model-7.keras",
+        "sha256": "0014df991517be2f1c44e213275c6bd67aac328553bbf60f46aa722e79759295",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\confidence-lstm\\live-2026\\model-42.keras",
+        "sha256": "6f9056ea8664c742a09ecc791c964cd8cfc2674577cd9bbae4217c8ce86582bc",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\confidence-lstm\\live-2026\\model-123.keras",
+        "sha256": "3799140486c083d2f96174d13150f813ab786861bd7fa6d69679bea31320c7fc",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\original-lstm\\live-2026\\model.keras",
+        "sha256": "3429ea90637eccde6604cdcf3462e0ff8b407b55068cf23378f0b5660a878859",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w10_price\\model-123.keras",
+        "sha256": "ebb62b7ef4c7038f3dca6882164da4bd26ee32d95dee1a835eef1548e60623ea",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w10_price\\model-42.keras",
+        "sha256": "eb93c59d07904596632872832963edd4aded404201bf4ed392d7f07bb4db8b4b",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w10_price\\model-7.keras",
+        "sha256": "2c32155f643307ca0b4bd7e2c05b60e40e1e330175ac8bb63ca5f8a269e1d983",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w10_vix\\model-123.keras",
+        "sha256": "e75771ec3962b86fec53ac6949acddd3ac25396fecdef90c6ff635f4129cfc69",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w10_vix\\model-42.keras",
+        "sha256": "ab9702cb49eab37faa7f7ebbb35d3613f2ded81d62976454e3acb3a98ab293cd",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w10_vix\\model-7.keras",
+        "sha256": "06887f8a13f8a0126aa87a7f037a4cd0b31b2102486c98c2455bde4bc78c7316",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w15_price\\model-123.keras",
+        "sha256": "a51ddf118f177a956e85d7c13c854402434d01910ddb488554391b56148cea1b",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w15_price\\model-42.keras",
+        "sha256": "d7bd5ad4376ba46997cdac79129272e771a8e136c3149e2b5de25ad3ddeaac11",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w15_price\\model-7.keras",
+        "sha256": "261fd4251d57ca65b865adab4b38b7d6e2794896b4bfa16a4beca3d27ae5b187",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w15_vix\\model-123.keras",
+        "sha256": "4bfb86f85372384b65c00fe444ab297613aa5a8e27205df6473d9cc10a08d388",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w15_vix\\model-42.keras",
+        "sha256": "23e46171b393665db36a9431cc6fc4efcd043e748d477a5464c2c9de99b45111",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w15_vix\\model-7.keras",
+        "sha256": "811e2257c388c474ba3c58e0b90fde3332abec354cd0dcd32128fc6eac565093",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w20_vix\\model-123.keras",
+        "sha256": "9bc786e4a48ab55a18b0fe2aa52b8a792ce83bb9752b0f8626e5566004370c13",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w20_vix\\model-42.keras",
+        "sha256": "65e391fb0c7280d21ec3c56ecd618e43649b65fd12f1bcd855bd31f2009d5097",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2023-w20_vix\\model-7.keras",
+        "sha256": "510a137684938921222bae77038d46b194dd2127081491135a48cbbae709fd89",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2024-w20_vix\\model-123.keras",
+        "sha256": "fafd1fa45c31b70918f48f65ac6668bf48f8dc65494f436e28c76a33a2553158",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2024-w20_vix\\model-42.keras",
+        "sha256": "d58df440bf268cafaf861d0299f7ff9f41871b583a59157d0f8d4ec37916e524",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2024-w20_vix\\model-7.keras",
+        "sha256": "a5bb4758ed95b5db7c952f99a1c4be9d0c76edfc32049de6d1d471e0eba5a495",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2025-w20_vix\\model-123.keras",
+        "sha256": "9c671ad235874896aab012e7da0069e11aaa6db5aecc2af847cda272a53e6880",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2025-w20_vix\\model-42.keras",
+        "sha256": "d82eef30e69621036cfc0d4fb1df9702ad783387e17fbab5b1cbc1b14da1bbd5",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      },
+      {
+        "path": "output\\lstm-lookback-vix\\2025-w20_vix\\model-7.keras",
+        "sha256": "52fe46d371ef052325c0fe64449d96f95a8cf4f08ab00dbc3e6677810e7f9758",
+        "lstm_units": [
+          128,
+          64
+        ],
+        "head": "expected_return"
+      }
+    ],
+    "adapter_files": {
+      "quant_forecast_lab/icaif.py": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6",
+      "quant_forecast_lab/icaif_training.py": "ee680b74e2278eae42d45684cee7f613b68754b5a448e67c22a67524ab66791f"
+    },
+    "statement": "Archives and frozen source hash match Jordi v9 128/64 encoder and expected-return head; training entrypoints import that factory. Features, relative-return target and turnover band are competition adaptations."
+  },
+  "new_training": {
+    "2023-w10_price": {
+      "seeds": {
+        "7": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.135416030883789,
+              1.1220824718475342,
+              1.1212506294250488,
+              1.1179227828979492
+            ],
+            "val_loss": [
+              1.6620334386825562,
+              1.6748751401901245,
+              1.6784554719924927,
+              1.6829829216003418
+            ]
+          },
+          "best_epoch": 1
+        },
+        "42": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1312679052352905,
+              1.1210179328918457,
+              1.1190265417099,
+              1.1191606521606445
+            ],
+            "val_loss": [
+              1.6638730764389038,
+              1.6677383184432983,
+              1.6691458225250244,
+              1.6754266023635864
+            ]
+          },
+          "best_epoch": 1
+        },
+        "123": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.136500597000122,
+              1.121753454208374,
+              1.1203763484954834,
+              1.1186705827713013
+            ],
+            "val_loss": [
+              1.662154197692871,
+              1.6740894317626953,
+              1.6797153949737549,
+              1.6856015920639038
+            ]
+          },
+          "best_epoch": 1
+        }
+      },
+      "tensorflow": "2.18.1",
+      "max_epochs": 10,
+      "source_files": {
+        "stock_prediction_lstm.py": "2579877f487ed6e7b311804c56c47a66adf61955c6223e055d43bbada50aabd7",
+        "quant_forecast_lab\\icaif_training.py": "ee680b74e2278eae42d45684cee7f613b68754b5a448e67c22a67524ab66791f",
+        "quant_forecast_lab\\icaif.py": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6"
+      },
+      "input_hash": "6f3344c5b3d36dd16f2b25839e7c78dc049beda471bf054f05e6070befe764a9",
+      "architecture": "Jordi Corbilla v9 128/64 LSTM encoder, expected_return head",
+      "last_training_label": "2022-08-31",
+      "first_validation_history": "2022-09-01",
+      "last_validation_label": "2022-12-30",
+      "first_test_start": "2023-01-03",
+      "scale": "Fixed relative returns / 0.02; no full-data scaler"
+    },
+    "2023-w10_vix": {
+      "seeds": {
+        "7": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1369576454162598,
+              1.1221740245819092,
+              1.1207586526870728,
+              1.1176666021347046
+            ],
+            "val_loss": [
+              1.6631563901901245,
+              1.6768248081207275,
+              1.6784311532974243,
+              1.6806215047836304
+            ]
+          },
+          "best_epoch": 1
+        },
+        "42": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1322463750839233,
+              1.1206309795379639,
+              1.1182438135147095,
+              1.1186872720718384
+            ],
+            "val_loss": [
+              1.667182445526123,
+              1.6712449789047241,
+              1.6704070568084717,
+              1.672626256942749
+            ]
+          },
+          "best_epoch": 1
+        },
+        "123": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1369363069534302,
+              1.121963381767273,
+              1.1205464601516724,
+              1.1185028553009033
+            ],
+            "val_loss": [
+              1.665595293045044,
+              1.6726831197738647,
+              1.6759471893310547,
+              1.6825001239776611
+            ]
+          },
+          "best_epoch": 1
+        }
+      },
+      "tensorflow": "2.18.1",
+      "max_epochs": 10,
+      "source_files": {
+        "stock_prediction_lstm.py": "2579877f487ed6e7b311804c56c47a66adf61955c6223e055d43bbada50aabd7",
+        "quant_forecast_lab\\icaif_training.py": "ee680b74e2278eae42d45684cee7f613b68754b5a448e67c22a67524ab66791f",
+        "quant_forecast_lab\\icaif.py": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6"
+      },
+      "input_hash": "3a96e2c52c1b3599264d12c72e3fc1f8056c4f7833871bc5ac9632ede75c8489",
+      "architecture": "Jordi Corbilla v9 128/64 LSTM encoder, expected_return head",
+      "last_training_label": "2022-08-31",
+      "first_validation_history": "2022-09-01",
+      "last_validation_label": "2022-12-30",
+      "first_test_start": "2023-01-03",
+      "scale": "Fixed relative returns / 0.02; no full-data scaler"
+    },
+    "2023-w15_price": {
+      "seeds": {
+        "7": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.149928331375122,
+              1.1247954368591309,
+              1.1205662488937378,
+              1.11673903465271
+            ],
+            "val_loss": [
+              1.6648924350738525,
+              1.682862401008606,
+              1.6950196027755737,
+              1.701112985610962
+            ]
+          },
+          "best_epoch": 1
+        },
+        "42": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1365935802459717,
+              1.1259052753448486,
+              1.1185857057571411,
+              1.1160582304000854
+            ],
+            "val_loss": [
+              1.671571135520935,
+              1.6744968891143799,
+              1.6836721897125244,
+              1.6952787637710571
+            ]
+          },
+          "best_epoch": 1
+        },
+        "123": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.142828345298767,
+              1.1282455921173096,
+              1.1230424642562866,
+              1.1149731874465942
+            ],
+            "val_loss": [
+              1.6720972061157227,
+              1.6799107789993286,
+              1.679904818534851,
+              1.6953415870666504
+            ]
+          },
+          "best_epoch": 1
+        }
+      },
+      "tensorflow": "2.18.1",
+      "max_epochs": 10,
+      "source_files": {
+        "stock_prediction_lstm.py": "2579877f487ed6e7b311804c56c47a66adf61955c6223e055d43bbada50aabd7",
+        "quant_forecast_lab\\icaif_training.py": "ee680b74e2278eae42d45684cee7f613b68754b5a448e67c22a67524ab66791f",
+        "quant_forecast_lab\\icaif.py": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6"
+      },
+      "input_hash": "01fbe55b95998bbb07474cacfd9e347d86fb3d58a167818b6af1d8f4827c9cd2",
+      "architecture": "Jordi Corbilla v9 128/64 LSTM encoder, expected_return head",
+      "last_training_label": "2022-08-31",
+      "first_validation_history": "2022-09-01",
+      "last_validation_label": "2022-12-30",
+      "first_test_start": "2023-01-03",
+      "scale": "Fixed relative returns / 0.02; no full-data scaler"
+    },
+    "2023-w15_vix": {
+      "seeds": {
+        "7": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.150715947151184,
+              1.124964952468872,
+              1.1198792457580566,
+              1.1162283420562744
+            ],
+            "val_loss": [
+              1.6694495677947998,
+              1.6838834285736084,
+              1.6980352401733398,
+              1.7018892765045166
+            ]
+          },
+          "best_epoch": 1
+        },
+        "42": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1372987031936646,
+              1.1258213520050049,
+              1.117577075958252,
+              1.1158238649368286
+            ],
+            "val_loss": [
+              1.6746413707733154,
+              1.6768170595169067,
+              1.6874713897705078,
+              1.6998199224472046
+            ]
+          },
+          "best_epoch": 1
+        },
+        "123": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1448876857757568,
+              1.1268575191497803,
+              1.1218639612197876,
+              1.114537239074707
+            ],
+            "val_loss": [
+              1.6714866161346436,
+              1.6794847249984741,
+              1.682480812072754,
+              1.6988149881362915
+            ]
+          },
+          "best_epoch": 1
+        }
+      },
+      "tensorflow": "2.18.1",
+      "max_epochs": 10,
+      "source_files": {
+        "stock_prediction_lstm.py": "2579877f487ed6e7b311804c56c47a66adf61955c6223e055d43bbada50aabd7",
+        "quant_forecast_lab\\icaif_training.py": "ee680b74e2278eae42d45684cee7f613b68754b5a448e67c22a67524ab66791f",
+        "quant_forecast_lab\\icaif.py": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6"
+      },
+      "input_hash": "aef2dced91a321a7df5cbf95f82bb8d21ec82381bb855debe6a9a5dfb9437e70",
+      "architecture": "Jordi Corbilla v9 128/64 LSTM encoder, expected_return head",
+      "last_training_label": "2022-08-31",
+      "first_validation_history": "2022-09-01",
+      "last_validation_label": "2022-12-30",
+      "first_test_start": "2023-01-03",
+      "scale": "Fixed relative returns / 0.02; no full-data scaler"
+    },
+    "2023-w20_vix": {
+      "seeds": {
+        "7": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.150667667388916,
+              1.126753330230713,
+              1.1214094161987305,
+              1.1166235208511353
+            ],
+            "val_loss": [
+              1.6846635341644287,
+              1.6910265684127808,
+              1.6980547904968262,
+              1.7071385383605957
+            ]
+          },
+          "best_epoch": 1
+        },
+        "42": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1427669525146484,
+              1.1263651847839355,
+              1.1206064224243164,
+              1.118537425994873
+            ],
+            "val_loss": [
+              1.6790006160736084,
+              1.6825751066207886,
+              1.6850653886795044,
+              1.6979291439056396
+            ]
+          },
+          "best_epoch": 1
+        },
+        "123": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1522711515426636,
+              1.1256155967712402,
+              1.1228370666503906,
+              1.1195685863494873
+            ],
+            "val_loss": [
+              1.6870759725570679,
+              1.6948801279067993,
+              1.6916781663894653,
+              1.702818512916565
+            ]
+          },
+          "best_epoch": 1
+        }
+      },
+      "tensorflow": "2.18.1",
+      "max_epochs": 10,
+      "source_files": {
+        "stock_prediction_lstm.py": "2579877f487ed6e7b311804c56c47a66adf61955c6223e055d43bbada50aabd7",
+        "quant_forecast_lab\\icaif_training.py": "ee680b74e2278eae42d45684cee7f613b68754b5a448e67c22a67524ab66791f",
+        "quant_forecast_lab\\icaif.py": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6"
+      },
+      "input_hash": "7e6222f5825a2d1ad320e84771ed2d8d05502c3159d3f21e7819f406da1493d8",
+      "architecture": "Jordi Corbilla v9 128/64 LSTM encoder, expected_return head",
+      "last_training_label": "2022-08-31",
+      "first_validation_history": "2022-09-01",
+      "last_validation_label": "2022-12-30",
+      "first_test_start": "2023-01-03",
+      "scale": "Fixed relative returns / 0.02; no full-data scaler"
+    },
+    "2024-w20_vix": {
+      "seeds": {
+        "7": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1971486806869507,
+              1.1824145317077637,
+              1.1796867847442627,
+              1.178393840789795
+            ],
+            "val_loss": [
+              0.9566448926925659,
+              0.9584595561027527,
+              0.9637267589569092,
+              0.965009868144989
+            ]
+          },
+          "best_epoch": 1
+        },
+        "42": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1920297145843506,
+              1.1810717582702637,
+              1.1796212196350098,
+              1.1759673357009888
+            ],
+            "val_loss": [
+              0.9576784372329712,
+              0.9609701633453369,
+              0.9675766825675964,
+              0.967810869216919
+            ]
+          },
+          "best_epoch": 1
+        },
+        "123": {
+          "epochs": 4,
+          "history": {
+            "loss": [
+              1.1984771490097046,
+              1.1835054159164429,
+              1.178162693977356,
+              1.1794538497924805
+            ],
+            "val_loss": [
+              0.9569478034973145,
+              0.9599381685256958,
+              0.9637210369110107,
+              0.9670963883399963
+            ]
+          },
+          "best_epoch": 1
+        }
+      },
+      "tensorflow": "2.18.1",
+      "max_epochs": 10,
+      "source_files": {
+        "stock_prediction_lstm.py": "2579877f487ed6e7b311804c56c47a66adf61955c6223e055d43bbada50aabd7",
+        "quant_forecast_lab\\icaif_training.py": "ee680b74e2278eae42d45684cee7f613b68754b5a448e67c22a67524ab66791f",
+        "quant_forecast_lab\\icaif.py": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6"
+      },
+      "input_hash": "f3de2c671b8fbff913ee587de624858049d0672ce95e9d9287f35540e4309dc2",
+      "architecture": "Jordi Corbilla v9 128/64 LSTM encoder, expected_return head",
+      "last_training_label": "2023-08-30",
+      "first_validation_history": "2023-08-31",
+      "last_validation_label": "2023-12-29",
+      "first_test_start": "2024-01-02",
+      "scale": "Fixed relative returns / 0.02; no full-data scaler"
+    },
+    "2025-w20_vix": {
+      "seeds": {
+        "7": {
+          "epochs": 7,
+          "history": {
+            "loss": [
+              1.1548593044281006,
+              1.1454416513442993,
+              1.141635775566101,
+              1.1397243738174438,
+              1.1377514600753784,
+              1.1356701850891113,
+              1.1371636390686035
+            ],
+            "val_loss": [
+              1.305268406867981,
+              1.3022782802581787,
+              1.2992712259292603,
+              1.2978651523590088,
+              1.2996060848236084,
+              1.3029515743255615,
+              1.3027633428573608
+            ]
+          },
+          "best_epoch": 4
+        },
+        "42": {
+          "epochs": 7,
+          "history": {
+            "loss": [
+              1.1512484550476074,
+              1.1436492204666138,
+              1.1414941549301147,
+              1.1384825706481934,
+              1.1366980075836182,
+              1.1371806859970093,
+              1.136652946472168
+            ],
+            "val_loss": [
+              1.3056291341781616,
+              1.3025237321853638,
+              1.3002175092697144,
+              1.2998156547546387,
+              1.3007296323776245,
+              1.301314115524292,
+              1.300252079963684
+            ]
+          },
+          "best_epoch": 4
+        },
+        "123": {
+          "epochs": 8,
+          "history": {
+            "loss": [
+              1.1560618877410889,
+              1.1445233821868896,
+              1.1426634788513184,
+              1.1392725706100464,
+              1.1383872032165527,
+              1.1379841566085815,
+              1.1373788118362427,
+              1.1357686519622803
+            ],
+            "val_loss": [
+              1.3022907972335815,
+              1.3036383390426636,
+              1.2996236085891724,
+              1.3002320528030396,
+              1.2993075847625732,
+              1.2995837926864624,
+              1.3005417585372925,
+              1.302608609199524
+            ]
+          },
+          "best_epoch": 5
+        }
+      },
+      "tensorflow": "2.18.1",
+      "max_epochs": 10,
+      "source_files": {
+        "stock_prediction_lstm.py": "2579877f487ed6e7b311804c56c47a66adf61955c6223e055d43bbada50aabd7",
+        "quant_forecast_lab\\icaif_training.py": "ee680b74e2278eae42d45684cee7f613b68754b5a448e67c22a67524ab66791f",
+        "quant_forecast_lab\\icaif.py": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6"
+      },
+      "input_hash": "f5c69cc245ced336726528aec3bbb08163ce78d0523efcba15f1cef209a6486e",
+      "architecture": "Jordi Corbilla v9 128/64 LSTM encoder, expected_return head",
+      "last_training_label": "2024-08-29",
+      "first_validation_history": "2024-08-30",
+      "last_validation_label": "2024-11-27",
+      "first_test_start": "2025-01-29",
+      "scale": "Fixed relative returns / 0.02; no full-data scaler"
+    }
+  },
+  "limits": [
+    "Fixed surviving universe",
+    "Excluded incomplete sessions",
+    "No dividends or cash yield",
+    "No extra slippage or market impact",
+    "Previously inspected overlapping windows"
+  ]
+}
