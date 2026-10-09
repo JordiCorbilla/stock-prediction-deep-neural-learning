@@ -41,9 +41,10 @@ def sequence_features(base, lookback=20, vix=None):
     """
     if lookback not in (10, 15, 20):
         raise ValueError("Lookback must be 10, 15 or 20")
-    if np.asarray(base).ndim != 3 or base.shape[1] < lookback:
+    x = np.asarray(base)
+    if x.ndim != 3 or x.shape[1] < lookback:
         raise ValueError("Insufficient base history")
-    result = enhanced_features(base[:, -lookback:, :])
+    result = enhanced_features(x[:, -lookback:, :])
     if vix is not None:
         values = np.asarray(vix, dtype=float)
         if values.shape != (lookback + 1,) or not np.isfinite(values).all() or (values <= 0).any():
