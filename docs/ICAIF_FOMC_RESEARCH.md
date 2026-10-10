@@ -44,3 +44,25 @@ Full protocol, price hashes, model/source hashes, training histories, portfolio
 results and promotion decision are maintained in the competition repository's
 `docs/LSTM_FOMC_RESEARCH.md` and its dated evidence archive. This research does
 not change accepted Official submission 1545.
+
+## Completed outcome
+
+All 18 neural fits completed (validation early stopping after 4–8 epochs).
+Mean net P&L per matched 15-session $1m episode:
+
+|Year|Zero-calendar control|FOMC context|Increment|
+|---|---:|---:|---:|
+|2023|$9,015.96|$9,249.85|+$233.90|
+|2024|$12,951.85|$13,106.42|+$154.58|
+|2025|$8,370.73|$8,228.27|−$142.46|
+
+The challenger passed the first two annual gates but failed the 2025 profit gate.
+It was not promoted. All downside guards passed, but the pooled later-year
+increment was only +$6.79 per window, which does not overturn the fixed gate.
+These are overlapping historical episodes after 0.1% buy/sell fees, not annual
+earnings or a live result. The unchanged Official model remains in use.
+
+See the [full experiment, chart and trade ledger](https://github.com/JordiCorbilla/acm-icaif-2026-trading-agent-competition/blob/main/docs/LSTM_FOMC_RESEARCH.md)
+for the protocol, training histories, input/model/source hashes and limitations.
+Feature code is published on `codex/fomc-calendar-feature`, preserving concurrent
+updates on the existing `architecture-clean-up` branch.
