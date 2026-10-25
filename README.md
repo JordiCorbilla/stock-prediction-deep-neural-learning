@@ -24,6 +24,7 @@ This repository began as an LSTM stock-price forecasting experiment in 2020. The
 - One-step held-out residual bands, explicitly labelled as unvalidated for recursive horizons.
 - Transaction-cost-aware directional strategy diagnostics.
 - CSV benchmark CLI.
+- [ICAIF competition adapter and LSTM provenance](docs/ICAIF_COMPETITION_ADAPTER.md): causal inputs, VIX experiments, controlled turnover and continuous portfolio replay.
 - CI, tests, packaging metadata and contributor templates.
 
 ## Why the benchmark matters
