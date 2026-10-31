@@ -17,20 +17,26 @@ def enhanced_features(base):
     if (returns <= -1).any():
         raise ValueError("Invalid stock return")
     logs = np.cumsum(np.log1p(returns), axis=1)
-    bands = np.zeros_like(returns)
-    acceleration = np.zeros_like(returns)
-    for t in range(2, returns.shape[1]):
-        time = np.arange(t + 1)
-        centered = time - time.mean()
-        prefix = logs[:, :t + 1]
-        slope = prefix @ centered / (centered @ centered)
-        fitted = prefix.mean(axis=1) + slope * (t - time.mean())
-        volatility = np.maximum(returns[:, :t + 1].std(axis=1, ddof=1), 1e-4)
-        bands[:, t] = np.clip((logs[:, t] - fitted) / volatility, -5, 5) / 5
-        if t >= 9:
-            acceleration[:, t] = returns[:, t - 4:t + 1].sum(axis=1) - returns[:, t - 9:t - 4].sum(axis=1)
-    return np.concatenate([x, logs[:, :, None] / .02, bands[:, :, None],
-                           acceleration[:, :, None] / .02], axis=2).astype("float32")
+    result = np.zeros(x.shape[:2] + (6,), dtype="float32")
+    result[:, :, :3] = x.astype(float, copy=False)
+    result[:, :, 3] = logs / .02
+    # Prefix regression and ddof=1 volatility for every t >= 2 from running sums.
+    time = np.arange(returns.shape[1])
+    t = time[2:]
+    count = t + 1.
+    sum_logs = logs.cumsum(axis=1)[:, 2:]
+    sum_time_logs = (logs * time).cumsum(axis=1)[:, 2:]
+    slope = (sum_time_logs - t / 2 * sum_logs) / (t * count * (t + 2) / 12)
+    fitted = sum_logs / count + slope * (t / 2)
+    shifted = returns - returns[:, :1]
+    sum_shifted = shifted.cumsum(axis=1)[:, 2:]
+    variance = ((shifted ** 2).cumsum(axis=1)[:, 2:] - sum_shifted ** 2 / count) / t
+    volatility = np.sqrt(np.maximum(variance, 1e-8))
+    result[:, 2:, 4] = np.clip((logs[:, 2:] - fitted) / volatility, -5, 5) / 5
+    # Acceleration: second 5-step difference of one zero-padded running sum.
+    running = np.cumsum(np.concatenate([np.zeros((len(returns), 1)), returns], axis=1), axis=1)
+    result[:, 9:, 5] = (running[:, 10:] - 2 * running[:, 5:-5] + running[:, :-10]) / .02
+    return result
 
 
 def sequence_features(base, lookback=20, vix=None):
