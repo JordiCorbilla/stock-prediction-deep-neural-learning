@@ -1,7 +1,15 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from quant_forecast_lab.icaif import enhanced_features, portfolio_target, sequence_features, trade_required
+
+
+def test_features_match_frozen_training_tensor_bit_for_bit():
+    fixture = Path(__file__).parent / "fixtures/icaif-frozen-features.npz"
+    with np.load(fixture, allow_pickle=False) as data:
+        np.testing.assert_array_equal(enhanced_features(data["base"]), data["expected"])
 
 
 def test_features_cannot_see_future_steps():

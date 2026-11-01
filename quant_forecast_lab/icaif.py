@@ -9,7 +9,37 @@ FEATURE_VERSION = "icaif-causal-v1"
 
 
 def enhanced_features(base):
-    """Add prefix-only log return, trend deviation and acceleration features."""
+    """Canonical prefix features with the frozen ICAIF arithmetic order.
+
+    Keep reduction order unchanged: the submitted checkpoints were fitted on
+    these exact float32 tensors. Use enhanced_features_fast explicitly for
+    research that tolerates different rounding.
+    """
+    x = np.asarray(base)
+    if x.ndim != 3 or x.shape[2] != 3 or x.shape[1] < 2 or not np.isfinite(x).all():
+        raise ValueError("Expected finite stock/time/three-feature input")
+    returns = x[:, :, 0].astype(float) * .02
+    if (returns <= -1).any():
+        raise ValueError("Invalid stock return")
+    logs = np.cumsum(np.log1p(returns), axis=1)
+    bands = np.zeros_like(returns)
+    acceleration = np.zeros_like(returns)
+    for t in range(2, returns.shape[1]):
+        time = np.arange(t + 1)
+        centered = time - time.mean()
+        prefix = logs[:, :t + 1]
+        slope = prefix @ centered / (centered @ centered)
+        fitted = prefix.mean(axis=1) + slope * (t - time.mean())
+        volatility = np.maximum(returns[:, :t + 1].std(axis=1, ddof=1), 1e-4)
+        bands[:, t] = np.clip((logs[:, t] - fitted) / volatility, -5, 5) / 5
+        if t >= 9:
+            acceleration[:, t] = returns[:, t - 4:t + 1].sum(axis=1) - returns[:, t - 9:t - 4].sum(axis=1)
+    return np.concatenate([x, logs[:, :, None] / .02, bands[:, :, None],
+                           acceleration[:, :, None] / .02], axis=2).astype("float32")
+
+
+def enhanced_features_fast(base):
+    """Vectorized research alternative; not bitwise compatible with frozen inputs."""
     x = np.asarray(base)
     if x.ndim != 3 or x.shape[2] != 3 or x.shape[1] < 2 or not np.isfinite(x).all():
         raise ValueError("Expected finite stock/time/three-feature input")

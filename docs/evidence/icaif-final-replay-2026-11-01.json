@@ -1,0 +1,34 @@
+{
+  "result": "PASS",
+  "round_id": "official-2026-10-12-r1",
+  "files_verified": 188,
+  "features_bitwise_equal": true,
+  "forecast_tolerance_absolute": 1e-08,
+  "forecast_comparisons": {
+    "predictions-7.npy": {
+      "max_absolute_difference": 0.0,
+      "bitwise_array_equal": true
+    },
+    "predictions-42.npy": {
+      "max_absolute_difference": 0.0,
+      "bitwise_array_equal": true
+    },
+    "predictions-123.npy": {
+      "max_absolute_difference": 0.0,
+      "bitwise_array_equal": true
+    },
+    "ensemble.npy": {
+      "max_absolute_difference": 0.0,
+      "bitwise_array_equal": true
+    }
+  },
+  "weights_equal_original": true,
+  "weights_equal_execution": true,
+  "decision_contract": "PASS",
+  "original_private_decision_sha256": "a97746186a62430452acef29d50f722fe625c9ff0e12e9cb2e284925542a7061",
+  "private_decision_bytes_match": null,
+  "wall_seconds": 9.922,
+  "network_calls": 0,
+  "submissions": 0,
+  "note": "decision.public.json omits credentials and is not an upload file. Optional decision.json is private, historical and must not be resubmitted."
+}

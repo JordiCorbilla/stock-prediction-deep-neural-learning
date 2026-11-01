@@ -1,0 +1,6 @@
+{
+  "source": "ICAIF historical causal 2023 training inputs, rows 11 through 14, frozen before competition",
+  "input_archive_sha256": "2df7aecd0bf1aca073ade91f6ace0a34bf207cc86d18f3892dd9c8f68da6f956",
+  "frozen_adapter_sha256": "4f1a3bd7218c7b50a56b7e652c065ce7e04529a09ab3b8122c6d249311fe83d6",
+  "purpose": "Exact float32 regression for original feature arithmetic; no credentials or model weights"
+}

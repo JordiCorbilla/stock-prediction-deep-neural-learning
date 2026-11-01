@@ -1,5 +1,10 @@
 # How this repository powers our ICAIF trading agent
 
+For the submitted checkpoints, final review status and exact offline replay,
+see the [November 1 final handoff](ICAIF_FINAL_HANDOFF.md). The default feature
+calculation preserves frozen arithmetic; the vectorized research alternative
+is explicitly named `enhanced_features_fast` and may round differently.
+
 The competition model is built from this repository's `LongShortTermMemory`
 factory in `stock_prediction_lstm.py`. It calls
 `create_return_multitask_model`, which constructs the v9 shared 128/64 LSTM
