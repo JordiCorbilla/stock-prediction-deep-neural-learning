@@ -2,6 +2,9 @@
 
 **Reproducible deep-learning research for financial time-series forecasting.**
 
+Stable source checkpoint: **v2.1.0** (November 1, 2026).
+See the [changelog](CHANGELOG.md) and [ICAIF reproduction handoff](docs/ICAIF_FINAL_HANDOFF.md).
+
 [![CI](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/actions/workflows/ci.yml/badge.svg)](https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning/actions/workflows/ci.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 [![TensorFlow 2.18.1](https://img.shields.io/badge/TensorFlow-2.18.1-orange.svg)](https://www.tensorflow.org/)

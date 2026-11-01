@@ -8,8 +8,8 @@ authors:
 repository-code: "https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning"
 url: "https://jordicorbilla.github.io/stock-prediction-deep-neural-learning/"
 license: "Apache-2.0"
-version: "1.0.0-alpha.1"
-date-released: "2026-09-26"
+version: "2.1.0"
+date-released: "2026-11-01"
 keywords:
   - quantitative-finance
   - time-series

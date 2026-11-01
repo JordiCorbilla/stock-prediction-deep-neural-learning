@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quant-forecast-lab"
-version = "1.0.0a1"
+version = "2.1.0"
 description = "Reproducible utilities for financial time-series forecasting experiments."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
